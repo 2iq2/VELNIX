@@ -286,8 +286,8 @@ const CATEGORY_META={
  world:{ar:'قنوات عالمية',en:'World channels',icon:'◎'}
 };
 function cleanChannelName(value){
- return String(value||'').replace(/^\\s*(?:\\|\\s*)?(?:AR|TR|FR|UK|US|USA|CA|CAN|DE|ES|ITA|IT|NL|PT|PL|EU|LAT|SP|AF|NEWS|SPORT|DEPORTE)(?:\\s*\\|+\\s*|\\s*\\|\\s*)/i,'')
- .replace(/^\\s*\\|+\\s*/,'').replace(/\\s*\\|\\s*/g,' ').replace(/\\s{2,}/g,' ').trim();
+ return String(value||'').replace(/^\s*(?:\|\s*)?(?:AR|TR|FR|UK|US|USA|CA|CAN|DE|ES|ITA|IT|NL|PT|PL|EU|LAT|SP|AF|NEWS|SPORT|DEPORTE)(?:\s*\|+\s*|\s*\|\s*)/i,'')
+ .replace(/^\s*\|+\s*/,'').replace(/\s*\|\s*/g,' ').replace(/\s{2,}/g,' ').trim();
 }
 function categoryFor(row){
  const group=String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'').toLowerCase();
@@ -309,7 +309,7 @@ function displayName(row){
  return cleanChannelName(value)||'Channel';
 }
 function initialsFor(name){
- const words=String(name||'TV').replace(/[^a-z0-9 ]/gi,' ').trim().split(/\\s+/).filter(Boolean);
+ const words=String(name||'TV').replace(/[^a-z0-9 ]/gi,' ').trim().split(/\s+/).filter(Boolean);
  return (words.length>1?words[0][0]+words[1][0]:String(words[0]||'TV').slice(0,2)).toUpperCase();
 }
 function renderChannels(){
