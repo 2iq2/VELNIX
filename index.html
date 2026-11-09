@@ -107,10 +107,17 @@ async function gateway(body){
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
 }
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,recovering=false;
+function destroyPlayerEngine(){
+ if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
+ if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
+}
 function stopPlayback(){
- if(hlsInstance){hlsInstance.destroy();hlsInstance=null}
- if(mpegtsPlayer){mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy();mpegtsPlayer=null}
- video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
+ playbackGeneration++;activeRow=null;recovering=false;retryCount=0;
+ if(retryTimer){clearTimeout(retryTimer);retryTimer=null}
+ if(watchdogTimer){clearInterval(watchdogTimer);watchdogTimer=null}
+ destroyPlayerEngine();video.pause();video.removeAttribute('src');video.load();
+ qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
 }
 function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
 function state(value){$('#playerState').textContent=value}
@@ -119,40 +126,102 @@ function qualities(){
  if(!hlsInstance)return;
  hlsInstance.levels.forEach((level,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps';qualitySelect.append(o)});
 }
-async function playChannel(row){
- playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;stopPlayback();
- state(lang==='ar'?'جارٍ تجهيز البث...':'Preparing stream...');
- try{
-  const stream=await gateway({action:'stream',channel_id:row.id});
-  const url=stream.stream_url,type=(stream.stream_type||row.stream_type||'hls').toLowerCase();
-  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
-  if(type==='hls'){
-   try{
-    const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
-    Hls=mod.default||mod;
-    if(Hls.isSupported()){
-     hlsInstance=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:30,capLevelToPlayerSize:true});
-     hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{qualities();state(lang==='ar'?'البث جاهز.':'Stream ready.');video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'))});
-     hlsInstance.on(Hls.Events.ERROR,(_e,d)=>{if(d.fatal)state(lang==='ar'?'تعذر تشغيل البث؛ قد يكون المصدر متوقفاً.':'Playback failed; the source may be offline.')});
-     hlsInstance.loadSource(url);hlsInstance.attachMedia(video);return;
-    }
-   }catch(e){console.warn('HLS engine unavailable',e)}
-   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;video.play().catch(()=>state('اضغط تشغيل / Press play'));return}
-   throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
-  }
-  if(['file','mpegts','ts'].includes(type)){
-   const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
-   mpegts=mod.default||mod;
-   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
-   const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
-   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{enableWorker:true,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:8,liveBufferLatencyMinRemain:1,stashInitialSize:384*1024,headers:{apikey:KEY}});
-   mpegtsPlayer.on(mpegts.Events.ERROR,(_t,d,info)=>state((lang==='ar'?'خطأ بالبث: ':'Stream error: ')+(info?.msg||d||'')));
-   mpegtsPlayer.attachMediaElement(video);mpegtsPlayer.load();mpegtsPlayer.play().then(()=>state(lang==='ar'?'متصل بالبث.':'Connected.')).catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
-   return;
-  }
-  video.src=url;video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
- }catch(e){state(e?.message||'Playback error')}
+function scheduleRecovery(reason,generation=playbackGeneration){
+ if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
+ if(retryCount>=7){state(lang==='ar'?'المصدر غير مستقر حالياً. أوقفنا المحاولات مؤقتاً؛ اضغط إعادة المحاولة بتغيير القناة ثم ارجع لها.':'The source is unstable. Automatic retries paused; reopen the channel to try again.');return}
+ recovering=true;retryCount++;
+ const delay=Math.min(15000,1200*Math.pow(1.7,retryCount-1));
+ state(lang==='ar'?'انقطع البث؛ إعادة الاتصال تلقائياً ('+retryCount+'/7)...':'Stream interrupted; reconnecting ('+retryCount+'/7)...');
+ if(retryTimer)clearTimeout(retryTimer);
+ retryTimer=setTimeout(async()=>{
+  retryTimer=null;
+  if(generation!==playbackGeneration||!activeRow){recovering=false;return}
+  destroyPlayerEngine();video.pause();video.removeAttribute('src');video.load();
+  try{await startPlayback(activeRow,generation,reason)}catch(e){console.warn('Playback recovery failed',e);scheduleRecovery(e?.message||'retry',generation)}
+  recovering=false;
+ },delay);
 }
+async function startPlayback(row,generation,reason='initial'){
+ if(generation!==playbackGeneration||!activeRow)return;
+ state(lang==='ar'?(reason==='initial'?'جارٍ تجهيز البث...':'جارٍ إعادة تشغيل البث...'):(reason==='initial'?'Preparing stream...':'Restarting stream...'));
+ const stream=await gateway({action:'stream',channel_id:row.id});
+ if(generation!==playbackGeneration)return;
+ const url=stream.stream_url,type=(stream.stream_type||row.stream_type||'hls').toLowerCase();
+ if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
+ lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
+ if(type==='hls'){
+  const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
+  if(generation!==playbackGeneration)return;
+  Hls=mod.default||mod;
+  if(Hls.isSupported()){
+   hlsInstance=new Hls({
+    enableWorker:true,lowLatencyMode:false,
+    backBufferLength:60,maxBufferLength:45,maxMaxBufferLength:90,maxBufferSize:60*1000*1000,
+    maxBufferHole:0.5,liveSyncDurationCount:4,liveMaxLatencyDurationCount:12,
+    maxLiveSyncPlaybackRate:1.15,nudgeOffset:0.2,nudgeMaxRetry:6,
+    manifestLoadingMaxRetry:6,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:12000,
+    levelLoadingMaxRetry:6,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:12000,
+    fragLoadingMaxRetry:8,fragLoadingRetryDelay:1000,fragLoadingMaxRetryTimeout:15000,
+    startFragPrefetch:true
+   });
+   const instance=hlsInstance;
+   instance.on(Hls.Events.MANIFEST_PARSED,()=>{
+    if(generation!==playbackGeneration||instance!==hlsInstance)return;
+    qualities();state(lang==='ar'?'البث جاهز؛ تتم مراقبة الاتصال تلقائياً.':'Stream ready; connection recovery is enabled.');
+    video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
+   });
+   instance.on(Hls.Events.ERROR,(_e,d)=>{
+    if(generation!==playbackGeneration||instance!==hlsInstance||!d.fatal)return;
+    if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&retryCount<3){try{instance.recoverMediaError();return}catch(e){}}
+    if(d.type===Hls.ErrorTypes.NETWORK_ERROR&&retryCount<3){try{instance.startLoad();return}catch(e){}}
+    scheduleRecovery(d.details||'HLS fatal error',generation);
+   });
+   instance.loadSource(url);instance.attachMedia(video);return;
+  }
+  if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{});return}
+  throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
+ }
+ if(['file','mpegts','ts'].includes(type)){
+  const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
+  if(generation!==playbackGeneration)return;
+  mpegts=mod.default||mod;
+  if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
+  const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
+  mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{
+   enableWorker:true,enableStashBuffer:true,stashInitialSize:512*1024,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:15,liveBufferLatencyMinRemain:2,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:60,autoCleanupMinBackwardDuration:30
+  });
+  const instance=mpegtsPlayer;
+  instance.on(mpegts.Events.ERROR,(_t,d,info)=>{
+   if(generation===playbackGeneration&&instance===mpegtsPlayer)scheduleRecovery(info?.msg||d||'MPEG-TS error',generation);
+  });
+  instance.attachMediaElement(video);instance.load();
+  instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ إعادة الاتصال التلقائية مفعّلة.':'Connected; automatic recovery enabled.')}).catch(e=>{if(generation===playbackGeneration)state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+  return;
+ }
+ video.src=url;await video.play().catch(()=>{});
+}
+async function playChannel(row){
+ stopPlayback();activeRow=row;const generation=playbackGeneration;
+ playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
+ retryCount=0;lastProgressAt=Date.now();lastCurrentTime=0;
+ try{await startPlayback(row,generation,'initial')}
+ catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
+}
+video.addEventListener('timeupdate',()=>{
+ if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
+});
+video.addEventListener('playing',()=>{lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0});
+video.addEventListener('error',()=>{if(activeRow&&!recovering)scheduleRecovery('Media element error')});
+video.addEventListener('ended',()=>{if(activeRow&&!video.paused)scheduleRecovery('Stream ended')});
+video.addEventListener('stalled',()=>{if(activeRow&&!video.paused&&Date.now()-lastProgressAt>12000)scheduleRecovery('Playback stalled')});
+watchdogTimer=setInterval(()=>{
+ if(!activeRow||!playerModal.classList.contains('show')||video.paused||video.ended||recovering)return;
+ const now=Date.now();
+ if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&now-lastProgressAt>30000)retryCount=0}
+ else if(now-lastProgressAt>22000)scheduleRecovery('No playback progress');
+},5000);
 function renderFilters(categories){
  const filters=$('#filters');filters.querySelectorAll('[data-dynamic="true"]').forEach(x=>x.remove());
  (categories||[]).forEach(c=>{const b=document.createElement('button');b.className='filter';b.dataset.cat=c.slug;b.dataset.dynamic='true';b.textContent=lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar);filters.append(b)});
