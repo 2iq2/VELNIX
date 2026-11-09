@@ -24,6 +24,9 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 [hidden]{display:none!important}
 @media(max-width:850px){nav{display:none}.hero{grid-template-columns:1fr;padding-top:54px;gap:35px}.visual{min-height:320px}.channels{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.wrap{width:min(100% - 28px,1180px)}.nav{height:68px}.brand{font-size:20px}.actions{gap:6px}.lang,.login{padding:9px 11px;font-size:12px}.hero{padding:45px 0 28px;min-height:0}h1{font-size:43px}.intro{font-size:15px}.visual{min-height:260px}.screen{inset:12px;padding:17px}.screen-copy strong{font-size:24px}.channels{gap:10px}.channel{padding:14px;min-height:145px}.section{padding:35px 0}.note{align-items:flex-start}.foot{flex-direction:column;align-items:flex-start}}
+
+.player-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.88);display:none;place-items:center;padding:18px}.player-modal.show{display:grid}.player-shell{width:min(1000px,100%);background:#0d141e;border:1px solid rgba(201,169,110,.3);border-radius:20px;overflow:hidden;box-shadow:0 25px 90px #000b}.player-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--line)}.player-head strong{color:var(--gold2)}.player-close{border:0;background:transparent;color:#fff;font-size:26px}.video-wrap{background:#000;aspect-ratio:16/9;position:relative}.video-wrap video{width:100%;height:100%;display:block;background:#000}.player-controls{display:flex;align-items:center;gap:12px;padding:14px 18px;flex-wrap:wrap}.player-controls label{color:var(--muted);font-size:12px}.player-controls select{background:#151e2b;color:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px}.player-state{padding:0 18px 16px;color:var(--muted);font-size:13px;min-height:22px}.channel{cursor:pointer}.channel:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}.channel .play-hint{display:inline-block;margin-inline-start:8px;color:#fff;background:rgba(201,169,110,.15);border:1px solid rgba(201,169,110,.3);padding:5px 9px;border-radius:8px;font-size:11px}
+
 </style>
 </head>
 <body>
@@ -51,34 +54,45 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية." data-en="This is the foundation of the experience. Accounts, channel sources and live playback will be enabled as the backend is configured.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><strong id="playerTitle">VELNIX LIVE</strong><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div><div class="video-wrap"><video id="liveVideo" controls playsinline preload="none"></video></div><div class="player-controls"><label for="qualitySelect">الجودة / Quality</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">ملء الشاشة</button></div><div class="player-state" id="playerState" role="status">اختر قناة لبدء المشاهدة.</div></div></div>
 <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';
+import Hls from 'https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm';
 (()=>{
 let lang='ar',mode='signin',currentUser=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const supabase=createClient('https://shungcjflcjwubdlhyzq.supabase.co','sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo');
 let channelRows=[];
 const categoryIcons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
+let hlsInstance=null;const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
+function stopPlayback(){if(hlsInstance){hlsInstance.destroy();hlsInstance=null}video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';}
+function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
+function setPlayerState(text){$('#playerState').textContent=text}
+function populateQualities(){qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';if(!hlsInstance)return;hlsInstance.levels.forEach((level,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=(level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps');qualitySelect.append(option)})}
+async function playChannel(row){playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;stopPlayback();if(!row.stream_url){setPlayerState(lang==='ar'?'مصدر البث غير مربوط لهذه القناة بعد، أو أن حسابك لا يملك صلاحية الوصول إليه.':'No stream is configured for this channel yet, or your account is not entitled to access it.');return}const url=row.stream_url;setPlayerState(lang==='ar'?'جارٍ الاتصال بمصدر البث...':'Connecting to stream...');
+ try{if((row.stream_type||'hls').toLowerCase()==='hls'&&Hls.isSupported()){hlsInstance=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:30,capLevelToPlayerSize:true});hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{populateQualities();setPlayerState(lang==='ar'?'تم الاتصال. اختر الجودة أو اتركها تلقائياً.':'Connected. Choose a quality or keep Auto.');video.play().catch(()=>setPlayerState(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'))});hlsInstance.on(Hls.Events.ERROR,(_event,data)=>{if(data.fatal)setPlayerState(lang==='ar'?'تعذر تشغيل المصدر. تحقق من الرابط أو صلاحيات CORS أو حالة السيرفر.':'Playback failed. Check the stream URL, CORS policy, or server status.')});hlsInstance.loadSource(url);hlsInstance.attachMedia(video)}else if(video.canPlayType('application/vnd.apple.mpegurl')||!url.toLowerCase().includes('.m3u8')){video.src=url;video.addEventListener('loadedmetadata',()=>setPlayerState(lang==='ar'?'المصدر جاهز للتشغيل.':'Stream ready.'),{once:true});video.play().catch(()=>setPlayerState(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'))}else{setPlayerState(lang==='ar'?'هذا المتصفح لا يدعم تشغيل HLS حالياً.':'This browser cannot play HLS in this mode.')}}catch(error){setPlayerState(lang==='ar'?'حدث خطأ أثناء تشغيل القناة.':'An error occurred while starting playback.')}}
+$('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});$('#fullscreenBtn').addEventListener('click',()=>{const target=$('.video-wrap');if(target.requestFullscreen)target.requestFullscreen()});
 function renderChannels(){
  const grid=$('#channelsGrid');if(!grid)return;grid.replaceChildren();
  const active=$('#filters .filter.active')?.dataset.cat||'all';
  const rows=channelRows.filter(row=>active==='all'||row.channel_categories?.slug===active);
  rows.forEach(row=>{
   const slug=row.channel_categories?.slug||'variety';
-  const card=document.createElement('article');card.className='channel';card.dataset.category=slug;
+  const card=document.createElement('article');card.className='channel';card.dataset.category=slug;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',(lang==='ar'?row.name_ar:row.name_en)+' — Play');
   const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=categoryIcons[slug]||'◈';
   const title=document.createElement('h3');title.textContent=lang==='ar'?row.name_ar:row.name_en;
   const desc=document.createElement('p');desc.textContent=row.description||'';
-  const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'مصدر البث قيد التجهيز':'STREAM SOURCE PENDING';
-  card.append(icon,title,desc,tag);grid.append(card);
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=row.stream_url?(lang==='ar'?'متاح للمشاهدة':'READY TO WATCH'):(lang==='ar'?'مصدر البث غير مربوط':'SOURCE NOT CONNECTED');
+  const play=document.createElement('span');play.className='play-hint';play.textContent=lang==='ar'?'فتح المشغّل ▶':'OPEN PLAYER ▶';
+  card.append(icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();playChannel(row)}});grid.append(card);
  });
 }
 async function loadChannels(){
  const status=$('#channelStatus');
  if(!currentUser){channelRows=[];renderChannels();status.textContent=lang==='ar'?'سجّل الدخول لعرض دليل القنوات.':'Sign in to browse the channel guide.';return}
  status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
- const {data,error}=await supabase.from('channels').select('id,name_ar,name_en,description,channel_categories(slug)').eq('is_active',true).order('name_ar');
+ const {data,error}=await supabase.from('channels').select('id,name_ar,name_en,description,stream_url,stream_type,channel_categories(slug)').eq('is_active',true).order('name_ar');
  if(error){status.textContent=lang==='ar'?'تعذر تحميل القنوات. حاول تحديث الصفحة.':'Could not load channels. Refresh the page.';return}
  channelRows=data||[];renderChannels();
  status.textContent=channelRows.length?(lang==='ar'?'تم تحميل '+channelRows.length+' قناة. مصادر البث ستُفعّل بعد ربطها.':channelRows.length+' channels loaded. Streams will be enabled once connected.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels have been added yet.');
