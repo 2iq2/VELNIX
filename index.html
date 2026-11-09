@@ -299,7 +299,7 @@ function categoryFor(row){
  if(/doc|document|nature|science|wissensch|natuur/.test(group)||/documentary|discovery|nat geo|national geographic|history channel|animal planet|bbc earth/.test(name))return 'documentaries';
  if(/cinema|movie|film|series|cine|prime video/.test(group)||/movies|cinema|ciné|film|series|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
  if(/radio|music|musique|musica|music/.test(group)||/radio|music|mtv|mezzo|trace urban|vh1|rotana music|موسيقى/.test(name))return 'music';
- if(/arabic|middle east|maghreb|maroc|quran|islamic|arab|mbc group|bein movies/.test(group)||/iraq|iraqia|mbc|osn|shahid|rotana|al arabiya|al jazeera|quran|alkass|abudhabi|abu dhabi|oman|kuwait|saudi|syria|lebanon|egypt|morocco|tunisia|jordan|palestine|arab/.test(name))return 'arabic';
+ if(/arabic|middle east|moyen orient|maghreb|maroc|quran|islamic|arab|mbc group|bein movies/.test(group)||/iraq|iraqia|mbc|osn|shahid|rotana|al arabiya|al jazeera|quran|alkass|abudhabi|abu dhabi|oman|kuwait|saudi|syria|lebanon|egypt|morocco|tunisia|jordan|palestine|arab/.test(name))return 'arabic';
  if(/arab|middle east|maghreb|maroc/.test(group))return 'arabic';
  if(/general|network|tv|relax|generalista|generali/.test(group))return 'world';
  return 'variety';
@@ -351,7 +351,7 @@ function renderChannels(){
  if(!rows.length){const empty=document.createElement('p');empty.className='channel-status';empty.textContent=lang==='ar'?'ماكو قنوات تطابق البحث أو القسم الحالي.':'No channels match this search or category.';grid.append(empty)}
  $('#catalogCount').textContent=channelRows.length.toLocaleString(lang==='ar'?'ar-IQ':'en-US');
  const more=$('#loadMoreChannels');more.hidden=rows.length<=visibleLimit;more.textContent=lang==='ar'?'عرض المزيد · '+Math.min(90,rows.length-visibleLimit).toLocaleString('ar-IQ')+' قناة':'Load more · '+Math.min(90,rows.length-visibleLimit)+' channels';
- $('#channelStatus').textContent=lang==='ar'?'يعرض '+rows.length.toLocaleString('ar-IQ')+' قناة من أصل '+channelRows.length.toLocaleString('ar-IQ')+'.':'Showing '+rows.length.toLocaleString('en-US')+' of '+channelRows.length.toLocaleString('en-US')+' channels.';
+ const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة في هذا القسم.':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels in this category.';
 }
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
