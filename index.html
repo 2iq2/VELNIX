@@ -111,7 +111,7 @@ async function playChannel(row){
    const proxyUrl='https://shungcjflcjwubdlhyzq.supabase.co/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
    mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxyUrl},{
     enableWorker:true,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:8,liveBufferLatencyMinRemain:1,stashInitialSize:384*1024,
-    xhrSetup:(xhr)=>{xhr.setRequestHeader('Authorization','Bearer '+sessionData.session.access_token);xhr.setRequestHeader('apikey','sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo');}
+    headers:{Authorization:'Bearer '+sessionData.session.access_token,apikey:'sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo}
    });
    mpegtsPlayer.on(mpegts.Events.ERROR,(_type,detail,info)=>{
     const reason=info?.msg||detail||'MPEG-TS playback error';
