@@ -68,6 +68,18 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
   const button=document.getElementById(id);
   if(button)button.addEventListener('click',open);
  });
+ window.__VELNIX_AUTH_READY__=false;
+ const form=document.getElementById('authForm');
+ if(form)form.addEventListener('submit',event=>{
+  if(!window.__VELNIX_AUTH_READY__){
+   event.preventDefault();
+   const status=document.getElementById('authMessage');
+   if(status){
+    status.textContent='تعذر تحميل خدمة تسجيل الدخول. تحقق من الاتصال بالإنترنت ثم حدّث الصفحة.';
+    status.classList.add('error');
+   }
+  }
+ });
  const closeButton=document.getElementById('closeModal');
  if(closeButton)closeButton.addEventListener('click',close);
  if(modal)modal.addEventListener('click',event=>{if(event.target===modal)close()});
@@ -75,7 +87,7 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 })();
 </script>
 <script type="module">
-const supabaseModule=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm').catch(()=>import('https://esm.sh/@supabase/supabase-js@2'));
+const supabaseModule=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm').catch(()=>import('https://esm.sh/@supabase/supabase-js@2')).catch(()=>import('https://esm.run/@supabase/supabase-js@2'));
 const {createClient}=supabaseModule;
 (()=>{
 let lang='ar',mode='signin',currentUser=null;
@@ -246,6 +258,7 @@ else if(mode==='signin'){
 }catch(err){message(err.message||(lang==='ar'?'تعذر إكمال العملية.':'Unable to complete the request.'),true)}
 finally{btn.disabled=false;renderAuthMode()}
 });
+window.__VELNIX_AUTH_READY__=true;
 $('#signOutBtn').addEventListener('click',async()=>{const {error}=await supabase.auth.signOut();if(error)message(error.message,true);else{currentUser=null;mode='signin';message(lang==='ar'?'تم تسجيل الخروج.':'Signed out.');renderAuthMode();$('#loginBtn').textContent=lang==='ar'?'تسجيل الدخول':'Sign in'}});
 supabase.auth.onAuthStateChange((event,session)=>{currentUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){mode='update';openModal()}renderAuthMode();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in');setTimeout(()=>loadChannels().catch(err=>console.error('Auth channel refresh failed:',err)),0)});
 supabase.auth.getSession().then(({data,error})=>{if(error)throw error;currentUser=data.session?.user||null;renderAuthMode();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in');return loadChannels()}).catch(err=>{console.error('VELNIX initialization failed:',err);$('#channelStatus').textContent=lang==='ar'?'تعذر تهيئة الموقع. حدّث الصفحة أو حاول لاحقاً.':'Site initialization failed. Refresh or try again later.'});
