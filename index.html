@@ -202,7 +202,7 @@ async function loadChannels(){
  status.textContent=channelRows.length?(lang==='ar'?'تم تحميل '+channelRows.length+' قناة.':'Loaded '+channelRows.length+' channels.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels have been added yet.');
 }
 
-function setLang(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';$('#langBtn').textContent=lang==='ar'?'EN':'عربي';$('[data-ar][data-en]').forEach(el=>{el.innerHTML=el.dataset[lang]});renderAuthMode();renderChannels()}
+function setLang(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';$('#langBtn').textContent=lang==='ar'?'EN':'عربي';document.querySelectorAll('[data-ar][data-en]').forEach(el=>{el.innerHTML=el.dataset[lang]});renderAuthMode();renderChannels()}
 $('#langBtn').addEventListener('click',()=>setLang(lang==='ar'?'en':'ar'));
 $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 const modal=$('#authModal');
@@ -264,7 +264,7 @@ $('#xtreamImportBtn').addEventListener('click',async()=>{
  }catch(err){status.textContent=err?.message||(lang==='ar'?'فشل الاستيراد.':'Import failed.');}
  finally{btn.disabled=false;}
 });
-$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;$('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
 })();
 </script>
 </body></html>
