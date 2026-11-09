@@ -221,7 +221,15 @@ if(result?.error)throw result.error;
 if(mode==='signup'&&!result.data.session)message(lang==='ar'?'تم إرسال طلب التسجيل. افحص بريدك لتأكيد الحساب.':'Signup started. Check your email to confirm your account.');
 else if(mode==='reset')message(lang==='ar'?'إذا كان البريد مسجلاً، سيصلك رابط استعادة.':'If the email is registered, a reset link will be sent.');
 else if(mode==='update'){mode='signin';await supabase.auth.signOut();message(lang==='ar'?'تم تحديث كلمة المرور. سجّل الدخول الآن.':'Password updated. Sign in now.');}
-else{message(lang==='ar'?'تم تسجيل الدخول بنجاح.':'Signed in successfully.');setTimeout(closeModal,700);}
+else if(mode==='signin'){
+ currentUser=result.data?.user||result.data?.session?.user||null;
+ mode='signin';
+ renderAuthMode();
+ $('#loginBtn').textContent=lang==='ar'?'حسابي':'My account';
+ message(lang==='ar'?'تم تسجيل الدخول بنجاح.':'Signed in successfully.');
+ await loadChannels();
+ setTimeout(closeModal,700);
+}else{message(lang==='ar'?'تمت العملية بنجاح.':'Operation completed successfully.');}
 }catch(err){message(err.message||(lang==='ar'?'تعذر إكمال العملية.':'Unable to complete the request.'),true)}
 finally{btn.disabled=false;renderAuthMode()}
 });
