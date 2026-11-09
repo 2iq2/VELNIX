@@ -142,7 +142,7 @@ function renderImportedFilters(categories){
 }
 async function loadChannels(){
  const status=$('#channelStatus');
- const admin=!!currentUser&&currentUser.app_metadata?.role==='admin';
+ const admin=!!currentUser&&(currentUser.id==='0ca4e432-b8e2-481e-ad35-4956cd276953'||currentUser.app_metadata?.role==='admin');
  $('#adminTools').hidden=!admin;
  if(!currentUser){channelRows=[];renderChannels();status.textContent=lang==='ar'?'سجّل الدخول لعرض دليل القنوات.':'Sign in to browse the channel guide.';return}
  status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
@@ -199,6 +199,10 @@ $('#xtreamImportBtn').addEventListener('click',async()=>{
  const btn=$('#xtreamImportBtn'),status=$('#importStatus');
  btn.disabled=true;status.textContent=lang==='ar'?'جارٍ الاتصال بمصدر Xtream واستيراد القنوات...':'Connecting to Xtream and importing channels...';
  try{
+  const {data:refreshed,error:refreshError}=await supabase.auth.refreshSession();
+  if(refreshError)throw refreshError;
+  currentUser=refreshed.session?.user||currentUser;
+  if(currentUser?.id!=='0ca4e432-b8e2-481e-ad35-4956cd276953'&&currentUser?.app_metadata?.role!=='admin')throw new Error(lang==='ar'?'هذا الحساب لا يملك صلاحية المدير.':'This account is not an administrator.');
   const {data,error}=await supabase.functions.invoke('xtream-gateway',{body:{action:'import'}});
   if(error||!data?.success)throw new Error(data?.error||error?.message||'Import failed');
   status.textContent=lang==='ar'?('اكتمل الاستيراد: '+data.channels+' قناة ضمن '+data.categories+' تصنيف.'):(`Imported ${data.channels} channels across ${data.categories} categories.`);
