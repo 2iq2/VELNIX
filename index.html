@@ -213,7 +213,7 @@ async function playChannel(row){
 video.addEventListener('timeupdate',()=>{
  if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
 });
-video.addEventListener('pause',()=>{if(!suppressPauseTracking)userPaused=true});
+video.addEventListener('pause',()=>{if(suppressPauseTracking)return;setTimeout(()=>{if(!video.ended&&!recovering&&activeRow&&video.paused)userPaused=true},150)});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
 video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;$('#bufferText').textContent='التخزين المؤقت نشط • اتصال مباشر'});
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
