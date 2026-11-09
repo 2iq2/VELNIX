@@ -28,7 +28,8 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 
 .player-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.88);display:none;place-items:center;padding:18px}.player-modal.show{display:grid}.player-shell{width:min(1000px,100%);background:#0d141e;border:1px solid rgba(201,169,110,.3);border-radius:20px;overflow:hidden;box-shadow:0 25px 90px #000b}.player-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--line)}.player-head strong{color:var(--gold2)}.player-close{border:0;background:transparent;color:#fff;font-size:26px}.video-wrap{background:#000;aspect-ratio:16/9;position:relative}.video-wrap video{width:100%;height:100%;display:block;background:#000}.player-controls{display:flex;align-items:center;gap:12px;padding:14px 18px;flex-wrap:wrap}.player-controls label{color:var(--muted);font-size:12px}.player-controls select{background:#151e2b;color:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px}.player-state{padding:0 18px 16px;color:var(--muted);font-size:13px;min-height:22px}.channel{cursor:pointer}.channel:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}.channel .play-hint{display:inline-block;margin-inline-start:8px;color:#fff;background:rgba(201,169,110,.15);border:1px solid rgba(201,169,110,.3);padding:5px 9px;border-radius:8px;font-size:11px}
 
-.admin-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px}#adminTools[hidden]{display:none!important}#importStatus{font-size:13px;color:var(--muted,#9aa0aa)}</style>
+.admin-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px}#adminTools[hidden]{display:none!important}#importStatus{font-size:13px;color:var(--muted,#9aa0aa)}.channel-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}.channel-search{display:flex;align-items:center;gap:9px;flex:1 1 260px;max-width:480px;background:#111823;border:1px solid var(--line);border-radius:14px;padding:0 14px;color:var(--gold2)}.channel-search span{font-size:23px;line-height:1}.channel-search input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:var(--text);padding:13px 0;font:inherit}.channel-search input::placeholder{color:var(--muted)}.channel-toolbar .filter.active{background:var(--gold2);color:#17191e;border-color:var(--gold2)}.channel{padding-bottom:48px}.channel-fav{position:absolute;z-index:3;top:12px;inset-inline-end:12px;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:#090c12bb;color:#b9c1ce;font-size:19px}.channel-fav.active{color:var(--gold2);border-color:rgba(201,169,110,.55);background:rgba(201,169,110,.16)}.player-modal{padding:12px;background:rgba(2,5,10,.94);backdrop-filter:blur(12px)}.player-shell{width:min(1100px,100%);border:1px solid rgba(201,169,110,.34);border-radius:22px;background:linear-gradient(145deg,#121b28,#080d14);overflow:hidden}.player-head{padding:14px 18px;gap:12px}.player-brand{display:flex;align-items:center;gap:12px;min-width:0}.player-brand strong{display:block;max-width:min(55vw,520px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player-brand small{display:block;color:var(--muted);font:10px "DM Sans",sans-serif;letter-spacing:1.2px;margin-top:4px}.player-live-dot,.buffer-dot{width:8px;height:8px;border-radius:50%;background:#5ed6a0;box-shadow:0 0 12px #5ed6a088;flex:none}.player-head-actions{display:flex;align-items:center;gap:10px}.player-retry{border:1px solid rgba(201,169,110,.38);border-radius:11px;background:rgba(201,169,110,.10);color:var(--gold2);padding:9px 12px;font:600 12px "Tajawal",sans-serif}.player-close{width:38px;height:38px;border-radius:11px;background:#ffffff0a;border:1px solid var(--line)}.video-wrap{aspect-ratio:16/9;max-height:68vh}.video-wrap video{object-fit:contain}.player-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:13px 18px 8px}.buffer-indicator{display:flex;align-items:center;gap:9px;color:#aeb8c7;font-size:12px}.player-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.player-options label{color:var(--muted);font-size:12px}.player-options select{background:#151e2b;color:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.player-options .secondary{padding:9px 13px;font-size:12px}.player-state{padding:8px 18px 16px;min-height:39px;color:var(--gold2);font-size:13px}@media(max-width:520px){.player-modal{padding:0;align-items:center}.player-shell{border-radius:0;border-inline:0}.player-head{padding:11px 12px}.player-retry{font-size:11px;padding:8px}.player-close{width:34px;height:34px}.player-toolbar{padding:10px 12px}.player-state{padding:6px 12px 13px}.player-options{gap:7px}.player-options .secondary{padding:8px 9px}}
+</style>
 </head>
 <body>
 <div class="topline"></div>
@@ -49,14 +50,14 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 </section>
 <section class="wrap section" id="categories">
 <div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
-<div class="filters" id="filters"><button class="filter active" data-cat="all" data-ar="الكل" data-en="All">الكل</button><button class="filter" data-cat="sports" data-ar="رياضة" data-en="Sports">رياضة</button><button class="filter" data-cat="news" data-ar="أخبار" data-en="News">أخبار</button><button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button><button class="filter" data-cat="kids" data-ar="أطفال" data-en="Kids">أطفال</button><button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button><button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button></div>
+<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة بالاسم..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div><div class="filters" id="filters"><button class="filter active" data-cat="all" data-ar="الكل" data-en="All">الكل</button><button class="filter" data-cat="sports" data-ar="رياضة" data-en="Sports">رياضة</button><button class="filter" data-cat="news" data-ar="أخبار" data-en="News">أخبار</button><button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button><button class="filter" data-cat="kids" data-ar="أطفال" data-en="Kids">أطفال</button><button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button><button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button></div>
 <div class="admin-tools" id="adminTools" hidden><button class="filter" id="xtreamImportBtn" type="button">استيراد قنوات Xtream</button><span id="importStatus" role="status"></span></div>
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div>
 </section>
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية." data-en="This is the foundation of the experience. Accounts, channel sources and live playback will be enabled as the backend is configured.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
-<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><strong id="playerTitle">VELNIX LIVE</strong><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div><div class="video-wrap"><video id="liveVideo" controls playsinline preload="none"></video></div><div class="player-controls"><label for="qualitySelect">الجودة / Quality</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">ملء الشاشة</button></div><div class="player-state" id="playerState" role="status">اختر قناة لبدء المشاهدة.</div></div></div>
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap"><video id="liveVideo" controls playsinline preload="auto"></video></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
 <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script>
 /* Keep the sign-in dialog usable even if a third-party module fails to load. */
@@ -107,7 +108,7 @@ async function gateway(body){
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
 }
-let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false;
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false;let favorites=new Set(),recentChannels=[],catalogMode='all';try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
@@ -127,10 +128,9 @@ function qualities(){
 }
 function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
- if(retryCount>=7){state(lang==='ar'?'المصدر غير مستقر حالياً. أوقفنا المحاولات مؤقتاً؛ اضغط إعادة المحاولة بتغيير القناة ثم ارجع لها.':'The source is unstable. Automatic retries paused; reopen the channel to try again.');return}
  recovering=true;retryCount++;
- const delay=Math.min(15000,1200*Math.pow(1.7,retryCount-1));
- state(lang==='ar'?'انقطع البث؛ إعادة الاتصال تلقائياً ('+retryCount+'/7)...':'Stream interrupted; reconnecting ('+retryCount+'/7)...');
+ const delay=Math.min(30000,1500*Math.pow(1.65,Math.min(retryCount-1,9)));
+ state(lang==='ar'?'تم رصد توقف البث؛ إعادة الاتصال تلقائياً (المحاولة '+retryCount+')...':'Stream interruption detected; reconnecting (attempt '+retryCount+')...');
  if(retryTimer)clearTimeout(retryTimer);
  retryTimer=setTimeout(async()=>{
   retryTimer=null;
@@ -155,13 +155,13 @@ async function startPlayback(row,generation,reason='initial'){
   if(Hls.isSupported()){
    hlsInstance=new Hls({
     enableWorker:true,lowLatencyMode:false,
-    backBufferLength:60,maxBufferLength:45,maxMaxBufferLength:90,maxBufferSize:60*1000*1000,
-    maxBufferHole:0.5,liveSyncDurationCount:4,liveMaxLatencyDurationCount:12,
-    maxLiveSyncPlaybackRate:1.15,nudgeOffset:0.2,nudgeMaxRetry:6,
-    manifestLoadingMaxRetry:6,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:12000,
-    levelLoadingMaxRetry:6,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:12000,
-    fragLoadingMaxRetry:8,fragLoadingRetryDelay:1000,fragLoadingMaxRetryTimeout:15000,
-    startFragPrefetch:true
+    backBufferLength:90,maxBufferLength:90,maxMaxBufferLength:180,maxBufferSize:120*1000*1000,
+    maxBufferHole:1,liveSyncDurationCount:8,liveMaxLatencyDurationCount:20,
+    maxLiveSyncPlaybackRate:1.08,nudgeOffset:0.25,nudgeMaxRetry:10,
+    manifestLoadingMaxRetry:10,manifestLoadingRetryDelay:1200,manifestLoadingMaxRetryTimeout:20000,
+    levelLoadingMaxRetry:10,levelLoadingRetryDelay:1200,levelLoadingMaxRetryTimeout:20000,
+    fragLoadingMaxRetry:12,fragLoadingRetryDelay:1200,fragLoadingMaxRetryTimeout:25000,
+    startFragPrefetch:true,progressive:true
    });
    const instance=hlsInstance;
    instance.on(Hls.Events.MANIFEST_PARSED,()=>{
@@ -187,9 +187,10 @@ async function startPlayback(row,generation,reason='initial'){
   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
   const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{
-   enableWorker:true,enableStashBuffer:true,stashInitialSize:512*1024,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:15,liveBufferLatencyMinRemain:2,
-   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:60,autoCleanupMinBackwardDuration:30
+   enableWorker:true,enableStashBuffer:true,stashInitialSize:2*1024*1024,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:45,liveBufferLatencyMinRemain:8,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:90,autoCleanupMinBackwardDuration:45,
+   fixAudioTimestampGap:true,accurateSeek:false
   });
   const instance=mpegtsPlayer;
   instance.on(mpegts.Events.ERROR,(_t,d,info)=>{
@@ -204,7 +205,8 @@ async function startPlayback(row,generation,reason='initial'){
 async function playChannel(row){
  stopPlayback();activeRow=row;const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
- retryCount=0;lastProgressAt=Date.now();lastCurrentTime=0;
+ retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();
+ const id=row.id;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}
  try{await startPlayback(row,generation,'initial')}
  catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
 }
@@ -213,33 +215,29 @@ video.addEventListener('timeupdate',()=>{
 });
 video.addEventListener('pause',()=>{if(!suppressPauseTracking)userPaused=true});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
-video.addEventListener('playing',()=>{lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0});
-video.addEventListener('error',()=>{if(activeRow&&!recovering)scheduleRecovery('Media element error')});
-video.addEventListener('ended',()=>{if(activeRow)scheduleRecovery('Stream ended')});
-video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&Date.now()-lastProgressAt>12000)scheduleRecovery('Playback stalled')});
-video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&Date.now()-lastProgressAt>12000)scheduleRecovery('Playback waiting for data')});
+video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;$('#bufferText').textContent='التخزين المؤقت نشط • اتصال مباشر'});
+video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
+video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
+video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&Date.now()-lastProgressAt>10000)scheduleRecovery('Playback stalled')});
+video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&Date.now()-lastProgressAt>12000)scheduleRecovery('Waiting for stream data')});
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||userPaused||video.ended||recovering)return;
  const now=Date.now();
- if(!video.paused&&video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>45000)retryCount=0}
- else if(now-lastProgressAt>18000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
-},4000);
+ if(!video.paused&&video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}}
+ else if(now-lastProgressAt>16000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
+},3000);
 function renderFilters(categories){
  const filters=$('#filters');filters.querySelectorAll('[data-dynamic="true"]').forEach(x=>x.remove());
  (categories||[]).forEach(c=>{const b=document.createElement('button');b.className='filter';b.dataset.cat=c.slug;b.dataset.dynamic='true';b.textContent=lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar);filters.append(b)});
 }
 function renderChannels(){
- const grid=$('#channelsGrid');grid.replaceChildren();
- const active=$('#filters .filter.active')?.dataset.cat||'all';
- channelRows.filter(r=>active==='all'||r.channel_categories?.slug===active).forEach(row=>{
-  const slug=row.channel_categories?.slug||'variety',card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
-  const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=icons[slug]||'◈';
-  const title=document.createElement('h3');title.textContent=lang==='ar'?row.name_ar:row.name_en;
-  const desc=document.createElement('p');desc.textContent=row.description||'';
-  const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'متاح للمشاهدة':'READY TO WATCH';
-  const play=document.createElement('span');play.className='play-hint';play.textContent=lang==='ar'?'فتح المشغّل ▶':'OPEN PLAYER ▶';
-  card.append(icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});grid.append(card);
- });
+ const grid=$('#channelsGrid');grid.replaceChildren();const active=$('#filters .filter.active')?.dataset.cat||'all';const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
+ let rows=channelRows.filter(r=>{const catOk=active==='all'||r.channel_categories?.slug===active;const name=(String(r.name_ar||'')+' '+String(r.name_en||'')).toLocaleLowerCase();const searchOk=!q||name.includes(q);const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):recentChannels.includes(r.id));return catOk&&searchOk&&modeOk});
+ if(catalogMode==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
+ rows.forEach(row=>{const slug=row.channel_categories?.slug||'variety',card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
+ const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(favorites.has(row.id)?' active':'');fav.textContent=favorites.has(row.id)?'★':'☆';fav.setAttribute('aria-label','تبديل المفضلة');fav.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(row.id))favorites.delete(row.id);else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
+ const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=icons[slug]||'◈';const title=document.createElement('h3');title.textContent=lang==='ar'?row.name_ar:row.name_en;const desc=document.createElement('p');desc.textContent=row.description||'';const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'متاح للمشاهدة':'READY TO WATCH';const play=document.createElement('span');play.className='play-hint';play.textContent=lang==='ar'?'فتح المشغّل ▶':'OPEN PLAYER ▶';card.append(fav,icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});grid.append(card)});
+ if(!rows.length){const empty=document.createElement('p');empty.className='channel-status';empty.textContent=lang==='ar'?'ماكو قنوات تطابق البحث أو الفلتر الحالي.':'No channels match the current search or filter.';grid.append(empty)}
 }
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
@@ -259,7 +257,11 @@ $('#langBtn').addEventListener('click',()=>{
  document.querySelectorAll('[data-ar][data-en]').forEach(el=>{el.innerHTML=el.dataset[lang]});renderChannels();
 });
 $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
-$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
+$('#channelSearch').addEventListener('input',renderChannels);
+$('#favoritesFilter').addEventListener('click',()=>{catalogMode=catalogMode==='favorites'?'all':'favorites';$('#favoritesFilter').classList.toggle('active',catalogMode==='favorites');$('#recentFilter').classList.remove('active');renderChannels()});
+$('#recentFilter').addEventListener('click',()=>{catalogMode=catalogMode==='recent'?'all':'recent';$('#recentFilter').classList.toggle('active',catalogMode==='recent');$('#favoritesFilter').classList.remove('active');renderChannels()});
+$('#playerRetry').addEventListener('click',()=>{if(!activeRow)return;if(retryTimer){clearTimeout(retryTimer);retryTimer=null}recovering=false;retryCount=0;userPaused=false;scheduleRecovery('Manual reconnect')});
 $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
