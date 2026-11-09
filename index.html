@@ -51,7 +51,7 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 <div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
 <div class="filters" id="filters"><button class="filter active" data-cat="all" data-ar="الكل" data-en="All">الكل</button><button class="filter" data-cat="sports" data-ar="رياضة" data-en="Sports">رياضة</button><button class="filter" data-cat="news" data-ar="أخبار" data-en="News">أخبار</button><button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button><button class="filter" data-cat="kids" data-ar="أطفال" data-en="Kids">أطفال</button><button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button><button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button></div>
 <div class="admin-tools" id="adminTools" hidden><button class="filter" id="xtreamImportBtn" type="button">استيراد قنوات Xtream</button><span id="importStatus" role="status"></span></div>
-<div id="channelStatus" class="channel-status" role="status">سجّل الدخول لعرض دليل القنوات.</div><div class="channels" id="channelsGrid"></div>
+<div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div>
 </section>
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية." data-en="This is the foundation of the experience. Accounts, channel sources and live playback will be enabled as the backend is configured.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
@@ -87,212 +87,114 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 })();
 </script>
 <script type="module">
-let supabaseModule;
-let supabaseLoadError;
-for(const source of [
- 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm',
- 'https://esm.sh/@supabase/supabase-js@2',
- 'https://unpkg.com/@supabase/supabase-js@2?module',
- 'https://esm.run/@supabase/supabase-js@2',
- 'https://cdn.skypack.dev/@supabase/supabase-js@2'
-]){
- try{supabaseModule=await import(source);break}
- catch(error){supabaseLoadError=error;console.warn('Supabase SDK source failed:',source,error)}
-}
-if(!supabaseModule){
- window.__VELNIX_AUTH_LOAD_ERROR__=String(supabaseLoadError?.message||supabaseLoadError||'Unknown module loading error');
- throw new Error('Supabase SDK could not be loaded: '+window.__VELNIX_AUTH_LOAD_ERROR__);
-}
-const {createClient}=supabaseModule;
 (()=>{
-let lang='ar',mode='signin',currentUser=null;
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-const supabase=createClient('https://shungcjflcjwubdlhyzq.supabase.co','sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo');
-let channelRows=[];
-const categoryIcons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
-let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
-function stopPlayback(){if(hlsInstance){hlsInstance.destroy();hlsInstance=null}if(mpegtsPlayer){mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy();mpegtsPlayer=null}video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';}
-function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
-function setPlayerState(text){$('#playerState').textContent=text}
-function populateQualities(){qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';if(!hlsInstance)return;hlsInstance.levels.forEach((level,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=(level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps');qualitySelect.append(option)})}
-async function playChannel(row){
- playerModal.classList.add('show');
- $('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
- stopPlayback();
- setPlayerState(lang==='ar'?'جارٍ التحقق من صلاحية المشاهدة...':'Checking viewing access...');
- try{
-  let streamUrl=row.stream_url||'';
-  let streamType=row.stream_type||'hls';
-  if(!streamUrl){
-   const {data,error}=await supabase.functions.invoke('xtream-gateway',{body:{action:'stream',channel_id:row.id}});
-   if(error||!data?.stream_url){
-    const detail=data?.error||error?.message||(lang==='ar'?'لا يوجد مصدر بث متاح لهذه القناة.':'No stream is available for this channel.');
-    setPlayerState(detail);
-    return;
-   }
-   streamUrl=data.stream_url;
-   streamType=data.stream_type||'hls';
-  }
-  const url=streamUrl;
-  setPlayerState(lang==='ar'?'تم التحقق. جارٍ الاتصال بالبث...':'Access verified. Connecting to stream...');
-  if(streamType.toLowerCase()==='hls'){
-   const hlsModule=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
-   Hls=hlsModule.default||hlsModule;
-   if(Hls.isSupported()){
-   hlsInstance=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:30,capLevelToPlayerSize:true});
-   hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{
-    populateQualities();
-    setPlayerState(lang==='ar'?'تم الاتصال. اختر الجودة أو اتركها تلقائياً.':'Connected. Choose a quality or keep Auto.');
-    video.play().catch(()=>setPlayerState(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
-   });
-   hlsInstance.on(Hls.Events.ERROR,(_event,data)=>{
-    if(data.fatal)setPlayerState(lang==='ar'?'تعذر تشغيل المصدر. قد يكون الرابط غير متاح أو أن الخادم يمنع الاتصال.':'Playback failed. The stream may be unavailable or the server may block playback.');
-   });
-   hlsInstance.loadSource(url);
-   hlsInstance.attachMedia(video);
-   }else if(video.canPlayType('application/vnd.apple.mpegurl')){
-    video.src=url;
-    video.play().catch(()=>setPlayerState(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
-   }else{throw new Error(lang==='ar'?'متصفحك لا يدعم تشغيل HLS.':'This browser does not support HLS playback.')}
-  }else if(['file','mpegts','ts'].includes(streamType.toLowerCase())){
-   const mpegtsModule=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
-   mpegts=mpegtsModule.default||mpegtsModule;
-   if(!mpegts.isSupported())throw new Error(lang==='ar'?'هذا المتصفح لا يدعم مشغل MPEG-TS. جرّب Chrome أو حدّث المتصفح.':'MPEG-TS playback is not supported by this browser. Try Chrome or update it.');
-   const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
-   if(sessionError||!sessionData.session?.access_token)throw new Error(lang==='ar'?'انتهت جلسة الدخول. سجّل الدخول مجدداً.':'Your session expired. Please sign in again.');
-   const proxyUrl='https://shungcjflcjwubdlhyzq.supabase.co/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
-   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxyUrl},{
-    enableWorker:true,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:8,liveBufferLatencyMinRemain:1,stashInitialSize:384*1024,
-    headers:{Authorization:'Bearer '+sessionData.session.access_token,apikey:'sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo}
-   });
-   mpegtsPlayer.on(mpegts.Events.ERROR,(_type,detail,info)=>{
-    const reason=info?.msg||detail||'MPEG-TS playback error';
-    setPlayerState((lang==='ar'?'تعذر استقبال البث: ':'Stream error: ')+reason);
-   });
-   mpegtsPlayer.attachMediaElement(video);mpegtsPlayer.load();
-   setPlayerState(lang==='ar'?'جارٍ فتح البث عبر الاتصال الآمن...':'Opening stream through secure connection...');
-   mpegtsPlayer.play().then(()=>setPlayerState(lang==='ar'?'تم الاتصال بالبث.':'Connected to live stream.')).catch(()=>setPlayerState(lang==='ar'?'البث جاهز؛ اضغط زر التشغيل.':'Stream ready; press play.'));
-  }else{
-   video.src=url;
-   video.addEventListener('loadedmetadata',()=>{
-    setPlayerState(lang==='ar'?'المصدر جاهز للتشغيل.':'Stream is ready.');
-    video.play().catch(()=>setPlayerState(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
-   },{once:true});
-   video.onerror=()=>setPlayerState(lang==='ar'?'تعذر تشغيل صيغة البث على هذا المتصفح.':'This browser could not play this stream format.');
-  }
- }catch(err){
-  setPlayerState(err?.message||(lang==='ar'?'حدث خطأ أثناء تشغيل القناة.':'An error occurred while starting playback.'));
- }
+const API='https://shungcjflcjwubdlhyzq.supabase.co';
+const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
+let lang='ar',channelRows=[];
+const $=(s,r=document)=>r.querySelector(s);
+const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
+let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
+const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
+const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
+async function rest(path){
+ const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Accept':'application/json'}});
+ if(!response.ok)throw new Error('Catalog request failed: HTTP '+response.status);
+ return response.json();
 }
-$('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});$('#fullscreenBtn').addEventListener('click',()=>{const target=$('.video-wrap');if(target.requestFullscreen)target.requestFullscreen()});
+async function gateway(body){
+ const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
+ return data;
+}
+function stopPlayback(){
+ if(hlsInstance){hlsInstance.destroy();hlsInstance=null}
+ if(mpegtsPlayer){mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy();mpegtsPlayer=null}
+ video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
+}
+function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
+function state(value){$('#playerState').textContent=value}
+function qualities(){
+ qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
+ if(!hlsInstance)return;
+ hlsInstance.levels.forEach((level,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps';qualitySelect.append(o)});
+}
+async function playChannel(row){
+ playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;stopPlayback();
+ state(lang==='ar'?'جارٍ تجهيز البث...':'Preparing stream...');
+ try{
+  const stream=await gateway({action:'stream',channel_id:row.id});
+  const url=stream.stream_url,type=(stream.stream_type||row.stream_type||'hls').toLowerCase();
+  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
+  if(type==='hls'){
+   try{
+    const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
+    Hls=mod.default||mod;
+    if(Hls.isSupported()){
+     hlsInstance=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:30,capLevelToPlayerSize:true});
+     hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{qualities();state(lang==='ar'?'البث جاهز.':'Stream ready.');video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'))});
+     hlsInstance.on(Hls.Events.ERROR,(_e,d)=>{if(d.fatal)state(lang==='ar'?'تعذر تشغيل البث؛ قد يكون المصدر متوقفاً.':'Playback failed; the source may be offline.')});
+     hlsInstance.loadSource(url);hlsInstance.attachMedia(video);return;
+    }
+   }catch(e){console.warn('HLS engine unavailable',e)}
+   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;video.play().catch(()=>state('اضغط تشغيل / Press play'));return}
+   throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
+  }
+  if(['file','mpegts','ts'].includes(type)){
+   const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
+   mpegts=mod.default||mod;
+   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
+   const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
+   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{enableWorker:true,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:8,liveBufferLatencyMinRemain:1,stashInitialSize:384*1024,headers:{apikey:KEY}});
+   mpegtsPlayer.on(mpegts.Events.ERROR,(_t,d,info)=>state((lang==='ar'?'خطأ بالبث: ':'Stream error: ')+(info?.msg||d||'')));
+   mpegtsPlayer.attachMediaElement(video);mpegtsPlayer.load();mpegtsPlayer.play().then(()=>state(lang==='ar'?'متصل بالبث.':'Connected.')).catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
+   return;
+  }
+  video.src=url;video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
+ }catch(e){state(e?.message||'Playback error')}
+}
+function renderFilters(categories){
+ const filters=$('#filters');filters.querySelectorAll('[data-dynamic="true"]').forEach(x=>x.remove());
+ (categories||[]).forEach(c=>{const b=document.createElement('button');b.className='filter';b.dataset.cat=c.slug;b.dataset.dynamic='true';b.textContent=lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar);filters.append(b)});
+}
 function renderChannels(){
- const grid=$('#channelsGrid');if(!grid)return;grid.replaceChildren();
+ const grid=$('#channelsGrid');grid.replaceChildren();
  const active=$('#filters .filter.active')?.dataset.cat||'all';
- const rows=channelRows.filter(row=>active==='all'||row.channel_categories?.slug===active);
- rows.forEach(row=>{
-  const slug=row.channel_categories?.slug||'variety';
-  const card=document.createElement('article');card.className='channel';card.dataset.category=slug;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',(lang==='ar'?row.name_ar:row.name_en)+' — Play');
-  const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=categoryIcons[slug]||'◈';
+ channelRows.filter(r=>active==='all'||r.channel_categories?.slug===active).forEach(row=>{
+  const slug=row.channel_categories?.slug||'variety',card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
+  const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=icons[slug]||'◈';
   const title=document.createElement('h3');title.textContent=lang==='ar'?row.name_ar:row.name_en;
   const desc=document.createElement('p');desc.textContent=row.description||'';
-  const tag=document.createElement('span');tag.className='tag';tag.textContent=(row.stream_url||row.source_provider)?(lang==='ar'?'متاح للمشاهدة':'READY TO WATCH'):(lang==='ar'?'مصدر البث غير مربوط':'SOURCE NOT CONNECTED');
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'متاح للمشاهدة':'READY TO WATCH';
   const play=document.createElement('span');play.className='play-hint';play.textContent=lang==='ar'?'فتح المشغّل ▶':'OPEN PLAYER ▶';
-  card.append(icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();playChannel(row)}});grid.append(card);
- });
-}
-function renderImportedFilters(categories){
- const filters=$('#filters');
- filters.querySelectorAll('[data-dynamic="true"]').forEach(el=>el.remove());
- (categories||[]).filter(c=>String(c.slug||'').startsWith('xtream-')).forEach(c=>{
-  const b=document.createElement('button');b.className='filter';b.dataset.cat=c.slug;b.dataset.dynamic='true';
-  b.textContent=lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar);
-  filters.append(b);
+  card.append(icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});grid.append(card);
  });
 }
 async function loadChannels(){
- const status=$('#channelStatus');
- const admin=!!currentUser&&(currentUser.id==='0ca4e432-b8e2-481e-ad35-4956cd276953'||currentUser.app_metadata?.role==='admin');
- $('#adminTools').hidden=!admin;
- if(!currentUser){channelRows=[];renderChannels();status.textContent=lang==='ar'?'سجّل الدخول لعرض دليل القنوات.':'Sign in to browse the channel guide.';return}
- status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
- const {data:cats,error:categoryError}=await supabase.from('channel_categories').select('slug,name_ar,name_en').eq('is_active',true).order('sort_order');
- if(categoryError){status.textContent=lang==='ar'?'تعذر تحميل تصنيفات القنوات.':'Could not load channel categories.';return}
- const allRows=[];
- for(let offset=0;offset<10000;offset+=500){
-  const {data,error}=await supabase.from('channels').select('id,name_ar,name_en,description,stream_url,stream_type,source_provider,channel_categories(slug)').eq('is_active',true).order('name_ar').range(offset,offset+499);
-  if(error){status.textContent=lang==='ar'?'تعذر تحميل القنوات. حاول تحديث الصفحة.':'Could not load channels. Refresh the page.';return}
-  allRows.push(...(data||[]));
-  if(!data||data.length<500)break;
- }
- renderImportedFilters(cats||[]);
- channelRows=allRows;renderChannels();
- status.textContent=channelRows.length?(lang==='ar'?'تم تحميل '+channelRows.length+' قناة.':'Loaded '+channelRows.length+' channels.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels have been added yet.');
-}
-
-function setLang(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';$('#langBtn').textContent=lang==='ar'?'EN':'عربي';document.querySelectorAll('[data-ar][data-en]').forEach(el=>{el.innerHTML=el.dataset[lang]});renderAuthMode();renderChannels()}
-$('#langBtn').addEventListener('click',()=>setLang(lang==='ar'?'en':'ar'));
-$('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
-const modal=$('#authModal');
-function message(msg,error=false){const el=$('#authMessage');el.textContent=msg;el.classList.toggle('error',error)}
-function renderAuthMode(){
-const ar=lang==='ar',showAccount=!!currentUser&&mode!=='update',title={signin:ar?'تسجيل الدخول':'Sign in',signup:ar?'إنشاء حساب':'Create account',reset:ar?'استعادة كلمة المرور':'Reset password',update:ar?'تعيين كلمة مرور جديدة':'Set a new password'};
-$('#modalTitle').textContent=showAccount?(ar?'حسابك في VELNIX':'Your VELNIX account'):title[mode];
-$('#authIntro').textContent=({signin:ar?'أدخل بياناتك للمتابعة.':'Enter your details to continue.',signup:ar?'أنشئ حسابك وابدأ تجربة VELNIX.':'Create an account to get started with VELNIX.',reset:ar?'سنرسل رابط استعادة إلى بريدك الإلكتروني.':'We will email you a password reset link.',update:ar?'اختر كلمة مرور جديدة لحسابك.':'Choose a new password for your account.'})[mode];
-$('#nameLabel').hidden=mode!=='signup';$('#displayName').hidden=mode!=='signup';$('#displayName').required=mode==='signup';
-$('#passwordLabel').hidden=mode==='reset';$('#authPassword').hidden=mode==='reset';$('#authPassword').required=mode!=='reset';$('#authPassword').autocomplete=mode==='update'?'new-password':'current-password';
-$('#authSubmit').textContent=title[mode];$('#authSwitch').hidden=mode==='reset'||mode==='update';$('#forgotPassword').hidden=mode!=='signin';
-$('#authSwitch').textContent=mode==='signin'?(ar?'إنشاء حساب جديد':'Create an account'):(ar?'لديك حساب؟ تسجيل الدخول':'Already have an account? Sign in');
-$('#forgotPassword').textContent=ar?'نسيت كلمة المرور؟':'Forgot password?';
-$('#authForm').hidden=showAccount;$('#accountPanel').hidden=!showAccount;if(showAccount)$('#accountEmail').textContent=currentUser.email||'';
-}
-function openModal(){message('');renderAuthMode();modal.classList.add('show')}function closeModal(){modal.classList.remove('show')}
-['loginBtn','heroLogin'].forEach(id=>$('#'+id).addEventListener('click',openModal));
-$('#closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-$('#authSwitch').addEventListener('click',()=>{mode=mode==='signin'?'signup':'signin';message('');renderAuthMode()});
-$('#forgotPassword').addEventListener('click',()=>{mode='reset';message('');renderAuthMode()});
-$('#authForm').addEventListener('submit',async e=>{
-e.preventDefault();const email=$('#authEmail').value.trim(),password=$('#authPassword').value,name=$('#displayName').value.trim(),btn=$('#authSubmit');btn.disabled=true;message(lang==='ar'?'جارٍ التنفيذ...':'Working...');
-try{let result;
-if(mode==='signup')result=await supabase.auth.signUp({email,password,options:{data:{display_name:name},emailRedirectTo:window.location.href}});
-else if(mode==='signin')result=await supabase.auth.signInWithPassword({email,password});
-else if(mode==='reset')result=await supabase.auth.resetPasswordForEmail(email,{redirectTo:'https://2iq2.github.io/VELNIX/'});
-else if(mode==='update')result=await supabase.auth.updateUser({password});
-if(result?.error)throw result.error;
-if(mode==='signup'&&!result.data.session)message(lang==='ar'?'تم إرسال طلب التسجيل. افحص بريدك لتأكيد الحساب.':'Signup started. Check your email to confirm your account.');
-else if(mode==='reset')message(lang==='ar'?'إذا كان البريد مسجلاً، سيصلك رابط استعادة.':'If the email is registered, a reset link will be sent.');
-else if(mode==='update'){mode='signin';await supabase.auth.signOut();message(lang==='ar'?'تم تحديث كلمة المرور. سجّل الدخول الآن.':'Password updated. Sign in now.');}
-else if(mode==='signin'){
- currentUser=result.data?.user||result.data?.session?.user||null;
- mode='signin';
- renderAuthMode();
- $('#loginBtn').textContent=lang==='ar'?'حسابي':'My account';
- message(lang==='ar'?'تم تسجيل الدخول بنجاح.':'Signed in successfully.');
- closeModal();
- loadChannels().catch(err=>{console.error('Channel refresh failed:',err);$('#channelStatus').textContent=lang==='ar'?'تعذر تحميل القنوات حالياً.':'Could not load channels right now.';});
-}else{message(lang==='ar'?'تمت العملية بنجاح.':'Operation completed successfully.');}
-}catch(err){message(err.message||(lang==='ar'?'تعذر إكمال العملية.':'Unable to complete the request.'),true)}
-finally{btn.disabled=false;renderAuthMode()}
-});
-window.__VELNIX_AUTH_READY__=true;
-$('#signOutBtn').addEventListener('click',async()=>{const {error}=await supabase.auth.signOut();if(error)message(error.message,true);else{currentUser=null;mode='signin';message(lang==='ar'?'تم تسجيل الخروج.':'Signed out.');renderAuthMode();$('#loginBtn').textContent=lang==='ar'?'تسجيل الدخول':'Sign in'}});
-supabase.auth.onAuthStateChange((event,session)=>{currentUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){mode='update';openModal()}renderAuthMode();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in');setTimeout(()=>loadChannels().catch(err=>console.error('Auth channel refresh failed:',err)),0)});
-supabase.auth.getSession().then(({data,error})=>{if(error)throw error;currentUser=data.session?.user||null;renderAuthMode();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in');return loadChannels()}).catch(err=>{console.error('VELNIX initialization failed:',err);$('#channelStatus').textContent=lang==='ar'?'تعذر تهيئة الموقع. حدّث الصفحة أو حاول لاحقاً.':'Site initialization failed. Refresh or try again later.'});
-$('#xtreamImportBtn').addEventListener('click',async()=>{
- const btn=$('#xtreamImportBtn'),status=$('#importStatus');
- btn.disabled=true;status.textContent=lang==='ar'?'جارٍ الاتصال بمصدر Xtream واستيراد القنوات...':'Connecting to Xtream and importing channels...';
+ const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  try{
-  const {data:refreshed,error:refreshError}=await supabase.auth.refreshSession();
-  if(refreshError)throw refreshError;
-  currentUser=refreshed.session?.user||currentUser;
-  if(currentUser?.id!=='0ca4e432-b8e2-481e-ad35-4956cd276953'&&currentUser?.app_metadata?.role!=='admin')throw new Error(lang==='ar'?'هذا الحساب لا يملك صلاحية المدير.':'This account is not an administrator.');
-  const {data,error}=await supabase.functions.invoke('xtream-gateway',{body:{action:'import'}});
-  if(error||!data?.success)throw new Error(data?.error||error?.message||'Import failed');
-  status.textContent=lang==='ar'?('اكتمل الاستيراد: '+data.channels+' قناة ضمن '+data.categories+' تصنيف.'):(`Imported ${data.channels} channels across ${data.categories} categories.`);
-  await loadChannels();
- }catch(err){status.textContent=err?.message||(lang==='ar'?'فشل الاستيراد.':'Import failed.');}
- finally{btn.disabled=false;}
+  const cats=await rest('channel_categories?select=slug,name_ar,name_en&is_active=eq.true&order=sort_order.asc');
+  const all=[];
+  for(let offset=0;offset<10000;offset+=500){
+   const rows=await rest('channels?select=id,name_ar,name_en,description,stream_type,source_provider,channel_categories(slug)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
+   all.push(...rows);if(rows.length<500)break;
+  }
+  renderFilters(cats);channelRows=all;renderChannels();
+  status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
+ }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
+}
+$('#langBtn').addEventListener('click',()=>{
+ lang=lang==='ar'?'en':'ar';document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';$('#langBtn').textContent=lang==='ar'?'EN':'عربي';
+ document.querySelectorAll('[data-ar][data-en]').forEach(el=>{el.innerHTML=el.dataset[lang]});renderChannels();
 });
+$('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
+$('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
+qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
+$('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
+$('#loginBtn').hidden=true;$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
+loadChannels();
 })();
 </script>
 </body></html>
