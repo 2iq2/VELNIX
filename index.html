@@ -75,7 +75,7 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
    event.preventDefault();
    const status=document.getElementById('authMessage');
    if(status){
-    status.textContent='تعذر تحميل خدمة تسجيل الدخول. تحقق من الاتصال بالإنترنت ثم حدّث الصفحة.';
+    status.textContent='تعذر تحميل مكتبة تسجيل الدخول: '+(window.__VELNIX_AUTH_LOAD_ERROR__||'تحقق من الاتصال بالإنترنت أو حظر مصادر CDN')+'. جرّب شبكة أخرى أو أوقف مانع المحتوى ثم حدّث الصفحة.';
     status.classList.add('error');
    }
   }
@@ -87,7 +87,22 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 })();
 </script>
 <script type="module">
-const supabaseModule=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm').catch(()=>import('https://esm.sh/@supabase/supabase-js@2')).catch(()=>import('https://esm.run/@supabase/supabase-js@2'));
+let supabaseModule;
+let supabaseLoadError;
+for(const source of [
+ 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm',
+ 'https://esm.sh/@supabase/supabase-js@2',
+ 'https://unpkg.com/@supabase/supabase-js@2?module',
+ 'https://esm.run/@supabase/supabase-js@2',
+ 'https://cdn.skypack.dev/@supabase/supabase-js@2'
+]){
+ try{supabaseModule=await import(source);break}
+ catch(error){supabaseLoadError=error;console.warn('Supabase SDK source failed:',source,error)}
+}
+if(!supabaseModule){
+ window.__VELNIX_AUTH_LOAD_ERROR__=String(supabaseLoadError?.message||supabaseLoadError||'Unknown module loading error');
+ throw new Error('Supabase SDK could not be loaded: '+window.__VELNIX_AUTH_LOAD_ERROR__);
+}
 const {createClient}=supabaseModule;
 (()=>{
 let lang='ar',mode='signin',currentUser=null;
