@@ -73,15 +73,15 @@ $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({b
 const modal=$('#authModal');
 function message(msg,error=false){const el=$('#authMessage');el.textContent=msg;el.classList.toggle('error',error)}
 function renderAuthMode(){
-const ar=lang==='ar',title={signin:ar?'تسجيل الدخول':'Sign in',signup:ar?'إنشاء حساب':'Create account',reset:ar?'استعادة كلمة المرور':'Reset password',update:ar?'تعيين كلمة مرور جديدة':'Set a new password'};
-$('#modalTitle').textContent=currentUser?(ar?'حسابك في VELNIX':'Your VELNIX account'):title[mode];
+const ar=lang==='ar',showAccount=!!currentUser&&mode!=='update',title={signin:ar?'تسجيل الدخول':'Sign in',signup:ar?'إنشاء حساب':'Create account',reset:ar?'استعادة كلمة المرور':'Reset password',update:ar?'تعيين كلمة مرور جديدة':'Set a new password'};
+$('#modalTitle').textContent=showAccount?(ar?'حسابك في VELNIX':'Your VELNIX account'):title[mode];
 $('#authIntro').textContent=({signin:ar?'أدخل بياناتك للمتابعة.':'Enter your details to continue.',signup:ar?'أنشئ حسابك وابدأ تجربة VELNIX.':'Create an account to get started with VELNIX.',reset:ar?'سنرسل رابط استعادة إلى بريدك الإلكتروني.':'We will email you a password reset link.',update:ar?'اختر كلمة مرور جديدة لحسابك.':'Choose a new password for your account.'})[mode];
 $('#nameLabel').hidden=mode!=='signup';$('#displayName').hidden=mode!=='signup';$('#displayName').required=mode==='signup';
 $('#passwordLabel').hidden=mode==='reset';$('#authPassword').hidden=mode==='reset';$('#authPassword').required=mode!=='reset';$('#authPassword').autocomplete=mode==='update'?'new-password':'current-password';
 $('#authSubmit').textContent=title[mode];$('#authSwitch').hidden=mode==='reset'||mode==='update';$('#forgotPassword').hidden=mode!=='signin';
 $('#authSwitch').textContent=mode==='signin'?(ar?'إنشاء حساب جديد':'Create an account'):(ar?'لديك حساب؟ تسجيل الدخول':'Already have an account? Sign in');
 $('#forgotPassword').textContent=ar?'نسيت كلمة المرور؟':'Forgot password?';
-$('#authForm').hidden=!!currentUser;$('#accountPanel').hidden=!currentUser;if(currentUser)$('#accountEmail').textContent=currentUser.email||'';
+$('#authForm').hidden=showAccount;$('#accountPanel').hidden=!showAccount;if(showAccount)$('#accountEmail').textContent=currentUser.email||'';
 }
 function openModal(){message('');renderAuthMode();modal.classList.add('show')}function closeModal(){modal.classList.remove('show')}
 ['loginBtn','heroLogin'].forEach(id=>$('#'+id).addEventListener('click',openModal));
