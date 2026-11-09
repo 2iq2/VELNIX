@@ -227,8 +227,8 @@ else if(mode==='signin'){
  renderAuthMode();
  $('#loginBtn').textContent=lang==='ar'?'حسابي':'My account';
  message(lang==='ar'?'تم تسجيل الدخول بنجاح.':'Signed in successfully.');
- await loadChannels();
- setTimeout(closeModal,700);
+ closeModal();
+ loadChannels().catch(err=>{console.error('Channel refresh failed:',err);$('#channelStatus').textContent=lang==='ar'?'تعذر تحميل القنوات حالياً.':'Could not load channels right now.';});
 }else{message(lang==='ar'?'تمت العملية بنجاح.':'Operation completed successfully.');}
 }catch(err){message(err.message||(lang==='ar'?'تعذر إكمال العملية.':'Unable to complete the request.'),true)}
 finally{btn.disabled=false;renderAuthMode()}
