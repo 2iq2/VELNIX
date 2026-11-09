@@ -107,7 +107,7 @@ async function gateway(body){
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
 }
-let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,recovering=false;
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false;
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
@@ -115,7 +115,6 @@ function destroyPlayerEngine(){
 function stopPlayback(){
  playbackGeneration++;activeRow=null;recovering=false;retryCount=0;
  if(retryTimer){clearTimeout(retryTimer);retryTimer=null}
- if(watchdogTimer){clearInterval(watchdogTimer);watchdogTimer=null}
  destroyPlayerEngine();video.pause();video.removeAttribute('src');video.load();
  qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
 }
@@ -137,7 +136,7 @@ function scheduleRecovery(reason,generation=playbackGeneration){
   retryTimer=null;
   if(generation!==playbackGeneration||!activeRow){recovering=false;return}
   destroyPlayerEngine();video.pause();video.removeAttribute('src');video.load();
-  try{await startPlayback(activeRow,generation,reason)}catch(e){console.warn('Playback recovery failed',e);scheduleRecovery(e?.message||'retry',generation)}
+  try{await startPlayback(activeRow,generation,reason)}catch(e){console.warn('Playback recovery failed',e);recovering=false;scheduleRecovery(e?.message||'retry',generation);return}
   recovering=false;
  },delay);
 }
@@ -172,8 +171,6 @@ async function startPlayback(row,generation,reason='initial'){
    });
    instance.on(Hls.Events.ERROR,(_e,d)=>{
     if(generation!==playbackGeneration||instance!==hlsInstance||!d.fatal)return;
-    if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&retryCount<3){try{instance.recoverMediaError();return}catch(e){}}
-    if(d.type===Hls.ErrorTypes.NETWORK_ERROR&&retryCount<3){try{instance.startLoad();return}catch(e){}}
     scheduleRecovery(d.details||'HLS fatal error',generation);
    });
    instance.loadSource(url);instance.attachMedia(video);return;
@@ -212,14 +209,14 @@ async function playChannel(row){
 video.addEventListener('timeupdate',()=>{
  if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
 });
-video.addEventListener('playing',()=>{lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0});
+video.addEventListener('playing',()=>{lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0});
 video.addEventListener('error',()=>{if(activeRow&&!recovering)scheduleRecovery('Media element error')});
-video.addEventListener('ended',()=>{if(activeRow&&!video.paused)scheduleRecovery('Stream ended')});
+video.addEventListener('ended',()=>{if(activeRow)scheduleRecovery('Stream ended')});
 video.addEventListener('stalled',()=>{if(activeRow&&!video.paused&&Date.now()-lastProgressAt>12000)scheduleRecovery('Playback stalled')});
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||video.paused||video.ended||recovering)return;
  const now=Date.now();
- if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&now-lastProgressAt>30000)retryCount=0}
+ if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>45000)retryCount=0}
  else if(now-lastProgressAt>22000)scheduleRecovery('No playback progress');
 },5000);
 function renderFilters(categories){
