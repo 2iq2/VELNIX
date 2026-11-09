@@ -234,7 +234,7 @@ else if(mode==='signin'){
 finally{btn.disabled=false;renderAuthMode()}
 });
 $('#signOutBtn').addEventListener('click',async()=>{const {error}=await supabase.auth.signOut();if(error)message(error.message,true);else{currentUser=null;mode='signin';message(lang==='ar'?'تم تسجيل الخروج.':'Signed out.');renderAuthMode();$('#loginBtn').textContent=lang==='ar'?'تسجيل الدخول':'Sign in'}});
-supabase.auth.onAuthStateChange((event,session)=>{currentUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){mode='update';openModal()}renderAuthMode();loadChannels();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in')});
+supabase.auth.onAuthStateChange((event,session)=>{currentUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){mode='update';openModal()}renderAuthMode();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in');setTimeout(()=>loadChannels().catch(err=>console.error('Auth channel refresh failed:',err)),0)});
 supabase.auth.getSession().then(({data})=>{currentUser=data.session?.user||null;renderAuthMode();loadChannels();$('#loginBtn').textContent=currentUser?(lang==='ar'?'حسابي':'My account'):(lang==='ar'?'تسجيل الدخول':'Sign in')});
 $('#xtreamImportBtn').addEventListener('click',async()=>{
  const btn=$('#xtreamImportBtn'),status=$('#importStatus');
