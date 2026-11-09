@@ -264,7 +264,7 @@ $('#xtreamImportBtn').addEventListener('click',async()=>{
  }catch(err){status.textContent=err?.message||(lang==='ar'?'فشل الاستيراد.':'Import failed.');}
  finally{btn.disabled=false;}
 });
-$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
+$('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;$('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
 })();
 </script>
 </body></html>
