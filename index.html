@@ -60,14 +60,15 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';
 import Hls from 'https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm';
+import mpegts from 'https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm';
 (()=>{
 let lang='ar',mode='signin',currentUser=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const supabase=createClient('https://shungcjflcjwubdlhyzq.supabase.co','sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo');
 let channelRows=[];
 const categoryIcons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
-let hlsInstance=null;const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
-function stopPlayback(){if(hlsInstance){hlsInstance.destroy();hlsInstance=null}video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';}
+let hlsInstance=null,mpegtsPlayer=null;const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
+function stopPlayback(){if(hlsInstance){hlsInstance.destroy();hlsInstance=null}if(mpegtsPlayer){mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy();mpegtsPlayer=null}video.pause();video.removeAttribute('src');video.load();qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';}
 function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
 function setPlayerState(text){$('#playerState').textContent=text}
 function populateQualities(){qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';if(!hlsInstance)return;hlsInstance.levels.forEach((level,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=(level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps');qualitySelect.append(option)})}
@@ -103,6 +104,22 @@ async function playChannel(row){
    });
    hlsInstance.loadSource(url);
    hlsInstance.attachMedia(video);
+  }else if(['file','mpegts','ts'].includes(streamType.toLowerCase())){
+   if(!mpegts.isSupported())throw new Error(lang==='ar'?'هذا المتصفح لا يدعم مشغل MPEG-TS. جرّب Chrome أو حدّث المتصفح.':'MPEG-TS playback is not supported by this browser. Try Chrome or update it.');
+   const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
+   if(sessionError||!sessionData.session?.access_token)throw new Error(lang==='ar'?'انتهت جلسة الدخول. سجّل الدخول مجدداً.':'Your session expired. Please sign in again.');
+   const proxyUrl='https://shungcjflcjwubdlhyzq.supabase.co/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
+   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxyUrl},{
+    enableWorker:true,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:8,liveBufferLatencyMinRemain:1,stashInitialSize:384*1024,
+    xhrSetup:(xhr)=>{xhr.setRequestHeader('Authorization','Bearer '+sessionData.session.access_token);xhr.setRequestHeader('apikey','sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo');}
+   });
+   mpegtsPlayer.on(mpegts.Events.ERROR,(_type,detail,info)=>{
+    const reason=info?.msg||detail||'MPEG-TS playback error';
+    setPlayerState((lang==='ar'?'تعذر استقبال البث: ':'Stream error: ')+reason);
+   });
+   mpegtsPlayer.attachMediaElement(video);mpegtsPlayer.load();
+   setPlayerState(lang==='ar'?'جارٍ فتح البث عبر الاتصال الآمن...':'Opening stream through secure connection...');
+   mpegtsPlayer.play().then(()=>setPlayerState(lang==='ar'?'تم الاتصال بالبث.':'Connected to live stream.')).catch(()=>setPlayerState(lang==='ar'?'البث جاهز؛ اضغط زر التشغيل.':'Stream ready; press play.'));
   }else{
    video.src=url;
    video.addEventListener('loadedmetadata',()=>{
