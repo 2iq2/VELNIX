@@ -29,6 +29,41 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 .player-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.88);display:none;place-items:center;padding:18px}.player-modal.show{display:grid}.player-shell{width:min(1000px,100%);background:#0d141e;border:1px solid rgba(201,169,110,.3);border-radius:20px;overflow:hidden;box-shadow:0 25px 90px #000b}.player-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--line)}.player-head strong{color:var(--gold2)}.player-close{border:0;background:transparent;color:#fff;font-size:26px}.video-wrap{background:#000;aspect-ratio:16/9;position:relative}.video-wrap video{width:100%;height:100%;display:block;background:#000}.player-controls{display:flex;align-items:center;gap:12px;padding:14px 18px;flex-wrap:wrap}.player-controls label{color:var(--muted);font-size:12px}.player-controls select{background:#151e2b;color:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px}.player-state{padding:0 18px 16px;color:var(--muted);font-size:13px;min-height:22px}.channel{cursor:pointer}.channel:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}.channel .play-hint{display:inline-block;margin-inline-start:8px;color:#fff;background:rgba(201,169,110,.15);border:1px solid rgba(201,169,110,.3);padding:5px 9px;border-radius:8px;font-size:11px}
 
 .admin-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px}#adminTools[hidden]{display:none!important}#importStatus{font-size:13px;color:var(--muted,#9aa0aa)}.channel-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}.channel-search{display:flex;align-items:center;gap:9px;flex:1 1 260px;max-width:480px;background:#111823;border:1px solid var(--line);border-radius:14px;padding:0 14px;color:var(--gold2)}.channel-search span{font-size:23px;line-height:1}.channel-search input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:var(--text);padding:13px 0;font:inherit}.channel-search input::placeholder{color:var(--muted)}.channel-toolbar .filter.active{background:var(--gold2);color:#17191e;border-color:var(--gold2)}.channel{padding-bottom:48px}.channel-fav{position:absolute;z-index:3;top:12px;inset-inline-end:12px;width:34px;height:34px;border:1px solid var(--line);border-radius:11px;background:#090c12bb;color:#b9c1ce;font-size:19px}.channel-fav.active{color:var(--gold2);border-color:rgba(201,169,110,.55);background:rgba(201,169,110,.16)}.player-modal{padding:12px;background:rgba(2,5,10,.94);backdrop-filter:blur(12px)}.player-shell{width:min(1100px,100%);border:1px solid rgba(201,169,110,.34);border-radius:22px;background:linear-gradient(145deg,#121b28,#080d14);overflow:hidden}.player-head{padding:14px 18px;gap:12px}.player-brand{display:flex;align-items:center;gap:12px;min-width:0}.player-brand strong{display:block;max-width:min(55vw,520px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player-brand small{display:block;color:var(--muted);font:10px "DM Sans",sans-serif;letter-spacing:1.2px;margin-top:4px}.player-live-dot,.buffer-dot{width:8px;height:8px;border-radius:50%;background:#5ed6a0;box-shadow:0 0 12px #5ed6a088;flex:none}.player-head-actions{display:flex;align-items:center;gap:10px}.player-retry{border:1px solid rgba(201,169,110,.38);border-radius:11px;background:rgba(201,169,110,.10);color:var(--gold2);padding:9px 12px;font:600 12px "Tajawal",sans-serif}.player-close{width:38px;height:38px;border-radius:11px;background:#ffffff0a;border:1px solid var(--line)}.video-wrap{aspect-ratio:16/9;max-height:68vh}.video-wrap video{object-fit:contain}.player-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:13px 18px 8px}.buffer-indicator{display:flex;align-items:center;gap:9px;color:#aeb8c7;font-size:12px}.player-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.player-options label{color:var(--muted);font-size:12px}.player-options select{background:#151e2b;color:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px}.player-options .secondary{padding:9px 13px;font-size:12px}.player-state{padding:8px 18px 16px;min-height:39px;color:var(--gold2);font-size:13px}@media(max-width:520px){.player-modal{padding:0;align-items:center}.player-shell{border-radius:0;border-inline:0}.player-head{padding:11px 12px}.player-retry{font-size:11px;padding:8px}.player-close{width:34px;height:34px}.player-toolbar{padding:10px 12px}.player-state{padding:6px 12px 13px}.player-options{gap:7px}.player-options .secondary{padding:8px 9px}}
+
+/* VELNIX channel directory redesign */
+.catalog-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 24px}
+.catalog-summary>div{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border:1px solid rgba(201,169,110,.17);border-radius:16px;background:linear-gradient(135deg,rgba(24,34,49,.9),rgba(13,19,29,.9))}
+.catalog-summary strong{font:700 20px "DM Sans","Tajawal",sans-serif;color:var(--gold2);letter-spacing:.2px}
+.catalog-summary span{font-size:12px;color:var(--muted)}
+#categories .section-head{margin-bottom:18px}
+#categories .section-head h2{font-size:clamp(27px,3vw,36px);letter-spacing:-.4px}
+#categories .section-head p{font-size:14px;line-height:1.8}
+.channel-toolbar{margin-bottom:14px}
+.channel-search{max-width:none;flex:1 1 320px}
+.filters{gap:8px;margin-bottom:22px;padding:4px 0 9px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+.filters .filter{white-space:nowrap;flex:none;padding:10px 17px}
+.channels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.channel{display:flex;align-items:center;gap:13px;min-height:94px;padding:13px 14px 13px 52px;border-radius:17px;background:linear-gradient(145deg,rgba(24,34,49,.96),rgba(13,19,29,.96));border-color:rgba(255,255,255,.075);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.channel:after{display:none}
+.channel:hover{transform:translateY(-3px);border-color:rgba(201,169,110,.45);box-shadow:0 15px 34px rgba(0,0,0,.25)}
+.channel-logo{width:58px;height:58px;flex:0 0 58px;display:grid;place-items:center;overflow:hidden;border-radius:15px;background:linear-gradient(145deg,#202c3e,#111925);border:1px solid rgba(255,255,255,.09);padding:7px}
+.channel-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.channel-logo-fallback{font:800 19px "DM Sans","Tajawal",sans-serif;color:var(--gold2);letter-spacing:-1px}
+.channel-copy{min-width:0;flex:1}
+.channel h3{font-size:15px;line-height:1.45;margin:0 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:right}
+.channel p{font-size:11px;color:var(--muted);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.channel .tag{margin-top:7px;font-size:9px;letter-spacing:.8px}
+.channel .play-hint{display:none}
+.channel-fav{top:50%;transform:translateY(-50%);inset-inline-end:10px;width:30px;height:30px;border-radius:10px;font-size:17px}
+.channel-status{margin:0 0 13px}
+#channelStatus{padding:10px 2px}
+@media(max-width:950px){.channels{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{gap:26px}}
+@media(max-width:600px){
+ .catalog-summary{gap:8px}.catalog-summary>div{padding:12px 11px;border-radius:13px}.catalog-summary strong{font-size:15px}.catalog-summary span{font-size:10px;line-height:1.5}
+ .channels{grid-template-columns:1fr;gap:9px}.channel{min-height:82px;padding:11px 48px 11px 12px;gap:11px}.channel-logo{width:52px;height:52px;flex-basis:52px;border-radius:13px}.channel h3{font-size:14px}.channel-fav{inset-inline-end:9px}
+ .filters{margin-inline:-2px}.filters .filter{padding:9px 14px;font-size:12px}
+}
+
 </style>
 </head>
 <body>
@@ -50,7 +85,20 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 </section>
 <section class="wrap section" id="categories">
 <div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
-<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة بالاسم..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div><div class="filters" id="filters"><button class="filter active" data-cat="all" data-ar="الكل" data-en="All">الكل</button><button class="filter" data-cat="sports" data-ar="رياضة" data-en="Sports">رياضة</button><button class="filter" data-cat="news" data-ar="أخبار" data-en="News">أخبار</button><button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button><button class="filter" data-cat="kids" data-ar="أطفال" data-en="Kids">أطفال</button><button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button><button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button></div>
+<div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
+<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
+<div class="filters" id="filters">
+<button class="filter active" data-cat="all" data-ar="كل القنوات" data-en="All channels">كل القنوات</button>
+<button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
+<button class="filter" data-cat="arabic" data-ar="القنوات العربية" data-en="Arabic">القنوات العربية</button>
+<button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button>
+<button class="filter" data-cat="news" data-ar="الأخبار" data-en="News">الأخبار</button>
+<button class="filter" data-cat="kids" data-ar="الأطفال" data-en="Kids">الأطفال</button>
+<button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button>
+<button class="filter" data-cat="music" data-ar="موسيقى وراديو" data-en="Music & Radio">موسيقى وراديو</button>
+<button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button>
+<button class="filter" data-cat="world" data-ar="قنوات عالمية" data-en="World">قنوات عالمية</button>
+</div>
 <div class="admin-tools" id="adminTools" hidden><button class="filter" id="xtreamImportBtn" type="button">استيراد قنوات Xtream</button><span id="importStatus" role="status"></span></div>
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div>
 </section>
@@ -226,29 +274,94 @@ watchdogTimer=setInterval(()=>{
  if(!video.paused&&video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}}
  else if(now-lastProgressAt>16000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
 },3000);
-function renderFilters(categories){
- const filters=$('#filters');filters.querySelectorAll('[data-dynamic="true"]').forEach(x=>x.remove());
- (categories||[]).forEach(c=>{const b=document.createElement('button');b.className='filter';b.dataset.cat=c.slug;b.dataset.dynamic='true';b.textContent=lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar);filters.append(b)});
+const CATEGORY_META={
+ sports:{ar:'الرياضة',en:'Sports',icon:'⚽'},
+ arabic:{ar:'القنوات العربية',en:'Arabic channels',icon:'✦'},
+ movies:{ar:'أفلام ومسلسلات',en:'Movies & series',icon:'▣'},
+ news:{ar:'الأخبار',en:'News',icon:'◉'},
+ kids:{ar:'الأطفال',en:'Kids',icon:'★'},
+ documentaries:{ar:'وثائقيات',en:'Documentaries',icon:'◇'},
+ music:{ar:'موسيقى وراديو',en:'Music & radio',icon:'♫'},
+ variety:{ar:'منوعات',en:'Variety',icon:'✧'},
+ world:{ar:'قنوات عالمية',en:'World channels',icon:'◎'}
+};
+function cleanChannelName(value){
+ return String(value||'').replace(/^\\s*(?:\\|\\s*)?(?:AR|TR|FR|UK|US|USA|CA|CAN|DE|ES|ITA|IT|NL|PT|PL|EU|LAT|SP|AF|NEWS|SPORT|DEPORTE)(?:\\s*\\|+\\s*|\\s*\\|\\s*)/i,'')
+ .replace(/^\\s*\\|+\\s*/,'').replace(/\\s*\\|\\s*/g,' ').replace(/\\s{2,}/g,' ').trim();
+}
+function categoryFor(row){
+ const group=String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'').toLowerCase();
+ const name=String(row.name_en||row.name_ar||'').toLowerCase();
+ const both=group+' '+name;
+ if(/sport|deport|bein sports|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
+ if(/news|info|actualité|actualite|inform|اخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
+ if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
+ if(/doc|document|nature|science|wissensch|natuur/.test(group)||/documentary|discovery|nat geo|national geographic|history channel|animal planet|bbc earth/.test(name))return 'documentaries';
+ if(/cinema|movie|film|series|cine|prime video/.test(group)||/movies|cinema|ciné|film|series|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
+ if(/radio|music|musique|musica|music/.test(group)||/radio|music|mtv|mezzo|trace urban|vh1|rotana music|موسيقى/.test(name))return 'music';
+ if(/arabic|middle east|maghreb|maroc|quran|islamic|arab|mbc group|bein movies/.test(group)||/iraq|iraqia|mbc|osn|shahid|rotana|al arabiya|al jazeera|quran|alkass|abudhabi|abu dhabi|oman|kuwait|saudi|syria|lebanon|egypt|morocco|tunisia|jordan|palestine|arab/.test(name))return 'arabic';
+ if(/arab|middle east|maghreb|maroc/.test(group))return 'arabic';
+ if(/general|network|tv|relax|generalista|generali/.test(group))return 'world';
+ return 'variety';
+}
+function displayName(row){
+ const value=lang==='ar'?(row.name_ar||row.name_en):(row.name_en||row.name_ar);
+ return cleanChannelName(value)||'Channel';
+}
+function initialsFor(name){
+ const words=String(name||'TV').replace(/[^a-z0-9 ]/gi,' ').trim().split(/\\s+/).filter(Boolean);
+ return (words.length>1?words[0][0]+words[1][0]:String(words[0]||'TV').slice(0,2)).toUpperCase();
 }
 function renderChannels(){
- const grid=$('#channelsGrid');grid.replaceChildren();const active=$('#filters .filter.active')?.dataset.cat||'all';const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
- let rows=channelRows.filter(r=>{const catOk=active==='all'||r.channel_categories?.slug===active;const name=(String(r.name_ar||'')+' '+String(r.name_en||'')).toLocaleLowerCase();const searchOk=!q||name.includes(q);const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):recentChannels.includes(r.id));return catOk&&searchOk&&modeOk});
+ const grid=$('#channelsGrid');grid.replaceChildren();
+ const active=$('#filters .filter.active')?.dataset.cat||'all';
+ const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
+ let rows=channelRows.filter(r=>{
+  const category=categoryFor(r),catOk=active==='all'||category===active;
+  const name=(String(r.name_ar||'')+' '+String(r.name_en||'')+' '+cleanChannelName(r.name_en)+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
+  const searchOk=!q||name.includes(q);
+  const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):recentChannels.includes(r.id));
+  return catOk&&searchOk&&modeOk;
+ });
+ const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
  if(catalogMode==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
- rows.forEach(row=>{const slug=row.channel_categories?.slug||'variety',card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
- const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(favorites.has(row.id)?' active':'');fav.textContent=favorites.has(row.id)?'★':'☆';fav.setAttribute('aria-label','تبديل المفضلة');fav.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(row.id))favorites.delete(row.id);else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
- const icon=document.createElement('div');icon.className='channel-icon';icon.textContent=icons[slug]||'◈';const title=document.createElement('h3');title.textContent=lang==='ar'?row.name_ar:row.name_en;const desc=document.createElement('p');desc.textContent=row.description||'';const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'متاح للمشاهدة':'READY TO WATCH';const play=document.createElement('span');play.className='play-hint';play.textContent=lang==='ar'?'فتح المشغّل ▶':'OPEN PLAYER ▶';card.append(fav,icon,title,desc,tag,play);card.addEventListener('click',()=>playChannel(row));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});grid.append(card)});
- if(!rows.length){const empty=document.createElement('p');empty.className='channel-status';empty.textContent=lang==='ar'?'ماكو قنوات تطابق البحث أو الفلتر الحالي.':'No channels match the current search or filter.';grid.append(empty)}
+ else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
+ rows.forEach(row=>{
+  const card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
+  const name=displayName(row),cat=categoryFor(row),meta=CATEGORY_META[cat];
+  const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(favorites.has(row.id)?' active':'');fav.textContent=favorites.has(row.id)?'★':'☆';fav.setAttribute('aria-label',lang==='ar'?'إضافة أو إزالة من المفضلة':'Toggle favorite');
+  fav.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(row.id))favorites.delete(row.id);else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
+  const logo=document.createElement('div');logo.className='channel-logo';
+  const fallback=document.createElement('span');fallback.className='channel-logo-fallback';fallback.textContent=initialsFor(name);logo.append(fallback);
+  if(row.logo_url){
+   const img=document.createElement('img');img.src=row.logo_url;img.alt=name+' logo';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+   img.addEventListener('load',()=>{fallback.hidden=true});
+   img.addEventListener('error',()=>{img.remove();fallback.hidden=false});
+   logo.append(img);
+  }
+  const copy=document.createElement('div');copy.className='channel-copy';
+  const title=document.createElement('h3');title.textContent=name;
+  const desc=document.createElement('p');desc.textContent=row.description||meta[lang]||meta.en;
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=(row.stream_type||'LIVE').toUpperCase()+' · '+(lang==='ar'?'مباشر':'LIVE');
+  copy.append(title,desc,tag);card.append(fav,logo,copy);
+  card.addEventListener('click',()=>playChannel(row));
+  card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});
+  grid.append(card);
+ });
+ if(!rows.length){const empty=document.createElement('p');empty.className='channel-status';empty.textContent=lang==='ar'?'ماكو قنوات تطابق البحث أو القسم الحالي.':'No channels match this search or category.';grid.append(empty)}
+ $('#catalogCount').textContent=channelRows.length.toLocaleString(lang==='ar'?'ar-IQ':'en-US');
+ $('#channelStatus').textContent=lang==='ar'?'يعرض '+rows.length.toLocaleString('ar-IQ')+' قناة من أصل '+channelRows.length.toLocaleString('ar-IQ')+'.':'Showing '+rows.length.toLocaleString('en-US')+' of '+channelRows.length.toLocaleString('en-US')+' channels.';
 }
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  try{
-  const cats=await rest('channel_categories?select=slug,name_ar,name_en&is_active=eq.true&order=sort_order.asc');
+  await rest('channel_categories?select=slug,name_ar,name_en&is_active=eq.true&order=sort_order.asc');
   const all=[];
   for(let offset=0;offset<10000;offset+=500){
-   const rows=await rest('channels?select=id,name_ar,name_en,description,stream_type,source_provider,channel_categories(slug)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
+   const rows=await rest('channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
    all.push(...rows);if(rows.length<500)break;
   }
-  renderFilters(cats);channelRows=all;renderChannels();
+  channelRows=all;renderChannels();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
 }
