@@ -92,7 +92,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 <section class="wrap section" id="categories">
 <div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
-<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
+<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><select class="field" id="subcategoryFilter" style="width:auto;max-width:180px;margin:0"><option value="">كل التصنيفات الفرعية</option></select><select class="field" id="channelSort" style="width:auto;max-width:150px;margin:0"><option value="name">ترتيب أبجدي</option><option value="favorites">المفضلة أولاً</option><option value="recent">الأحدث مشاهدة</option></select><button class="filter" id="resumeLastBtn" type="button" hidden>▶ استئناف آخر قناة</button><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
 <button class="filter active" data-cat="all" data-ar="كل القنوات" data-en="All channels">كل القنوات</button>
 <button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
@@ -409,9 +409,9 @@ function initialsFor(name){
 function renderChannels(){
  const grid=$('#channelsGrid');grid.replaceChildren();
  const active=$('#filters .filter.active')?.dataset.cat||'all';
- const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
+ const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();const sub=$('#subcategoryFilter')?.value||'';
  let rows=channelRows.filter(r=>{
-  const category=categoryFor(r),catOk=active==='all'||category===active;
+  const category=categoryFor(r),catOk=(active==='all'||category===active)&&(!sub||r.channel_categories?.slug===sub);
   const name=(String(r.name_ar||'')+' '+String(r.name_en||'')+' '+cleanChannelName(r.name_en)+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
   const searchOk=!q||name.includes(q);
   const list=userLists.find(x=>x.id===activeListId);const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):catalogMode==='recent'?recentChannels.includes(r.id):!!list&&(list.channel_ids||[]).includes(r.id));
@@ -455,7 +455,7 @@ async function loadChannels(){
    const rows=await rest('channels?select=id,category_id,source_external_id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
    all.push(...rows);if(rows.length<500)break;
   }
-  channelRows=all;renderChannels();if(authSession?.user?.app_metadata?.role==='admin')adminDashboard();
+  channelRows=all;const sub=$('#subcategoryFilter');const cats=new Map();all.forEach(r=>{const c=r.channel_categories;if(c?.slug)cats.set(c.slug,lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar))});cats.forEach((name,slug)=>{const o=document.createElement('option');o.value=slug;o.textContent=name;sub.append(o)});const last=localStorage.getItem('velnix:lastChannel');if(last){const r=all.find(x=>x.id===last);if(r){$('#resumeLastBtn').hidden=false;$('#resumeLastBtn').textContent='▶ استئناف: '+displayName(r);$('#resumeLastBtn').onclick=()=>playChannel(r)}}renderChannels();if(authSession?.user?.app_metadata?.role==='admin')adminDashboard();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
 }
@@ -524,7 +524,7 @@ $('#langBtn').addEventListener('click',()=>{
 });
 $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
-$('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
+$('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});$('#subcategoryFilter').addEventListener('change',()=>{visibleLimit=90;renderChannels()});$('#channelSort').addEventListener('change',renderChannels);
 $('#loadMoreChannels').addEventListener('click',()=>{visibleLimit+=90;renderChannels()});
 $('#favoritesFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='favorites'?'all':'favorites';$('#favoritesFilter').classList.toggle('active',catalogMode==='favorites');$('#recentFilter').classList.remove('active');renderChannels()});
 $('#recentFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='recent'?'all':'recent';$('#recentFilter').classList.toggle('active',catalogMode==='recent');$('#favoritesFilter').classList.remove('active');renderChannels()});
