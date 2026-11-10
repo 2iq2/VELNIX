@@ -151,7 +151,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
    event.preventDefault();
    const status=document.getElementById('authMessage');
    if(status){
-    status.textContent='تعذر تحميل مكتبة تسجيل الدخول: '+(window.__VELNIX_AUTH_LOAD_ERROR__||'تحقق من الاتصال بالإنترنت أو حظر مصادر CDN')+'. جرّب شبكة أخرى أو أوقف مانع المحتوى ثم حدّث الصفحة.';
+    status.textContent='تعذر تهيئة واجهة تسجيل الدخول: '+(window.__VELNIX_AUTH_LOAD_ERROR__||'تحقق من الاتصال بالإنترنت أو حظر مصادر CDN')+'. جرّب شبكة أخرى أو أوقف مانع المحتوى ثم حدّث الصفحة.';
     status.classList.add('error');
    }
   }
@@ -159,6 +159,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
  const closeButton=document.getElementById('closeModal');
  if(closeButton)closeButton.addEventListener('click',close);
  if(modal)modal.addEventListener('click',event=>{if(event.target===modal)close()});
+ window.addEventListener('error',event=>{if(!window.__VELNIX_AUTH_READY__)window.__VELNIX_AUTH_LOAD_ERROR__=(event.message||'JavaScript error')+' (line '+(event.lineno||'?')+')'});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
 })();
 </script>
