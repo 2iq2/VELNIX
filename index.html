@@ -64,15 +64,6 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
  .filters{margin-inline:-2px}.filters .filter{padding:9px 14px;font-size:12px}
 }
 
-
-:root.light{--bg:#eef1f5;--panel:#fff;--panel2:#f7f8fa;--text:#18202b;--muted:#667080;--line:rgba(20,30,45,.13);--gold:#9b7439;--gold2:#8a652d}
-body.light{background:var(--bg);color:var(--text)}body.light header{background:rgba(245,247,250,.92)}body.light .channel,body.light .feature-card,body.light .profile-box,body.light .dialog,body.light .player-shell{background:linear-gradient(145deg,#fff,#f2f4f7);color:#18202b}
-.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.feature-card,.profile-box{border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#151e2a,#0e141d);padding:18px}.feature-card h3{margin:0 0 8px}.feature-card p,.profile-box p{color:var(--muted);font-size:13px;line-height:1.8}.feature-icon{font-size:24px;color:var(--gold2);margin-bottom:10px}.feature-state{display:inline-block;margin-top:10px;color:var(--gold2);font-size:11px}.profile-box{margin-top:14px}.profile-row,.list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.profile-form,.admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.profile-form .field,.admin-form .field{margin:0;min-width:0}.list-controls{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.list-controls input{flex:1 1 180px}.list-chip{border:1px solid rgba(201,169,110,.3);background:rgba(201,169,110,.08);color:var(--gold2);border-radius:12px;padding:9px 13px;font-size:12px}.list-chip.active{background:var(--gold2);color:#17191e}.epg-box{padding:10px 18px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.epg-item{border:1px solid var(--line);border-radius:12px;padding:10px}.epg-item small{display:block;color:var(--gold2);font-size:10px}.epg-item strong{font-size:13px}.player-actions{display:flex;gap:7px;flex-wrap:wrap;padding:0 18px 12px}.player-actions button{border:1px solid var(--line);border-radius:10px;background:#ffffff08;color:var(--text);padding:8px 10px;font-size:11px}.assistant-window{position:fixed;z-index:100;inset:0;background:#000b;display:none;place-items:center;padding:16px}.assistant-window.show{display:grid}.assistant-box{width:min(520px,100%);max-height:80vh;overflow:auto;background:#111925;border:1px solid rgba(201,169,110,.32);border-radius:20px;padding:20px}.assistant-log{min-height:150px;max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:13px;padding:12px;margin:12px 0}.assistant-msg{padding:9px 11px;border-radius:11px;background:#ffffff09;margin:7px 0;font-size:13px;line-height:1.8;white-space:pre-wrap}.assistant-msg.user{background:rgba(201,169,110,.13);color:var(--gold2)}.assistant-form{display:flex;gap:8px}.assistant-form input{flex:1;min-width:0}.admin-panel{border:1px solid rgba(201,169,110,.22);border-radius:20px;padding:20px;background:linear-gradient(145deg,#151e2a,#0e141d)}.admin-panel[hidden],#accountSection[hidden],#adminSection[hidden]{display:none!important}.admin-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}.admin-metrics>div{background:#ffffff08;border:1px solid var(--line);border-radius:12px;padding:12px}.admin-metrics b{display:block;color:var(--gold2);font-size:18px}.admin-metrics span{font-size:10px;color:var(--muted)}.admin-bulk{width:100%;min-height:90px;background:#0b111a;border:1px solid var(--line);border-radius:11px;color:var(--text);padding:12px;margin:10px 0;direction:ltr}.top-actions{display:flex;gap:6px}.top-actions .filter{padding:8px 10px}
-@media(max-width:800px){.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.feature-grid{grid-template-columns:1fr}.profile-form,.admin-form{grid-template-columns:1fr}.epg-box{grid-template-columns:1fr}.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-/* Public viewing mode: no viewer accounts or sign-in prompts. Admin authentication remains private. */
-#loginBtn,#heroLogin,#accountSection,#playerListSelect,#addToListBtn,.auth-links{display:none!important}
 </style>
 </head>
 <body>
@@ -80,7 +71,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
 <nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav>
-<div class="actions"><div class="top-actions"><button class="filter" id="assistantOpen" type="button">✦ المساعد</button><button class="filter" id="installBtn" type="button" hidden>＋ تثبيت</button><button class="filter" id="themeBtn" type="button">◐</button></div><button class="lang" id="langBtn" type="button">EN</button><button class="login" id="loginBtn" hidden aria-hidden="true" tabindex="-1">إدارة</button></div>
+<div class="actions"><button class="lang" id="langBtn" type="button">EN</button><button class="login" id="loginBtn" data-ar="تسجيل الدخول" data-en="Sign in">تسجيل الدخول</button></div>
 </div></header>
 <main>
 <section class="wrap hero" id="home">
@@ -88,14 +79,14 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 <div class="eyebrow" data-ar="تجربة ترفيه بمستوى مختلف" data-en="A premium entertainment experience">تجربة ترفيه بمستوى مختلف</div>
 <h1 data-ar="كل ما تحب مشاهدته،<br><span class='gold'>في مكان واحد.</span>" data-en="Everything you love,<br><span class='gold'>in one place.</span>">كل ما تحب مشاهدته،<br><span class="gold">في مكان واحد.</span></h1>
 <p class="intro" data-ar="اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك." data-en="Discover live channels and a world of entertainment in a refined viewing experience, designed to feel seamless across your devices.">اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك.</p>
-<div class="hero-ctas"><button class="primary" id="exploreBtn" data-ar="استكشف القنوات ←" data-en="Explore channels →">استكشف القنوات ←</button><button class="secondary" id="heroLogin" hidden aria-hidden="true" tabindex="-1">إدارة</button></div>
+<div class="hero-ctas"><button class="primary" id="exploreBtn" data-ar="استكشف القنوات ←" data-en="Explore channels →">استكشف القنوات ←</button><button class="secondary" id="heroLogin" data-ar="إنشاء حساب" data-en="Create account">إنشاء حساب</button></div>
 </div>
 <div class="visual" aria-label="VELNIX premium preview"><div class="screen"><div class="screen-top"><span>VELNIX ORIGINAL</span><span class="live"><i></i><span data-ar="تجربة المنصة" data-en="PREVIEW">تجربة المنصة</span></span></div><div class="screen-copy"><small>YOUR WORLD. YOUR SCREEN.</small><strong data-ar="شاهد بطريقتك." data-en="Watch your way.">شاهد بطريقتك.</strong><p data-ar="الترفيه يبدأ من هنا" data-en="Entertainment starts here">الترفيه يبدأ من هنا</p></div></div><div class="float-card"><b>VELNIX</b><span data-ar="تجربة مشاهدة مميزة" data-en="Premium viewing experience">تجربة مشاهدة مميزة</span></div></div>
 </section>
 <section class="wrap section" id="categories">
 <div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
-<div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة في الدليل" data-en="channels in the guide">قناة في الدليل</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
-<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><select class="field" id="subcategoryFilter" style="width:auto;max-width:180px;margin:0"><option value="">كل التصنيفات الفرعية</option></select><select class="field" id="countryFilter" style="width:auto;max-width:130px;margin:0"><option value="">كل الدول</option></select><select class="field" id="languageFilter" style="width:auto;max-width:130px;margin:0"><option value="">كل اللغات</option></select><select class="field" id="channelSort" style="width:auto;max-width:150px;margin:0"><option value="name">ترتيب أبجدي</option><option value="favorites">المفضلة أولاً</option><option value="recent">الأحدث مشاهدة</option></select><button class="filter" id="resumeLastBtn" type="button" hidden>▶ استئناف آخر قناة</button><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
+<div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
+<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
 <button class="filter active" data-cat="all" data-ar="كل القنوات" data-en="All channels">كل القنوات</button>
 <button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
@@ -108,35 +99,14 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 <button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button>
 <button class="filter" data-cat="world" data-ar="قنوات عالمية" data-en="World">قنوات عالمية</button>
 </div>
-
+<div class="admin-tools" id="adminTools" hidden><button class="filter" id="xtreamImportBtn" type="button">استيراد قنوات Xtream</button><span id="importStatus" role="status"></span></div>
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button>
 </section>
-
-<section class="wrap section" id="accountSection" hidden aria-hidden="true">
- <div class="section-head"><div><h2>حسابي في VELNIX</h2><p>الملف الشخصي والاشتراك وقوائم المشاهدة</p></div></div>
- <div class="profile-box"><div class="profile-row"><div><strong id="profileEmail">—</strong><p id="subscriptionStatus">حالة الاشتراك: —</p><p id="subscriptionExpiry">تاريخ الانتهاء: —</p></div><button class="secondary" id="openAccountBtn" type="button">إدارة الحساب</button></div><div class="profile-form"><input class="field" id="profileNameInput" placeholder="اسم العرض"><button class="primary" id="saveProfileBtn" type="button">حفظ الاسم</button></div></div>
- <div class="profile-box"><strong>قوائمي الخاصة</strong><p>أنشئ قوائمك واحفظ قنواتك المفضلة بحسابك.</p><div class="list-controls"><input class="field" id="newListName" placeholder="اسم القائمة الجديدة"><button class="primary" id="createListBtn" type="button">إنشاء قائمة</button></div><div id="userLists" class="list-row"></div></div>
-</section>
-<section class="wrap section" id="features"><div class="section-head"><div><h2>مركز VELNIX</h2><p>ميزات إضافية للمشاهدة والحساب</p></div></div>
- <div class="feature-grid">
-  <article class="feature-card"><div class="feature-icon">⚽</div><h3>مواعيد ونتائج المباريات</h3><p>نتائج ومواعيد مباشرة من لوحة ESPN العامة. قد تتغير واجهة المزود لأنها غير رسمية.</p><select class="field" id="sportsLeague"><option value="soccer/eng.1">الدوري الإنجليزي</option><option value="soccer/uefa.champions">دوري أبطال أوروبا</option><option value="basketball/nba">NBA</option><option value="football/nfl">NFL</option><option value="baseball/mlb">MLB</option><option value="hockey/nhl">NHL</option></select><div id="sportsScores" class="channel-status">جارٍ تحميل المباريات…</div><button class="list-chip" id="refreshSports" type="button">تحديث النتائج</button></article>
-  <article class="feature-card"><div class="feature-icon">✦</div><h3>مساعد VELNIX</h3><p>مساعد دعم إرشادي لمشاكل الدخول والتشغيل والبحث. ربط نموذج ذكاء اصطناعي يحتاج مفتاح API خادمي.</p><button class="list-chip" id="assistantCardOpen" type="button">فتح المساعد</button></article>
-  <article class="feature-card"><div class="feature-icon">🔔</div><h3>تنبيهات البرامج والمباريات</h3><p>التنبيهات الفورية بالخلفية تتطلب إعداد Push/VAPID وخدمة إشعارات مستقلة.</p><span class="feature-state">يتطلب إعداد خدمة الإشعارات</span></article>
- </div>
-</section>
-<section class="wrap section" id="adminSection" hidden><div class="section-head"><div><h2>مركز إدارة VELNIX</h2><p>إدارة القنوات والشعارات ومراجعة الدليل</p></div></div><div class="admin-panel">
- <div class="admin-metrics"><div><b id="adminChannelCount">—</b><span>قناة فعالة</span></div><div><b id="adminLogoCount">—</b><span>بشعار</span></div><div><b id="adminNoLogoCount">—</b><span>بدون شعار</span></div><div><b id="adminDuplicateCount">—</b><span>مجموعات مكررة</span></div></div>
- <div class="list-row"><strong>إضافة أو تعديل قناة</strong><select class="field" id="adminChannelSelect"><option value="">قناة جديدة</option></select></div>
- <div class="admin-form"><input class="field" id="adminNameAr" placeholder="اسم القناة بالعربي"><input class="field" id="adminNameEn" placeholder="Channel name"><input class="field" id="adminLogoUrl" placeholder="رابط الشعار HTTPS"><input class="field" id="adminStreamUrl" placeholder="رابط البث (اختياري)"><input class="field" id="adminCountry" placeholder="رمز الدولة: IQ"><input class="field" id="adminLanguage" placeholder="رمز اللغة: ar"><select class="field" id="adminCategory"><option value="">بدون تصنيف</option></select><select class="field" id="adminStreamType"><option value="hls">HLS</option><option value="dash">DASH</option><option value="file">MPEG-TS / File</option><option value="embed">Embed</option></select></div>
- <div class="list-controls"><button class="primary" id="adminSaveChannel" type="button">حفظ القناة</button><button class="secondary" id="adminDeactivateChannel" type="button">إيقاف القناة</button><button class="secondary" id="adminTestStream" type="button">فحص مصدر البث</button><button class="secondary" id="adminEnrichCatalog" type="button">مطابقة شعارات وبيانات القنوات</button><button class="secondary" id="xtreamImportBtn" type="button">استيراد Xtream</button><span id="importStatus"></span></div>
- <div class="profile-box" style="margin-top:18px"><strong>إدارة الأقسام والتصنيفات</strong><div class="admin-form"><select class="field" id="adminCategoryEditSelect"><option value="">قسم جديد</option></select><input class="field" id="adminCategorySlug" placeholder="slug مثل iraq-tv"><input class="field" id="adminCategoryNameAr" placeholder="اسم القسم بالعربي"><input class="field" id="adminCategoryNameEn" placeholder="Category name"><input class="field" id="adminCategoryOrder" type="number" value="0" placeholder="ترتيب العرض"></div><button class="secondary" id="adminSaveCategory" type="button">حفظ القسم</button></div>
-  <strong>تحديث الشعارات جماعياً</strong><p class="channel-status">كل سطر: UUID القناة,رابط الشعار HTTPS — حتى 100 سطر.</p><textarea class="admin-bulk" id="bulkLogoInput" placeholder="channel-uuid,https://example.com/logo.png"></textarea><button class="secondary" id="bulkLogoBtn" type="button">تحديث الشعارات</button><p id="adminStatus" class="channel-status"></p>
-</div></section>
-<section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="دليل قنوات منظم، مشاهدة مباشرة، قوائم شخصية، معلومات البرامج، وميزات إدارة متقدمة — ضمن تجربة VELNIX." data-en="An organized channel guide, live playback, personal lists, programme information and advanced administration in one VELNIX experience.">دليل قنوات منظم، مشاهدة مباشرة، قوائم شخصية، معلومات البرامج، وميزات إدارة متقدمة — ضمن تجربة VELNIX.</p></div><div class="note-icon">✦</div></div></section>
+<section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية." data-en="This is the foundation of the experience. Accounts, channel sources and live playback will be enabled as the backend is configured.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
-<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap"><video id="liveVideo" controls playsinline preload="auto"></video></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="epg-box"><div class="epg-item"><small>الآن</small><strong id="epgNow">جارٍ تحميل معلومات البرنامج…</strong></div><div class="epg-item"><small>التالي</small><strong id="epgNext">—</strong></div></div><div class="player-actions"><button id="prevChannel" type="button">⏮ السابق</button><button id="nextChannel" type="button">التالي ⏭</button><button id="pipBtn" type="button">▣ صورة داخل صورة</button><button id="shareChannelBtn" type="button">↗ مشاركة القناة</button><button id="qrChannelBtn" type="button">▦ QR</button><button id="remindProgramBtn" type="button">🔔 ذكّرني بالبرنامج</button><select class="field" id="playerListSelect" hidden style="width:auto;margin:0;max-width:160px"><option value="">اختر قائمة</option></select><button id="addToListBtn" hidden type="button">＋ أضف للقائمة</button></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
-<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">إدارة VELNIX</h2><p id="authIntro">دخول المدير فقط. المشاهدة متاحة للجميع دون حساب.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links" hidden><button type="button" id="authSwitch" hidden>إنشاء حساب جديد</button><button type="button" id="forgotPassword" hidden>نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap"><video id="liveVideo" controls playsinline preload="auto"></video></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
+<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script>
 /* Keep the sign-in dialog usable even if a third-party module fails to load. */
 (()=>{
@@ -154,7 +124,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
    event.preventDefault();
    const status=document.getElementById('authMessage');
    if(status){
-    status.textContent='تعذر تهيئة واجهة تسجيل الدخول: '+(window.__VELNIX_AUTH_LOAD_ERROR__||'تحقق من الاتصال بالإنترنت أو حظر مصادر CDN')+'. جرّب شبكة أخرى أو أوقف مانع المحتوى ثم حدّث الصفحة.';
+    status.textContent='تعذر تحميل مكتبة تسجيل الدخول: '+(window.__VELNIX_AUTH_LOAD_ERROR__||'تحقق من الاتصال بالإنترنت أو حظر مصادر CDN')+'. جرّب شبكة أخرى أو أوقف مانع المحتوى ثم حدّث الصفحة.';
     status.classList.add('error');
    }
   }
@@ -162,103 +132,34 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
  const closeButton=document.getElementById('closeModal');
  if(closeButton)closeButton.addEventListener('click',close);
  if(modal)modal.addEventListener('click',event=>{if(event.target===modal)close()});
- window.addEventListener('error',event=>{if(!window.__VELNIX_AUTH_READY__)window.__VELNIX_AUTH_LOAD_ERROR__=(event.message||'JavaScript error')+' (line '+(event.lineno||'?')+')'});
  document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
 })();
 </script>
-<script>
+<script type="module">
 (()=>{
 const API='https://shungcjflcjwubdlhyzq.supabase.co';
 const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
 let lang='ar',channelRows=[];
-let authSession=null,authMode='login',userLists=[],activeListId=null,adminCategories=[];try{authSession=JSON.parse(localStorage.getItem('velnix:auth')||'null');if(authSession?.user?.app_metadata?.role!=='admin'){authSession=null;localStorage.removeItem('velnix:auth')}}catch(e){authSession=null;localStorage.removeItem('velnix:auth')}
 const $=(s,r=document)=>r.querySelector(s);
 const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
-let hlsInstance=null,mpegtsPlayer=null,dashPlayer=null,Hls=null,mpegts=null;
+let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
 async function rest(path){
- const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Authorization':'Bearer '+(authSession?.access_token||KEY),'Accept':'application/json'}});
+ const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Accept':'application/json'}});
  if(!response.ok)throw new Error('Catalog request failed: HTTP '+response.status);
  return response.json();
 }
 async function gateway(body){
- const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Authorization':'Bearer '+(authSession?.access_token||KEY),'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
-}
-
-async function restWrite(path,method,body,prefer='return=minimal'){
- const r=await fetch(API+'/rest/v1/'+path,{method,headers:{...headers,'Authorization':'Bearer '+(authSession?.access_token||KEY),'Content-Type':'application/json','Prefer':prefer},body:body===undefined?undefined:JSON.stringify(body)});
- if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.message||d.error||'Database update failed ('+r.status+')')}
- return r.status===204?null:r.json().catch(()=>null);
-}
-async function authRequest(path,body,method='POST'){
- const r=await fetch(API+'/auth/v1/'+path,{method,headers:{apikey:KEY,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
- const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||'Authentication failed');return d;
-}
-function saveSession(d){if(d?.access_token){authSession={access_token:d.access_token,refresh_token:d.refresh_token,user:d.user||authSession?.user,expires_at:Date.now()+(Number(d.expires_in)||3600)*1000};localStorage.setItem('velnix:auth',JSON.stringify(authSession))}}
-async function ensureSession(){
- if(!authSession?.access_token)return false;
- if(authSession.expires_at<Date.now()+60000&&authSession.refresh_token){try{saveSession(await authRequest('token?grant_type=refresh_token',{refresh_token:authSession.refresh_token}))}catch(e){authSession=null;localStorage.removeItem('velnix:auth');renderAuth();return false}}
- return !!authSession?.access_token;
-}
-function authMessage(t,error=false){$('#authMessage').textContent=t;$('#authMessage').classList.toggle('error',error)}
-function openAuth(){const m=$('#authModal');m.hidden=false;m.classList.add('show')}
-function renderAuth(){
- const admin=!!authSession?.user&&authSession.user.app_metadata?.role==='admin';
- $('#loginBtn').hidden=true;$('#heroLogin').hidden=true;
- $('#authForm').hidden=admin;$('#accountPanel').hidden=true;document.querySelector('.auth-links').hidden=true;
- $('#accountSection').hidden=true;$('#adminSection').hidden=!admin;
- if(admin)adminDashboard();
-}
-async function accountData(){
- if(!await ensureSession())return;renderAuth();const uid=authSession.user.id;
- try{
-  const [p,sub]=await Promise.all([rest('profiles?select=display_name&id=eq.'+encodeURIComponent(uid)+'&limit=1'),rest('subscriptions?select=plan_code,status,expires_at&user_id=eq.'+encodeURIComponent(uid)+'&order=created_at.desc&limit=1')]);
-  $('#profileEmail').textContent=authSession.user.email||'';$('#profileNameInput').value=p[0]?.display_name||authSession.user.user_metadata?.display_name||'';
-  $('#subscriptionStatus').textContent=sub[0]?'الاشتراك: '+sub[0].plan_code+' — '+sub[0].status:'الاشتراك: لا يوجد اشتراك مسجل';
-  $('#subscriptionExpiry').textContent=sub[0]?.expires_at?'ينتهي في: '+new Date(sub[0].expires_at).toLocaleString('ar-IQ'):'تاريخ الانتهاء: —';
- }catch(e){console.warn(e)}
- await syncFavorites();await loadLists();
-}
-async function syncFavorites(){
- if(!await ensureSession())return;const uid=authSession.user.id;
- try{const remote=await rest('favorites?select=channel_id&user_id=eq.'+encodeURIComponent(uid));const old=[...favorites];if(old.length)await restWrite('favorites','POST',old.map(channel_id=>({user_id:uid,channel_id})),'resolution=merge-duplicates,return=minimal');favorites=new Set([...remote.map(x=>x.channel_id),...old]);localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]));renderChannels()}catch(e){console.warn('Favorite sync',e)}
-}
-async function persistFavorite(id,on){
- if(!await ensureSession())return;const uid=authSession.user.id;
- try{if(on)await restWrite('favorites','POST',{user_id:uid,channel_id:id},'resolution=merge-duplicates,return=minimal');else await restWrite('favorites?user_id=eq.'+encodeURIComponent(uid)+'&channel_id=eq.'+encodeURIComponent(id),'DELETE')}catch(e){console.warn(e)}
-}
-async function loadLists(){
- if(!await ensureSession())return;
- try{userLists=await rest('user_channel_lists?select=id,name,channel_ids,updated_at&order=updated_at.desc');renderLists()}catch(e){console.warn(e)}
-}
-function renderLists(){
- const host=$('#userLists'),sel=$('#playerListSelect');host.replaceChildren();sel.innerHTML='<option value="">اختر قائمة</option>';
- userLists.forEach(l=>{const wrap=document.createElement('div');wrap.className='list-row';const b=document.createElement('button');b.type='button';b.className='list-chip'+(activeListId===l.id?' active':'');b.textContent=l.name+' ('+(l.channel_ids||[]).length+')';b.onclick=()=>{activeListId=activeListId===l.id?null:l.id;catalogMode=activeListId?'list':'all';visibleLimit=90;renderLists();renderChannels()};const del=document.createElement('button');del.type='button';del.className='list-chip';del.textContent='حذف';del.onclick=async()=>{if(!confirm('حذف القائمة '+l.name+'؟'))return;try{await restWrite('user_channel_lists?id=eq.'+encodeURIComponent(l.id),'DELETE');if(activeListId===l.id){activeListId=null;catalogMode='all'}await loadLists();renderChannels()}catch(e){alert(e.message)}};wrap.append(b,del);host.append(wrap);const o=document.createElement('option');o.value=l.id;o.textContent=l.name;sel.append(o)});
- if(!userLists.length){const p=document.createElement('p');p.className='channel-status';p.textContent='لا توجد قوائم بعد.';host.append(p)}
-}
-async function createList(){
- if(!await ensureSession()){openAuth();authMessage('سجّل الدخول لحفظ قوائمك.',true);return}
- const name=$('#newListName').value.trim();if(!name)return;
- try{await restWrite('user_channel_lists','POST',{user_id:authSession.user.id,name,channel_ids:[]});$('#newListName').value='';await loadLists()}catch(e){alert(e.message)}
-}
-async function addToList(){
- const id=$('#playerListSelect').value;if(!id||!activeRow)return;
- const l=userLists.find(x=>x.id===id);if(!l)return;const ids=[...new Set([...(l.channel_ids||[]),activeRow.id])];
- try{await restWrite('user_channel_lists?id=eq.'+encodeURIComponent(id),'PATCH',{channel_ids:ids,updated_at:new Date().toISOString()});await loadLists();state('تمت إضافة القناة إلى القائمة.')}catch(e){state(e.message)}
-}
-async function saveProfile(){
- if(!await ensureSession())return;const name=$('#profileNameInput').value.trim();if(!name)return;
- try{const u=await authRequest('user',{data:{...(authSession.user.user_metadata||{}),display_name:name}},'PUT');authSession.user=u;localStorage.setItem('velnix:auth',JSON.stringify(authSession));await restWrite('profiles?id=eq.'+encodeURIComponent(u.id),'PATCH',{display_name:name,updated_at:new Date().toISOString()});alert('تم حفظ الاسم.')}catch(e){alert(e.message)}
 }
 let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
- if(dashPlayer){try{dashPlayer.reset()}catch(e){}dashPlayer=null}
 }
 function stopPlayback(){
  playbackGeneration++;activeRow=null;recovering=false;retryCount=0;
@@ -313,7 +214,7 @@ async function startPlayback(row,generation,reason='initial'){
    const instance=hlsInstance;
    instance.on(Hls.Events.MANIFEST_PARSED,()=>{
     if(generation!==playbackGeneration||instance!==hlsInstance)return;
-    qualities();const savedQuality=localStorage.getItem('velnix:quality');if(savedQuality!==null&&Number(savedQuality)>=0&&Number(savedQuality)<instance.levels.length){qualitySelect.value=savedQuality;instance.currentLevel=Number(savedQuality)}state(lang==='ar'?'البث جاهز؛ تتم مراقبة الاتصال تلقائياً.':'Stream ready; connection recovery is enabled.');
+    qualities();state(lang==='ar'?'البث جاهز؛ تتم مراقبة الاتصال تلقائياً.':'Stream ready; connection recovery is enabled.');
     video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
    });
    instance.on(Hls.Events.ERROR,(_e,d)=>{
@@ -347,22 +248,13 @@ async function startPlayback(row,generation,reason='initial'){
   instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ إعادة الاتصال التلقائية مفعّلة.':'Connected; automatic recovery enabled.')}).catch(e=>{if(generation===playbackGeneration)state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
   return;
  }
- if(type==='dash'){
-  const mod=await import('https://esm.sh/dashjs@5.0.3');
-  if(generation!==playbackGeneration)return;
-  const dash=mod.default||mod;
-  dashPlayer=dash.MediaPlayer().create();
-  dashPlayer.initialize(video,url,true);
-  state(lang==='ar'?'مشغل DASH التكيفي جاهز.':'Adaptive DASH player ready.');
-  return;
- }
  video.src=url;await video.play().catch(()=>{});
 }
 async function playChannel(row){
  stopPlayback();activeRow=row;const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
  retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();
- const id=row.id;localStorage.setItem('velnix:lastChannel',id);recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){};loadEpg(row);
+ const id=row.id;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}
  try{await startPlayback(row,generation,'initial')}
  catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
 }
@@ -423,23 +315,22 @@ function initialsFor(name){
 function renderChannels(){
  const grid=$('#channelsGrid');grid.replaceChildren();
  const active=$('#filters .filter.active')?.dataset.cat||'all';
- const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();const sub=$('#subcategoryFilter')?.value||'',country=$('#countryFilter')?.value||'',language=$('#languageFilter')?.value||'';
+ const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
  let rows=channelRows.filter(r=>{
-  const category=categoryFor(r),catOk=(active==='all'||category===active)&&(!sub||r.channel_categories?.slug===sub)&&(!country||r.country_code===country)&&(!language||r.language_code===language);
+  const category=categoryFor(r),catOk=active==='all'||category===active;
   const name=(String(r.name_ar||'')+' '+String(r.name_en||'')+' '+cleanChannelName(r.name_en)+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
   const searchOk=!q||name.includes(q);
-  const list=userLists.find(x=>x.id===activeListId);const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):catalogMode==='recent'?recentChannels.includes(r.id):!!list&&(list.channel_ids||[]).includes(r.id));
+  const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):recentChannels.includes(r.id));
   return catOk&&searchOk&&modeOk;
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
- if(catalogMode==='recent'||$('#channelSort')?.value==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
- else if($('#channelSort')?.value==='favorites')rows.sort((a,b)=>Number(favorites.has(b.id))-Number(favorites.has(a.id))||collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
+ if(catalogMode==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
  else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  rows.slice(0,visibleLimit).forEach(row=>{
   const card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
   const name=displayName(row),cat=categoryFor(row),meta=CATEGORY_META[cat];
   const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(favorites.has(row.id)?' active':'');fav.textContent=favorites.has(row.id)?'★':'☆';fav.setAttribute('aria-label',lang==='ar'?'إضافة أو إزالة من المفضلة':'Toggle favorite');
-  fav.addEventListener('click',e=>{e.stopPropagation();const on=!favorites.has(row.id);if(on)favorites.add(row.id);else favorites.delete(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}persistFavorite(row.id,on);renderChannels()});
+  fav.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(row.id))favorites.delete(row.id);else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
   const logo=document.createElement('div');logo.className='channel-logo';
   const fallback=document.createElement('span');fallback.className='channel-logo-fallback';fallback.textContent=initialsFor(name);logo.append(fallback);
   if(row.logo_url){
@@ -467,95 +358,12 @@ async function loadChannels(){
  try{
   const all=[];
   for(let offset=0;offset<10000;offset+=500){
-   const rows=await rest('channels?select=id,category_id,source_external_id,country_code,language_code,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
+   const rows=await rest('channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
    all.push(...rows);if(rows.length<500)break;
   }
-  channelRows=all;const sub=$('#subcategoryFilter');const cats=new Map();all.forEach(r=>{const c=r.channel_categories;if(c?.slug)cats.set(c.slug,lang==='ar'?(c.name_ar||c.name_en):(c.name_en||c.name_ar))});cats.forEach((name,slug)=>{const o=document.createElement('option');o.value=slug;o.textContent=name;sub.append(o)});const fillMeta=(id,key)=>{const el=$(id),values=[...new Set(all.map(x=>x[key]).filter(Boolean))].sort();el.innerHTML=key==='country_code'?'<option value="">كل الدول</option>':'<option value="">كل اللغات</option>';values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v.toUpperCase();el.append(o)})};fillMeta('#countryFilter','country_code');fillMeta('#languageFilter','language_code');const last=localStorage.getItem('velnix:lastChannel');if(last){const r=all.find(x=>x.id===last);if(r){$('#resumeLastBtn').hidden=false;$('#resumeLastBtn').textContent='▶ استئناف: '+displayName(r);$('#resumeLastBtn').onclick=()=>playChannel(r)}}renderChannels();if(authSession?.user?.app_metadata?.role==='admin')adminDashboard();
+  channelRows=all;renderChannels();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
-}
-
-async function loadEpg(row){
- const id=row.source_external_id;if(!id){$('#epgNow').textContent='لا تتوفر بيانات EPG لهذه القناة';return}
- try{const d=await gateway({action:'epg',stream_id:id}),a=d.epg_listings||[];const dec=v=>{try{return decodeURIComponent(escape(atob(v||'')))}catch(e){return v||''}};$('#epgNow').textContent=a[0]?dec(a[0].title||a[0].name||'برنامج غير محدد'):'لا توجد بيانات للبرنامج الحالي';$('#epgNext').textContent=a[1]?dec(a[1].title||a[1].name||'برنامج غير محدد'):'لا توجد بيانات للبرنامج التالي';window.__velnixNextProgram=a[1]||null}catch(e){$('#epgNow').textContent='بيانات EPG غير متاحة حالياً';$('#epgNext').textContent='—'}
-}
-function adjacent(step){if(!activeRow)return;const i=channelRows.findIndex(x=>x.id===activeRow.id),r=channelRows[i+step];if(r)playChannel(r)}
-async function shareChannel(){if(!activeRow)return;const u=new URL(location.href);u.searchParams.set('channel',activeRow.id);try{if(navigator.share)await navigator.share({title:'VELNIX — '+displayName(activeRow),url:u.toString()});else{await navigator.clipboard.writeText(u.toString());state('تم نسخ رابط القناة.')}}catch(e){}}
-async function pip(){try{if(document.pictureInPictureElement)await document.exitPictureInPicture();else if(document.pictureInPictureEnabled&&video.requestPictureInPicture)await video.requestPictureInPicture();else state('المتصفح لا يدعم صورة داخل صورة.')}catch(e){state('تعذر تشغيل صورة داخل صورة.')}}
-function assistantReply(q){const t=q.toLowerCase();if(/دخول|تسجيل|حساب|login/.test(t))return 'افتح تسجيل الدخول، أدخل البريد وكلمة المرور. إذا نسيت كلمة المرور استخدم رابط الاستعادة. إذا ظهر خطأ أرسل نصه.';if(/توقف|يقطع|بث|تشغيل|قناة|buffer/.test(t))return 'اضغط إعادة الاتصال، اترك الجودة تلقائي، وجرب قناة أخرى. بعض التوقفات مصدرها مزود البث نفسه. أرسل اسم القناة ووقت التوقف للتشخيص.';if(/مفضلة|قائمة|favorite/.test(t))return 'اضغط النجمة على القناة. بعد تسجيل الدخول تتم مزامنة المفضلة، وتقدر تنشئ قوائم خاصة من حسابي.';if(/برنامج|epg|جدول/.test(t))return 'يعرض المشغل البرنامج الحالي والقادم إذا كان مزود Xtream يوفّر بيانات EPG للقناة.';return 'أكدر أساعدك بمشاكل الدخول، تشغيل القنوات، المفضلة، القوائم وبيانات EPG. اكتب اسم القناة أو نص الخطأ.'}
-function assistantMsg(t,user=false){const d=document.createElement('div');d.className='assistant-msg'+(user?' user':'');d.textContent=t;$('#assistantLog').append(d);$('#assistantLog').scrollTop=$('#assistantLog').scrollHeight}
-
-async 
-function showChannelQr(){
- if(!activeRow)return;const u=new URL(location.href);u.searchParams.set('channel',activeRow.id);
- $('#channelQrImage').src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(u.toString());
- $('#qrChannelLabel').textContent=displayName(activeRow);$('#qrModal').classList.add('show');
-}
-let deferredInstallPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;$('#installBtn').hidden=false});
-window.addEventListener('appinstalled',()=>{$('#installBtn').hidden=true;deferredInstallPrompt=null});
-$('#installBtn').addEventListener('click',async()=>{if(!deferredInstallPrompt){alert('إذا لم يظهر خيار التثبيت، افتح قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.');return}deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;$('#installBtn').hidden=true});
-$('#qrChannelBtn').addEventListener('click',showChannelQr);$('#qrClose').addEventListener('click',()=>$('#qrModal').classList.remove('show'));$('#qrModal').addEventListener('click',e=>{if(e.target===$('#qrModal'))$('#qrModal').classList.remove('show')});
-async function loadSports(){
- const value=$('#sportsLeague').value.split('/'),sport=value[0],league=value[1];const host=$('#sportsScores');host.textContent='جارٍ جلب النتائج…';
- try{
-  const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+encodeURIComponent(sport)+'/'+encodeURIComponent(league)+'/scoreboard');
-  if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json(),events=data.events||[];host.replaceChildren();
-  if(!events.length){host.textContent='لا توجد مباريات مدرجة حالياً لهذا الدوري.';return}
-  events.slice(0,8).forEach(event=>{
-   const comp=event.competitions?.[0],teams=comp?.competitors||[],away=teams.find(x=>x.homeAway==='away'),home=teams.find(x=>x.homeAway==='home');
-   const box=document.createElement('div');box.className='epg-item';const title=document.createElement('strong');title.textContent=(away?.team?.displayName||'—')+'  '+(away?.score||'')+'  —  '+(home?.score||'')+'  '+(home?.team?.displayName||'—');
-   const sub=document.createElement('span');sub.textContent=(event.status?.type?.shortDetail||'')+' · '+new Date(event.date).toLocaleString('ar-IQ');box.append(title,sub);host.append(box);
-  });
- }catch(e){host.textContent='تعذر تحميل النتائج الآن. حاول التحديث لاحقاً.'}
-}
-function remindNextProgram(){
- const item=window.__velnixNextProgram;if(!item){state('لا تتوفر بيانات للبرنامج القادم على هذه القناة.');return}
- if(!('Notification'in window)){state('هذا المتصفح لا يدعم إشعارات البرامج.');return}
- const ask=Notification.permission==='default'?Notification.requestPermission():Promise.resolve(Notification.permission);
- ask.then(permission=>{
-  if(permission!=='granted'){state('لم يتم السماح بالإشعارات.');return}
-  let start=Number(item.start_timestamp||item.startTime||0);if(start&&start<1000000000000)start*=1000;if(!start&&item.start)start=new Date(item.start).getTime();
-  const delay=start-Date.now();if(!Number.isFinite(delay)||delay<=0){state('موعد البرنامج غير صالح أو بدأ بالفعل.');return}
-  clearTimeout(window.__velnixReminderTimer);window.__velnixReminderTimer=setTimeout(()=>new Notification('VELNIX — تذكير بالبرنامج',{body:item.title||item.name||'البرنامج القادم'}),Math.min(delay,2147480000));
-  state('تم ضبط التذكير. اترك صفحة VELNIX مفتوحة حتى موعد البرنامج.');
- });
-}
-async function adminEnrichCatalog(){
- if(!confirm('سيتم جلب بيانات عامة ومطابقة أسماء القنوات بشكل دقيق فقط. ستُملأ الشعارات والدول واللغات الفارغة، ولن تتغير مصادر البث أو الشعارات الموجودة. متابعة؟'))return;
- $('#adminStatus').textContent='جارٍ جلب بيانات المطابقة العامة… قد تستغرق العملية بعض الوقت.';
- try{const d=await gateway({action:'admin_enrich_catalog'});$('#adminStatus').textContent='اكتملت المطابقة: '+d.matched+' قناة تم إثراؤها من '+d.scanned+' قناة. الشعارات العامة المتاحة: '+d.logos_available+' · أسماء ملتبسة تم تجاوزها: '+d.ambiguous+'.';await loadChannels();await adminDashboard()}catch(e){$('#adminStatus').textContent='تعذر إكمال المطابقة: '+e.message}
-}
-async function adminTestStream(){
- const id=$('#adminChannelSelect').value;if(!id){$('#adminStatus').textContent='اختر قناة أولاً.';return}
- $('#adminStatus').textContent='جارٍ فحص مصدر البث…';
- try{const d=await gateway({action:'admin_test_stream',channel_id:id});$('#adminStatus').textContent=d.success?'المصدر يستجيب — HTTP '+d.status+' · '+d.latency_ms+'ms':'فشل الفحص: '+(d.message||'مصدر البث لا يستجيب')+(d.status?' · HTTP '+d.status:'')}catch(e){$('#adminStatus').textContent=e.message}
-}
-async function adminDashboard(){
- const n=channelRows.length,l=channelRows.filter(x=>x.logo_url).length,m=new Map();channelRows.forEach(x=>{const k=String(x.name_en||x.name_ar||'').trim().toLowerCase();m.set(k,(m.get(k)||0)+1)});
- $('#adminChannelCount').textContent=n.toLocaleString();$('#adminLogoCount').textContent=l.toLocaleString();$('#adminNoLogoCount').textContent=(n-l).toLocaleString();$('#adminDuplicateCount').textContent=[...m.values()].filter(x=>x>1).length.toLocaleString();
- const sel=$('#adminChannelSelect');if(sel.options.length===1)channelRows.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=displayName(r);sel.append(o)});
- try{
-  adminCategories=await rest('channel_categories?select=id,slug,name_ar,name_en,sort_order&is_active=eq.true&order=sort_order.asc');
-  const c=$('#adminCategory');c.innerHTML='<option value="">بدون تصنيف</option>';
-  const edit=$('#adminCategoryEditSelect');edit.innerHTML='<option value="">قسم جديد</option>';
-  adminCategories.forEach(x=>{const a=document.createElement('option');a.value=x.id;a.textContent=x.name_ar||x.name_en;c.append(a);const b=document.createElement('option');b.value=x.id;b.textContent=x.name_ar||x.name_en;edit.append(b)});
- }catch(e){console.warn('Could not load category admin data',e)}
-}
-
-async function adminSaveCategory(){
- try{const d=await gateway({action:'admin_save_category',category_id:$('#adminCategoryEditSelect').value,slug:$('#adminCategorySlug').value,name_ar:$('#adminCategoryNameAr').value,name_en:$('#adminCategoryNameEn').value,sort_order:Number($('#adminCategoryOrder').value||0)});$('#adminStatus').textContent='تم حفظ القسم: '+d.category_id;await adminDashboard();await loadChannels()}catch(e){$('#adminStatus').textContent=e.message}
-}
-async function adminSave(){
- try{const d=await gateway({action:'admin_save_channel',channel_id:$('#adminChannelSelect').value,name_ar:$('#adminNameAr').value,name_en:$('#adminNameEn').value,logo_url:$('#adminLogoUrl').value,stream_url:$('#adminStreamUrl').value,category_id:$('#adminCategory').value,country_code:$('#adminCountry').value,language_code:$('#adminLanguage').value,stream_type:$('#adminStreamType').value});$('#adminStatus').textContent='تم الحفظ: '+d.channel_id;await loadChannels();adminDashboard()}catch(e){$('#adminStatus').textContent=e.message}
-}
-async function adminDisable(){
- const id=$('#adminChannelSelect').value;if(!id||!confirm('تأكيد إيقاف القناة؟ لن يتم حذفها.'))return;
- try{await gateway({action:'admin_deactivate_channel',channel_id:id});$('#adminStatus').textContent='تم إيقاف القناة.';await loadChannels()}catch(e){$('#adminStatus').textContent=e.message}
-}
-async function adminLogos(){
- const rows=$('#bulkLogoInput').value.split(/\r?\n/).map(x=>x.split(',')).filter(x=>x.length>=2).map(x=>({channel_id:x[0].trim(),logo_url:x.slice(1).join(',').trim()})).slice(0,100);
- try{const d=await gateway({action:'admin_bulk_logos',rows});$('#adminStatus').textContent='تم تحديث '+d.updated+' شعار.';await loadChannels()}catch(e){$('#adminStatus').textContent=e.message}
 }
 $('#langBtn').addEventListener('click',()=>{
  lang=lang==='ar'?'en':'ar';document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';$('#langBtn').textContent=lang==='ar'?'EN':'عربي';
@@ -563,79 +371,17 @@ $('#langBtn').addEventListener('click',()=>{
 });
 $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
-$('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});$('#subcategoryFilter').addEventListener('change',()=>{visibleLimit=90;renderChannels()});$('#countryFilter').addEventListener('change',renderChannels);$('#languageFilter').addEventListener('change',renderChannels);$('#channelSort').addEventListener('change',renderChannels);
+$('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
 $('#loadMoreChannels').addEventListener('click',()=>{visibleLimit+=90;renderChannels()});
 $('#favoritesFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='favorites'?'all':'favorites';$('#favoritesFilter').classList.toggle('active',catalogMode==='favorites');$('#recentFilter').classList.remove('active');renderChannels()});
 $('#recentFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='recent'?'all':'recent';$('#recentFilter').classList.toggle('active',catalogMode==='recent');$('#favoritesFilter').classList.remove('active');renderChannels()});
 $('#playerRetry').addEventListener('click',()=>{if(!activeRow)return;if(retryTimer){clearTimeout(retryTimer);retryTimer=null}recovering=false;retryCount=0;userPaused=false;scheduleRecovery('Manual reconnect')});
 $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
-qualitySelect.addEventListener('change',()=>{localStorage.setItem('velnix:quality',qualitySelect.value);if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
+qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
-$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;$('#authModal').hidden=true;$('#displayName').hidden=true;$('#nameLabel').hidden=true;
-$('.brand').addEventListener('click',e=>{e.preventDefault();renderAuth();openAuth()});
-$('#authForm').addEventListener('submit',async e=>{e.preventDefault();authMessage('جارٍ التحقق من صلاحية المدير…');try{const d=await authRequest('token?grant_type=password',{email:$('#authEmail').value.trim(),password:$('#authPassword').value});if(!d.access_token||d.user?.app_metadata?.role!=='admin'){if(d.access_token)fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+d.access_token}}).catch(()=>{});authMessage('هذا الحساب غير مخوّل لإدارة VELNIX.',true);return}saveSession(d);renderAuth();authMessage('تم دخول المدير.');setTimeout(()=>$('#authModal').classList.remove('show'),700)}catch(err){authMessage(err.message,true)}});
-$('#authSwitch').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';$('#displayName').hidden=authMode!=='signup';$('#nameLabel').hidden=authMode!=='signup';$('#authSubmit').textContent=authMode==='signup'?'إنشاء الحساب':'تسجيل الدخول';$('#authSwitch').textContent=authMode==='signup'?'لدي حساب بالفعل':'إنشاء حساب جديد'});
-$('#forgotPassword').addEventListener('click',async()=>{const email=$('#authEmail').value.trim();if(!email){authMessage('أدخل بريدك الإلكتروني أولاً.',true);return}try{await authRequest('recover',{email,redirect_to:location.origin+location.pathname});authMessage('إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.')}catch(e){authMessage(e.message,true)}});
-window.__VELNIX_AUTH_READY__=true;
-$('#signOutBtn').addEventListener('click',async()=>{try{if(authSession?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+authSession.access_token}})}catch(e){}authSession=null;localStorage.removeItem('velnix:auth');renderAuth();$('#authModal').classList.remove('show')});
-$('#openAccountBtn').addEventListener('click',()=>openAuth());$('#saveProfileBtn').addEventListener('click',saveProfile);$('#createListBtn').addEventListener('click',createList);$('#addToListBtn').addEventListener('click',addToList);
-$('#prevChannel').addEventListener('click',()=>adjacent(-1));$('#nextChannel').addEventListener('click',()=>adjacent(1));$('#pipBtn').addEventListener('click',pip);$('#shareChannelBtn').addEventListener('click',shareChannel);
-const openAssistant=()=>$('#assistantWindow').classList.add('show');$('#assistantOpen').addEventListener('click',openAssistant);$('#assistantCardOpen').addEventListener('click',openAssistant);$('#assistantClose').addEventListener('click',()=>$('#assistantWindow').classList.remove('show'));$('#assistantWindow').addEventListener('click',e=>{if(e.target===$('#assistantWindow'))$('#assistantWindow').classList.remove('show')});
-$('#assistantForm').addEventListener('submit',async e=>{e.preventDefault();const q=$('#assistantInput').value.trim();if(!q)return;assistantMsg(q,true);$('#assistantInput').value='';assistantMsg(assistantReply(q));});
-$('#sportsLeague').addEventListener('change',loadSports);$('#refreshSports').addEventListener('click',loadSports);$('#remindProgramBtn').addEventListener('click',remindNextProgram);
-$('#themeBtn').addEventListener('click',()=>{document.body.classList.toggle('light');localStorage.setItem('velnix:theme',document.body.classList.contains('light')?'light':'dark')});if(localStorage.getItem('velnix:theme')==='light')document.body.classList.add('light');loadSports();setInterval(loadSports,120000);
-$('#adminChannelSelect').addEventListener('change',()=>{const r=channelRows.find(x=>x.id===$('#adminChannelSelect').value);if(r){$('#adminNameAr').value=r.name_ar||'';$('#adminNameEn').value=r.name_en||'';$('#adminLogoUrl').value=r.logo_url||'';$('#adminCategory').value=r.category_id||''}});
-$('#adminSaveCategory').addEventListener('click',adminSaveCategory);$('#adminCategoryEditSelect').addEventListener('change',()=>{const c=adminCategories.find(x=>x.id===$('#adminCategoryEditSelect').value);if(c){$('#adminCategorySlug').value=c.slug;$('#adminCategoryNameAr').value=c.name_ar;$('#adminCategoryNameEn').value=c.name_en;$('#adminCategoryOrder').value=c.sort_order||0}else{$('#adminCategorySlug').value='';$('#adminCategoryNameAr').value='';$('#adminCategoryNameEn').value='';$('#adminCategoryOrder').value=0}});$('#adminSaveChannel').addEventListener('click',adminSave);$('#adminDeactivateChannel').addEventListener('click',adminDisable);$('#bulkLogoBtn').addEventListener('click',adminLogos);$('#adminTestStream').addEventListener('click',adminTestStream);$('#adminEnrichCatalog').addEventListener('click',adminEnrichCatalog);
-$('#xtreamImportBtn').addEventListener('click',async()=>{$('#importStatus').textContent='جارٍ الاستيراد…';try{const d=await gateway({action:'import'});$('#importStatus').textContent='تم استيراد '+d.channels+' قناة.';await loadChannels()}catch(e){$('#importStatus').textContent=e.message}});
-renderAuth();loadChannels().then(()=>{const id=new URL(location.href).searchParams.get('channel');if(id){const r=channelRows.find(x=>x.id===id);if(r)playChannel(r)}});
-
-})();
-</script>
-<div class="assistant-window" id="qrModal" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>رمز مشاركة القناة</h2><button class="player-close" id="qrClose" type="button">×</button></div><p>امسح الرمز لفتح القناة على VELNIX.</p><img id="channelQrImage" alt="Channel QR code" style="display:block;width:220px;height:220px;max-width:100%;margin:18px auto;background:#fff;padding:8px;border-radius:12px"><p id="qrChannelLabel" style="text-align:center"></p></div></div><div class="assistant-window" id="assistantWindow" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>مساعد VELNIX</h2><button class="player-close" id="assistantClose" type="button">×</button></div><p>مساعد دعم إرشادي محلي، ولا يرسل بياناتك إلى خدمة خارجية.</p><div class="assistant-log" id="assistantLog"><div class="assistant-msg">أهلاً! اكتب مشكلتك بخصوص الدخول أو تشغيل القنوات أو البحث.</div></div><form class="assistant-form" id="assistantForm"><input class="field" id="assistantInput" placeholder="اكتب سؤالك..." required><button class="primary" type="submit">إرسال</button></form></div></div>
-<script>
-/* Independent REST fallback: sign-in does not depend on a third-party CDN bundle. */
-(()=>{
- const API='https://shungcjflcjwubdlhyzq.supabase.co';
- const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
- const $=id=>document.getElementById(id);
- const show=(message,error=false)=>{const el=$('authMessage');if(el){el.textContent=message;el.classList.toggle('error',error)}};
- let mode='login';
- async function request(path,body){
-  const r=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||('تعذر الاتصال بخدمة الحسابات ('+r.status+')'));
-  return d;
- }
- const form=$('authForm');
- if(!form||window.__VELNIX_AUTH_READY__===true)return;
- window.__VELNIX_AUTH_FALLBACK__=true;
- form.addEventListener('submit',async event=>{
-  event.preventDefault();
-  const email=$('authEmail')?.value.trim(),password=$('authPassword')?.value;
-  if(!email||!password){show('أدخل البريد الإلكتروني وكلمة المرور.',true);return}
-  show('جارٍ الاتصال بخدمة تسجيل الدخول…');
-  try{
-   const d=mode==='signup'?await request('signup',{email,password,data:{display_name:$('displayName')?.value.trim()||''}}):await request('token?grant_type=password',{email,password});
-   if(d.access_token){
-    localStorage.setItem('velnix:auth',JSON.stringify({access_token:d.access_token,refresh_token:d.refresh_token,user:d.user,expires_at:Date.now()+(Number(d.expires_in)||3600)*1000}));
-    show('تم تسجيل الدخول. جارٍ تحديث الحساب…');location.reload();
-   }else show('تم إنشاء الحساب. افحص بريدك الإلكتروني إذا كان تأكيد البريد مطلوباً.');
-  }catch(error){show(error.message||'تعذر تسجيل الدخول. حاول مرة أخرى.',true)}
- });
- $('authSwitch')?.addEventListener('click',()=>{
-  mode=mode==='login'?'signup':'login';
-  if($('displayName'))$('displayName').hidden=mode!=='signup';
-  if($('nameLabel'))$('nameLabel').hidden=mode!=='signup';
-  if($('authSubmit'))$('authSubmit').textContent=mode==='signup'?'إنشاء الحساب':'تسجيل الدخول';
-  $('authSwitch').textContent=mode==='signup'?'لدي حساب بالفعل':'إنشاء حساب جديد';
- });
- $('forgotPassword')?.addEventListener('click',async()=>{
-  const email=$('authEmail')?.value.trim();
-  if(!email){show('أدخل بريدك الإلكتروني أولاً.',true);return}
-  try{await request('recover',{email,redirect_to:location.origin+location.pathname});show('إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.')}
-  catch(error){show(error.message||'تعذر إرسال رابط الاستعادة.',true)}
- });
+$('#loginBtn').hidden=true;$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
+loadChannels();
 })();
 </script>
 </body></html>
