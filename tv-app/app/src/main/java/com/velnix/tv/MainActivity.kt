@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
+import androidx.tv.material3.Surface as TvSurface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import coil.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -260,7 +262,7 @@ private fun VelnixTvApp() {
 @Composable
 private fun CategoryPill(title: String, active: Boolean, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
-    Surface(
+    TvSurface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = when { active -> Accent; focused -> Color(0xFF23434A); else -> Color(0xFF152238) },
