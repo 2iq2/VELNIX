@@ -212,7 +212,7 @@ private fun VelnixTvApp() {
                         }
                     )
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { refresh() }) { Text("تحديث القنوات", color = Accent) }
+                    TextButton(onClick = { scope.launch { refresh() } }) { Text("تحديث القنوات", color = Accent) }
                 }
                 Spacer(Modifier.height(14.dp))
                 when {
