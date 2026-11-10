@@ -234,7 +234,7 @@ async function loadLists(){
 }
 function renderLists(){
  const host=$('#userLists'),sel=$('#playerListSelect');host.replaceChildren();sel.innerHTML='<option value="">اختر قائمة</option>';
- userLists.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='list-chip'+(activeListId===l.id?' active':'');b.textContent=l.name+' ('+(l.channel_ids||[]).length+')';b.onclick=()=>{activeListId=activeListId===l.id?null:l.id;catalogMode=activeListId?'list':'all';visibleLimit=90;renderLists();renderChannels()};host.append(b);const o=document.createElement('option');o.value=l.id;o.textContent=l.name;sel.append(o)});
+ userLists.forEach(l=>{const wrap=document.createElement('div');wrap.className='list-row';const b=document.createElement('button');b.type='button';b.className='list-chip'+(activeListId===l.id?' active':'');b.textContent=l.name+' ('+(l.channel_ids||[]).length+')';b.onclick=()=>{activeListId=activeListId===l.id?null:l.id;catalogMode=activeListId?'list':'all';visibleLimit=90;renderLists();renderChannels()};const del=document.createElement('button');del.type='button';del.className='list-chip';del.textContent='حذف';del.onclick=async()=>{if(!confirm('حذف القائمة '+l.name+'؟'))return;try{await restWrite('user_channel_lists?id=eq.'+encodeURIComponent(l.id),'DELETE');if(activeListId===l.id){activeListId=null;catalogMode='all'}await loadLists();renderChannels()}catch(e){alert(e.message)}};wrap.append(b,del);host.append(wrap);const o=document.createElement('option');o.value=l.id;o.textContent=l.name;sel.append(o)});
  if(!userLists.length){const p=document.createElement('p');p.className='channel-status';p.textContent='لا توجد قوائم بعد.';host.append(p)}
 }
 async function createList(){
