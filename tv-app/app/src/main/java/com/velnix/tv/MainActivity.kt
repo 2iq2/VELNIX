@@ -451,16 +451,21 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                if (currentRetryCount < 4) {
-                    retryCount = currentRetryCount + 1
-                    playbackError = "انقطع الاتصال، إعادة المحاولة ${currentRetryCount + 1}/4..."
-                    player.playWhenReady = false
-                } else {
-                    playbackError = "تعذر تشغيل القناة. جرّب قناة ثانية أو أعد المحاولة."
-                }
+                retryCount = currentRetryCount + 1
+                playbackError = "انقطع البث، جاري إعادة الاتصال..."
+                player.playWhenReady = false
             }
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) playbackError = null
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        retryCount = 0
+                        playbackError = null
+                    }
+                    Player.STATE_ENDED -> {
+                        retryCount = currentRetryCount + 1
+                        playbackError = "انتهى البث، جاري إعادة تشغيله..."
+                    }
+                }
             }
         }
         player.addListener(listener)
@@ -471,9 +476,12 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
     }
 
     LaunchedEffect(retryCount) {
-        if (retryCount in 1..4) {
-            delay((retryCount * 1500L).coerceAtMost(6000L))
-            playbackError = null
+        if (retryCount > 0) {
+            // Keep retrying indefinitely; back off to avoid hammering an unavailable stream.
+            val waitMs = (1000L shl (retryCount - 1).coerceAtMost(5)).coerceAtMost(30_000L)
+            delay(waitMs)
+            playbackError = "جاري إعادة الاتصال بالبث..."
+            player.seekToDefaultPosition()
             player.prepare()
             player.playWhenReady = true
         }
@@ -490,15 +498,6 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
                 update = { it.player = player },
                 modifier = Modifier.fillMaxSize()
             )
-            Row(
-                Modifier.align(Alignment.TopStart).fillMaxWidth().background(Color(0x99070B12)).padding(horizontal = 28.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("VELNIX  /  ", color = Accent, fontWeight = FontWeight.Black, fontSize = 17.sp)
-                Text(channel.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onClose) { Text("رجوع ✕", color = Color.White) }
-            }
             playbackError?.let {
                 Text(it, color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).padding(28.dp)
                     .background(Color(0xCC101827), RoundedCornerShape(10.dp)).padding(14.dp))
