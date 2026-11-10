@@ -105,7 +105,7 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 <button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button>
 <button class="filter" data-cat="world" data-ar="قنوات عالمية" data-en="World">قنوات عالمية</button>
 </div>
-<div class="admin-tools" id="adminTools" hidden><button class="filter" id="xtreamImportBtn" type="button">استيراد قنوات Xtream</button><span id="importStatus" role="status"></span></div>
+
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button>
 </section>
 
@@ -165,7 +165,8 @@ body.light{background:var(--bg);color:var(--text)}body.light header{background:r
 (()=>{
 const API='https://shungcjflcjwubdlhyzq.supabase.co';
 const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
-let lang='ar',channelRows=[];\nlet authSession=null,authMode='login',userLists=[],activeListId=null;try{authSession=JSON.parse(localStorage.getItem('velnix:auth')||'null')}catch(e){}
+let lang='ar',channelRows=[];
+let authSession=null,authMode='login',userLists=[],activeListId=null;try{authSession=JSON.parse(localStorage.getItem('velnix:auth')||'null')}catch(e){}
 const $=(s,r=document)=>r.querySelector(s);
 const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
 let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
