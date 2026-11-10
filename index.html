@@ -418,7 +418,8 @@ function renderChannels(){
   return catOk&&searchOk&&modeOk;
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
- if(catalogMode==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
+ if(catalogMode==='recent'||$('#channelSort')?.value==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
+ else if($('#channelSort')?.value==='favorites')rows.sort((a,b)=>Number(favorites.has(b.id))-Number(favorites.has(a.id))||collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  rows.slice(0,visibleLimit).forEach(row=>{
   const card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
