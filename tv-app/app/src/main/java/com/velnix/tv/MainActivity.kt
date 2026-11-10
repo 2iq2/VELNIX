@@ -11,10 +11,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
@@ -183,7 +181,7 @@ private fun VelnixTvApp() {
         )
     ) {
         Box(Modifier.fillMaxSize().background(Night)) {
-            Column(Modifier.fillMaxSize().padding(horizontal = 38.dp, vertical = 22.dp)) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 14.dp)) {
                 Row(
                     Modifier.fillMaxWidth().height(54.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -196,12 +194,10 @@ private fun VelnixTvApp() {
                     Spacer(Modifier.width(18.dp))
                     ActionChip("تحديث", refreshing) { scope.launch { refresh() } }
                 }
-                Spacer(Modifier.height(18.dp))
-                HeroPanel(channelCount = channels.size)
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                     Column(
-                        Modifier.width(205.dp).fillMaxHeight()
+                        Modifier.width(180.dp).fillMaxHeight()
                             .clip(RoundedCornerShape(22.dp)).background(Panel).padding(14.dp)
                     ) {
                         Text("التصفح", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -220,7 +216,7 @@ private fun VelnixTvApp() {
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         Row(
-                            Modifier.fillMaxWidth().height(52.dp),
+                            Modifier.fillMaxWidth().height(48.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
@@ -245,16 +241,19 @@ private fun VelnixTvApp() {
                             visibleChannels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text("ماكو قنوات بهالقسم", color = Muted, fontSize = 18.sp)
                             }
-                            else -> LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 205.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                contentPadding = PaddingValues(bottom = 22.dp),
+                            else -> LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                contentPadding = PaddingValues(top = 2.dp, bottom = 18.dp),
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                items(visibleChannels, key = { it.id }, contentType = { "channel" }) { channel ->
-                                    ChannelCard(
+                                itemsIndexed(
+                                    visibleChannels,
+                                    key = { _, channel -> channel.id },
+                                    contentType = { _, _ -> "channel-row" }
+                                ) { index, channel ->
+                                    ChannelListRow(
                                         channel = channel,
+                                        channelNumber = index + 1,
                                         favorite = favorites.contains(channel.id),
                                         onOpen = { selectedChannel = channel },
                                         onFavorite = {
@@ -360,8 +359,9 @@ private fun EmptyState(message: String, action: String, onAction: () -> Unit) {
 }
 
 @Composable
-private fun ChannelCard(
+private fun ChannelListRow(
     channel: TvChannel,
+    channelNumber: Int,
     favorite: Boolean,
     onOpen: () -> Unit,
     onFavorite: () -> Unit
@@ -370,49 +370,55 @@ private fun ChannelCard(
     val context = LocalContext.current
     val logoRequest = remember(channel.logo) {
         channel.logo?.let { url ->
-            ImageRequest.Builder(context).data(url).size(128, 128).crossfade(false).build()
+            ImageRequest.Builder(context).data(url).size(96, 96).crossfade(false).build()
         }
     }
     Row(
-        Modifier.height(104.dp).clip(RoundedCornerShape(17.dp))
+        Modifier.fillMaxWidth().height(68.dp).clip(RoundedCornerShape(9.dp))
             .background(if (focused) Color(0xFF203B4A) else Panel)
             .onFocusChanged { focused = it.isFocused }
-            .padding(start = 10.dp, end = 7.dp, top = 8.dp, bottom = 8.dp),
+            .clickable(onClick = onOpen).focusable()
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            Modifier.weight(1f).fillMaxHeight().clickable(onClick = onOpen).focusable()
-                .padding(start = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Text(
+            channelNumber.toString().padStart(2, '0'),
+            color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(34.dp)
+        )
+        Box(
+            Modifier.size(48.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF20334A)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier.size(62.dp).clip(RoundedCornerShape(13.dp)).background(Color(0xFF20334A)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (logoRequest != null) {
-                    AsyncImage(
-                        model = logoRequest, contentDescription = null, contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize().padding(6.dp)
-                    )
-                } else {
-                    Text(channel.name.take(2), color = Accent, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                }
-            }
-            Spacer(Modifier.width(11.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-                Text(channel.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(5.dp))
-                Text("● مباشر", color = Accent, fontSize = 10.sp)
+            if (logoRequest != null) {
+                AsyncImage(
+                    model = logoRequest, contentDescription = null, contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize().padding(4.dp)
+                )
+            } else {
+                Text(channel.name.take(2), color = Accent, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+            Text(
+                channel.name,
+                color = Color.White,
+                fontWeight = if (focused) FontWeight.Bold else FontWeight.Medium,
+                fontSize = 12.sp,
+                lineHeight = 15.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Clip
+            )
+            Text("مباشر", color = Accent, fontSize = 9.sp, lineHeight = 11.sp)
+        }
         Box(
-            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+            Modifier.size(34.dp).clip(RoundedCornerShape(7.dp))
                 .background(if (favorite) Color(0xFF254A4C) else Color.Transparent)
                 .clickable(onClick = onFavorite).focusable(),
             contentAlignment = Alignment.Center
         ) {
-            Text(if (favorite) "★" else "☆", color = if (favorite) Accent else Muted, fontSize = 21.sp)
+            Text(if (favorite) "★" else "☆", color = if (favorite) Accent else Muted, fontSize = 19.sp)
         }
     }
 }
