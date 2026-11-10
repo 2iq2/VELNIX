@@ -460,7 +460,7 @@ async function loadChannels(){
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
 }
 
-async async function loadEpg(row){
+async function loadEpg(row){
  const id=row.source_external_id;if(!id){$('#epgNow').textContent='لا تتوفر بيانات EPG لهذه القناة';return}
  try{const d=await gateway({action:'epg',stream_id:id}),a=d.epg_listings||[];const dec=v=>{try{return decodeURIComponent(escape(atob(v||'')))}catch(e){return v||''}};$('#epgNow').textContent=a[0]?dec(a[0].title||a[0].name||'برنامج غير محدد'):'لا توجد بيانات للبرنامج الحالي';$('#epgNext').textContent=a[1]?dec(a[1].title||a[1].name||'برنامج غير محدد'):'لا توجد بيانات للبرنامج التالي'}catch(e){$('#epgNow').textContent='بيانات EPG غير متاحة حالياً';$('#epgNext').textContent='—'}
 }
