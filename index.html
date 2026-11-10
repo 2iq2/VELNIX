@@ -646,7 +646,7 @@ $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventList
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
-$('#loginBtn').hidden=true;$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
+if($('#loginBtn'))$('#loginBtn').hidden=true;if($('#heroLogin'))$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
  
 $("#menuToggle").addEventListener("click",()=>{const m=$("#siteMenu");m.hidden=!m.hidden;$("#menuToggle").setAttribute("aria-expanded",String(!m.hidden))});
 $("#siteMenu").addEventListener("click",e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)});
