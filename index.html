@@ -172,12 +172,12 @@ let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
 async function rest(path){
- const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Accept':'application/json'}});
+ const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Authorization':'Bearer '+(authSession?.access_token||KEY),'Accept':'application/json'}});
  if(!response.ok)throw new Error('Catalog request failed: HTTP '+response.status);
  return response.json();
 }
 async function gateway(body){
- const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Authorization':'Bearer '+(authSession?.access_token||KEY),'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
@@ -205,7 +205,7 @@ function renderAuth(){
  $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;$('#loginBtn').textContent=signed?'حسابي':'تسجيل الدخول';$('#heroLogin').textContent=signed?'حسابي':'إنشاء حساب';
  $('#authForm').hidden=signed;$('#accountPanel').hidden=!signed;document.querySelector('.auth-links').hidden=signed;
  $('#accountEmail').textContent=signed?(authSession.user.email||''):'';
- $('#accountSection').hidden=!signed;$('#adminSection').hidden=!admin;$('#adminTools').hidden=!admin;
+ $('#accountSection').hidden=!signed;$('#adminSection').hidden=!admin;
  if(admin)adminDashboard();
 }
 async function accountData(){
@@ -454,7 +454,7 @@ async function loadChannels(){
    const rows=await rest('channels?select=id,category_id,source_external_id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
    all.push(...rows);if(rows.length<500)break;
   }
-  channelRows=all;renderChannels();
+  channelRows=all;renderChannels();if(authSession?.user?.app_metadata?.role==='admin')adminDashboard();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
 }
@@ -501,8 +501,22 @@ $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventList
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',()=>{localStorage.setItem('velnix:quality',qualitySelect.value);if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
-$('#loginBtn').hidden=true;$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
-loadChannels();
+$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;$('#authModal').hidden=true;window.__VELNIX_AUTH_READY__=true;
+$('#loginBtn').addEventListener('click',()=>{renderAuth();openAuth()});$('#heroLogin').addEventListener('click',()=>openAuth());
+$('#authForm').addEventListener('submit',async e=>{e.preventDefault();authMessage('جارٍ التحقق…');try{let d;if(authMode==='signup')d=await authRequest('signup',{email:$('#authEmail').value.trim(),password:$('#authPassword').value,data:{display_name:$('#displayName').value.trim()}});else d=await authRequest('token?grant_type=password',{email:$('#authEmail').value.trim(),password:$('#authPassword').value});if(d.access_token){saveSession(d);renderAuth();await accountData();authMessage('تم تسجيل الدخول.');setTimeout(()=>$('#authModal').classList.remove('show'),700)}else authMessage('تم إنشاء الحساب. افحص بريدك لتأكيده إذا طُلب.')}catch(err){authMessage(err.message,true)}});
+$('#authSwitch').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';$('#displayName').hidden=authMode!=='signup';$('#nameLabel').hidden=authMode!=='signup';$('#authSubmit').textContent=authMode==='signup'?'إنشاء الحساب':'تسجيل الدخول';$('#authSwitch').textContent=authMode==='signup'?'لدي حساب بالفعل':'إنشاء حساب جديد'});
+$('#forgotPassword').addEventListener('click',async()=>{const email=$('#authEmail').value.trim();if(!email){authMessage('أدخل بريدك الإلكتروني أولاً.',true);return}try{await authRequest('recover',{email,redirect_to:location.origin+location.pathname});authMessage('إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.')}catch(e){authMessage(e.message,true)}});
+$('#signOutBtn').addEventListener('click',async()=>{try{if(authSession?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+authSession.access_token}})}catch(e){}authSession=null;localStorage.removeItem('velnix:auth');renderAuth();$('#authModal').classList.remove('show')});
+$('#openAccountBtn').addEventListener('click',()=>openAuth());$('#saveProfileBtn').addEventListener('click',saveProfile);$('#createListBtn').addEventListener('click',createList);$('#addToListBtn').addEventListener('click',addToList);
+$('#prevChannel').addEventListener('click',()=>adjacent(-1));$('#nextChannel').addEventListener('click',()=>adjacent(1));$('#pipBtn').addEventListener('click',pip);$('#shareChannelBtn').addEventListener('click',shareChannel);
+const openAssistant=()=>$('#assistantWindow').classList.add('show');$('#assistantOpen').addEventListener('click',openAssistant);$('#assistantCardOpen').addEventListener('click',openAssistant);$('#assistantClose').addEventListener('click',()=>$('#assistantWindow').classList.remove('show'));$('#assistantWindow').addEventListener('click',e=>{if(e.target===$('#assistantWindow'))$('#assistantWindow').classList.remove('show')});
+$('#assistantForm').addEventListener('submit',e=>{e.preventDefault();const q=$('#assistantInput').value.trim();if(q){assistantMsg(q,true);assistantMsg(assistantReply(q));$('#assistantInput').value=''}});
+$('#themeBtn').addEventListener('click',()=>{document.body.classList.toggle('light');localStorage.setItem('velnix:theme',document.body.classList.contains('light')?'light':'dark')});if(localStorage.getItem('velnix:theme')==='light')document.body.classList.add('light');
+$('#adminChannelSelect').addEventListener('change',()=>{const r=channelRows.find(x=>x.id===$('#adminChannelSelect').value);if(r){$('#adminNameAr').value=r.name_ar||'';$('#adminNameEn').value=r.name_en||'';$('#adminLogoUrl').value=r.logo_url||'';$('#adminCategory').value=r.category_id||''}});
+$('#adminSaveChannel').addEventListener('click',adminSave);$('#adminDeactivateChannel').addEventListener('click',adminDisable);$('#bulkLogoBtn').addEventListener('click',adminLogos);
+$('#xtreamImportBtn').addEventListener('click',async()=>{$('#importStatus').textContent='جارٍ الاستيراد…';try{const d=await gateway({action:'import'});$('#importStatus').textContent='تم استيراد '+d.channels+' قناة.';await loadChannels()}catch(e){$('#importStatus').textContent=e.message}});
+renderAuth();loadChannels().then(async()=>{if(authSession?.access_token)await accountData();const id=new URL(location.href).searchParams.get('channel');if(id){const r=channelRows.find(x=>x.id===id);if(r)playChannel(r)}});
+
 })();
 </script>
 <div class="assistant-window" id="assistantWindow" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>مساعد VELNIX</h2><button class="player-close" id="assistantClose" type="button">×</button></div><p>مساعد دعم إرشادي محلي، ولا يرسل بياناتك إلى خدمة خارجية.</p><div class="assistant-log" id="assistantLog"><div class="assistant-msg">أهلاً! اكتب مشكلتك بخصوص الدخول أو تشغيل القنوات أو البحث.</div></div><form class="assistant-form" id="assistantForm"><input class="field" id="assistantInput" placeholder="اكتب سؤالك..." required><button class="primary" type="submit">إرسال</button></form></div></div></body></html>
