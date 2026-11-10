@@ -513,7 +513,7 @@ async function adminTestStream(){
  $('#adminStatus').textContent='جارٍ فحص مصدر البث…';
  try{const d=await gateway({action:'admin_test_stream',channel_id:id});$('#adminStatus').textContent=d.success?'المصدر يستجيب — HTTP '+d.status+' · '+d.latency_ms+'ms':'فشل الفحص: '+(d.message||'مصدر البث لا يستجيب')+(d.status?' · HTTP '+d.status:'')}catch(e){$('#adminStatus').textContent=e.message}
 }
-async function adminDashboard(){
+async async function adminDashboard(){
  const n=channelRows.length,l=channelRows.filter(x=>x.logo_url).length,m=new Map();channelRows.forEach(x=>{const k=String(x.name_en||x.name_ar||'').trim().toLowerCase();m.set(k,(m.get(k)||0)+1)});
  $('#adminChannelCount').textContent=n.toLocaleString();$('#adminLogoCount').textContent=l.toLocaleString();$('#adminNoLogoCount').textContent=(n-l).toLocaleString();$('#adminDuplicateCount').textContent=[...m.values()].filter(x=>x>1).length.toLocaleString();
  const sel=$('#adminChannelSelect');if(sel.options.length===1)channelRows.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=displayName(r);sel.append(o)});
