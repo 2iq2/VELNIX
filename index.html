@@ -483,7 +483,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 window.addEventListener('appinstalled',()=>{$('#installBtn').hidden=true;deferredInstallPrompt=null});
 $('#installBtn').addEventListener('click',async()=>{if(!deferredInstallPrompt){alert('إذا لم يظهر خيار التثبيت، افتح قائمة المتصفح واختر إضافة إلى الشاشة الرئيسية.');return}deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;$('#installBtn').hidden=true});
 $('#qrChannelBtn').addEventListener('click',showChannelQr);$('#qrClose').addEventListener('click',()=>$('#qrModal').classList.remove('show'));$('#qrModal').addEventListener('click',e=>{if(e.target===$('#qrModal'))$('#qrModal').classList.remove('show')});
-function loadSports(){
+async function loadSports(){
  const value=$('#sportsLeague').value.split('/'),sport=value[0],league=value[1];const host=$('#sportsScores');host.textContent='جارٍ جلب النتائج…';
  try{
   const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/'+encodeURIComponent(sport)+'/'+encodeURIComponent(league)+'/scoreboard');
