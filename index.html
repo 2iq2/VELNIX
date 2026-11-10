@@ -146,6 +146,108 @@ footer{border-color:#ffffff12;background:#08090d}
  .channel{min-height:82px;border-radius:9px}
  .filters .filter{padding:9px 13px}
 }
+ 
+/* VELNIX — new premium interface */
+:root{
+ --bg:#090d16;--panel:#111a29;--panel2:#172337;--gold:#56d6c5;--gold2:#c2fff5;
+ --text:#f4f7fb;--muted:#93a2b6;--line:rgba(177,205,230,.12);--radius:18px;
+}
+html{background:#090d16;scroll-padding-top:90px}
+body{background:radial-gradient(ellipse at 8% 8%,rgba(38,93,119,.19),transparent 33%),radial-gradient(ellipse at 92% 28%,rgba(67,60,132,.12),transparent 30%),#090d16;color:var(--text)}
+body:before{display:none}
+.topline{height:2px;background:linear-gradient(90deg,transparent,#56d6c5 30%,#8a8cf5 70%,transparent)}
+header{background:rgba(9,13,22,.84);backdrop-filter:blur(22px);border-bottom:1px solid rgba(180,210,230,.1)}
+.nav{height:76px}
+.brand{font-size:24px;letter-spacing:3px;gap:12px}
+.brand-mark{width:39px;height:39px;border-radius:13px;background:linear-gradient(145deg,#56d6c5,#3e8fba);border:0;color:#07131b;box-shadow:0 7px 28px #56d6c52b}
+.brand-mark span{transform:none}
+nav{gap:9px}
+nav a{color:#9eafc4;padding:10px 15px;border-radius:10px;font-size:13px;font-weight:600;transition:.2s}
+nav a:hover{background:#ffffff0b;color:#eafffc}
+.actions{gap:9px}
+.lang{border:1px solid var(--line);background:#121c2b;color:#d9e5ef;border-radius:10px;padding:10px 14px}
+.login{display:none!important}
+.hero{width:100%;max-width:none;min-height:540px;padding:85px max(6vw,calc((100vw - 1220px)/2)) 75px;display:flex;align-items:center;position:relative;isolation:isolate;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,#090d16 0%,rgba(9,13,22,.94) 31%,rgba(9,13,22,.58) 65%,rgba(9,13,22,.35) 100%),linear-gradient(0deg,#090d16 0%,transparent 45%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1800&q=85') center 42%/cover}
+.hero>div:first-child{position:relative;z-index:2;max-width:620px}
+.eyebrow{color:#8df3e3;letter-spacing:1.5px;font-size:12px}
+.eyebrow:before{background:#56d6c5}
+h1{font-size:clamp(42px,5.8vw,72px);line-height:1.2;letter-spacing:-1.2px;text-shadow:0 6px 30px #0009}
+.gold{color:#8df3e3;background:linear-gradient(90deg,#8df3e3,#9abaff);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.intro{font-size:17px;line-height:1.95;color:#c0ccda;max-width:540px}
+.hero-ctas{display:flex;gap:11px;flex-wrap:wrap;margin-top:28px}
+.primary{background:linear-gradient(120deg,#56d6c5,#4b9fbe);color:#06131a;border:0;border-radius:11px;padding:14px 23px;font-weight:800;box-shadow:0 10px 32px #56d6c52b}
+.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.secondary{background:#ffffff0b;color:#e8f0f8;border:1px solid #ffffff20;border-radius:11px;padding:13px 20px}
+.visual{position:absolute;z-index:-1;inset:0 0 0 auto;width:58%;min-height:100%;border:0;border-radius:0;background:transparent;box-shadow:none;opacity:.7;pointer-events:none}
+.visual:before{display:none}
+.screen{inset:0;border:0;border-radius:0;background:linear-gradient(90deg,#090d16 0%,transparent 55%),linear-gradient(0deg,#090d16 0%,transparent 35%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=85') center/cover}
+.screen-top,.screen-copy,.float-card{display:none}
+.section{width:min(1220px,calc(100% - 48px));padding:46px 0}
+.section-head{margin-bottom:22px}
+.section-head h2{font-size:30px;letter-spacing:-.4px}
+.section-head p{font-size:14px;color:#95a5b9;line-height:1.8}
+.catalog-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:27px}
+.catalog-summary>div{position:relative;overflow:hidden;min-height:85px;padding:17px 20px;border:1px solid #a8c7df18;border-radius:15px;background:linear-gradient(135deg,#142237,#101827)}
+.catalog-summary>div:after{content:"";position:absolute;width:100px;height:100px;inset-inline-end:-30px;top:-55px;border-radius:50%;background:#56d6c51c;filter:blur(2px)}
+.catalog-summary strong{font-size:22px;color:#a0f6e9}
+.catalog-summary span{font-size:12px;color:#9aabc0}
+.channel-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:17px}
+.channel-search{min-height:48px;flex:1 1 320px;background:#111b2a;border:1px solid #b4d0e31a;border-radius:12px;padding:0 15px;color:#8fa4b8}
+.channel-search:focus-within{border-color:#56d6c5;box-shadow:0 0 0 3px #56d6c51b}
+.channel-search input{color:#f5f8fb;font-size:14px}
+.channel-search input::placeholder{color:#73849a}
+#favoritesFilter,#recentFilter{min-height:46px;background:#111b2a;border:1px solid #b4d0e31a;border-radius:11px;color:#b9c9d8;padding:10px 15px}
+#favoritesFilter.active,#recentFilter.active{background:#183c43;border-color:#56d6c5;color:#a0f6e9}
+.filters{gap:8px;flex-wrap:wrap;overflow:visible;padding:5px 0 17px;margin-bottom:10px}
+.filters .filter{background:#111b2a;color:#aab9ca;border:1px solid #b4d0e318;border-radius:30px;padding:10px 17px;font-size:12px;white-space:nowrap;transition:.2s}
+.filters .filter.active,.filters .filter:hover{background:#56d6c5;color:#07151a;border-color:#56d6c5;box-shadow:0 6px 20px #56d6c51c}
+.channels{grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.channel{position:relative;min-height:100px;padding:14px 48px 14px 14px;gap:13px;border-radius:15px;background:linear-gradient(145deg,#152238,#101827);border:1px solid #b4d0e318;box-shadow:0 9px 24px #0003;transition:transform .22s,border-color .22s,background .22s}
+.channel:hover{transform:translateY(-3px);border-color:#56d6c58a;background:linear-gradient(145deg,#1a3043,#111c2c);box-shadow:0 15px 35px #0005}
+.channel-logo{width:58px;height:58px;flex:0 0 58px;border-radius:13px;background:linear-gradient(145deg,#24364b,#152235);border:1px solid #ffffff17;padding:8px}
+.channel-logo-fallback{font-size:18px;color:#9ff6e8}
+.channel-copy{min-width:0}
+.channel h3{font-size:14px;color:#f0f5fa;font-weight:700;margin-bottom:5px}
+.channel p{font-size:11px;color:#8fa1b6}
+.channel .tag{color:#7de7d6;font-size:9px;letter-spacing:.5px}
+.channel-fav{inset-inline-end:10px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:9px;background:#09111dcc;border:1px solid #ffffff1a;color:#a7b7c8}
+.channel-fav.active{color:#7de7d6;background:#56d6c51c;border-color:#56d6c5}
+#channelStatus{color:#94a6ba;padding:8px 2px 15px;font-size:13px}
+#loadMoreChannels{display:block!important;margin:28px auto 0!important;border-radius:11px}
+.note{background:linear-gradient(120deg,#142438,#101827);border:1px solid #b4d0e31b;border-radius:16px;padding:24px 27px}
+.note strong{font-size:17px;color:#eaf6fa}
+.note p{color:#91a5ba;line-height:1.8}
+.note-icon{color:#7de7d6;font-size:25px}
+footer{margin-top:45px;background:#080c14;border-color:#b4d0e312;color:#8192a6}
+.foot b{color:#eaf7f8}
+.player-modal{background:#03070deF;backdrop-filter:blur(12px)}
+.player-shell{background:#0e1724;border:1px solid #56d6c544;border-radius:16px;box-shadow:0 30px 100px #000b}
+.player-head{background:#101d2d;border-bottom:1px solid #ffffff12}
+.player-brand strong{color:#effafa}
+.player-live-dot{background:#56d6c5;box-shadow:0 0 12px #56d6c5}
+.player-retry{color:#9cf3e5;border:1px solid #56d6c55a;background:#56d6c518;border-radius:9px}
+.player-close{border-radius:9px}
+.player-toolbar{background:#101b2a;border-top:1px solid #ffffff12}
+.player-options select{background:#172538;color:#eaf4fa;border:1px solid #ffffff20;border-radius:8px}
+.player-state{color:#a2b4c8}
+.dialog{background:#111d2c;border:1px solid #56d6c544;border-radius:17px}
+.field{background:#0b1421;color:#f2f7fa;border:1px solid #ffffff20;border-radius:10px}
+.auth-links button{color:#83e9dc}
+@media(max-width:1050px){.channels{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:850px){nav{display:none}.hero{min-height:500px;padding:70px 28px 62px}.visual{width:100%;opacity:.38}.channels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+ .nav{height:66px}.brand{font-size:21px}.brand-mark{width:34px;height:34px}
+ .hero{min-height:450px;padding:58px 20px 45px}.hero:before{background:linear-gradient(90deg,rgba(9,13,22,.97),rgba(9,13,22,.72)),linear-gradient(0deg,#090d16 0%,transparent 48%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=85') center/cover}
+ h1{font-size:42px}.intro{font-size:14px;line-height:1.9}.hero-ctas{margin-top:22px}.primary,.secondary{padding:12px 16px;font-size:13px}
+ .section{width:calc(100% - 28px);padding:31px 0}.section-head h2{font-size:24px}
+ .catalog-summary{gap:8px}.catalog-summary>div{min-height:78px;padding:12px 10px;border-radius:12px}.catalog-summary strong{font-size:15px}.catalog-summary span{font-size:10px;line-height:1.5}
+ .channel-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}.channel-search{grid-column:1/-1;min-height:46px}#favoritesFilter,#recentFilter{font-size:11px;padding:9px 7px;min-height:41px}
+ .filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-2px;padding:3px 2px 13px}.filters::-webkit-scrollbar{display:none}.filters .filter{padding:9px 14px;font-size:11px}
+ .channels{grid-template-columns:1fr;gap:9px}.channel{min-height:79px;padding:10px 46px 10px 11px;border-radius:13px;gap:11px}.channel-logo{width:51px;height:51px;flex-basis:51px;border-radius:11px}.channel h3{font-size:13px}.channel p{font-size:10px}
+ .note{padding:18px;border-radius:13px}.foot{flex-wrap:wrap;justify-content:center;text-align:center;gap:9px}
+}
+
 </style>
 </head>
 <body>
@@ -158,15 +260,15 @@ footer{border-color:#ffffff12;background:#08090d}
 <main>
 <section class="wrap hero" id="home">
 <div>
-<div class="eyebrow" data-ar="تجربة ترفيه بمستوى مختلف" data-en="A premium entertainment experience">تجربة ترفيه بمستوى مختلف</div>
+<div class="eyebrow" data-ar="قنواتك المفضلة، بتجربة أرقى" data-en="Your channels, elevated">قنواتك المفضلة، بتجربة أرقى</div>
 <h1 data-ar="كل ما تحب مشاهدته،<br><span class='gold'>في مكان واحد.</span>" data-en="Everything you love,<br><span class='gold'>in one place.</span>">كل ما تحب مشاهدته،<br><span class="gold">في مكان واحد.</span></h1>
-<p class="intro" data-ar="اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك." data-en="Discover live channels and a world of entertainment in a refined viewing experience, designed to feel seamless across your devices.">اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك.</p>
+<p class="intro" data-ar="قنوات رياضية، إخبارية وترفيهية في مكان واحد. تصفّح بسهولة، أضف قنواتك للمفضلة، وابدأ المشاهدة بضغطة واحدة." data-en="Discover live channels and a world of entertainment in a refined viewing experience, designed to feel seamless across your devices.">اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك.</p>
 <div class="hero-ctas"><button class="primary" id="exploreBtn" data-ar="استكشف القنوات ←" data-en="Explore channels →">استكشف القنوات ←</button><button class="secondary" id="heroLogin" data-ar="إنشاء حساب" data-en="Create account">إنشاء حساب</button></div>
 </div>
 <div class="visual" aria-label="VELNIX premium preview"><div class="screen"><div class="screen-top"><span>VELNIX ORIGINAL</span><span class="live"><i></i><span data-ar="تجربة المنصة" data-en="PREVIEW">تجربة المنصة</span></span></div><div class="screen-copy"><small>YOUR WORLD. YOUR SCREEN.</small><strong data-ar="شاهد بطريقتك." data-en="Watch your way.">شاهد بطريقتك.</strong><p data-ar="الترفيه يبدأ من هنا" data-en="Entertainment starts here">الترفيه يبدأ من هنا</p></div></div><div class="float-card"><b>VELNIX</b><span data-ar="تجربة مشاهدة مميزة" data-en="Premium viewing experience">تجربة مشاهدة مميزة</span></div></div>
 </section>
 <section class="wrap section" id="categories">
-<div class="section-head"><div><h2 data-ar="اكتشف عالم القنوات" data-en="Explore channels">اكتشف عالم القنوات</h2><p data-ar="اختر التصنيف الذي يناسب لحظتك." data-en="Choose the category that fits your moment.">اختر التصنيف الذي يناسب لحظتك.</p></div></div>
+<div class="section-head"><div><h2 data-ar="دليل القنوات" data-en="Channel guide">دليل القنوات</h2><p data-ar="كل قنواتك مرتبة حتى توصل للمحتوى بسرعة." data-en="Browse your channels by category.">كل قنواتك مرتبة حتى توصل للمحتوى بسرعة.</p></div></div>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
 <div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
