@@ -535,8 +535,8 @@ function setView(view){
  document.body.classList.add(view==="live"?"view-live":view==="series"?"view-series":"view-vod");
  const menu=$("#siteMenu");menu.hidden=true;$("#menuToggle").setAttribute("aria-expanded","false");
  if(view==="live"){document.body.classList.add("view-live");$("#categories").scrollIntoView({behavior:"instant",block:"start"});return;}
- if(view==="series"){vodKind="series";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="series"));$("#vodHeading").textContent="مسلسلات تستحق المتابعة";loadVod();return;}
- vodKind="movie";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="movie"));$("#vodHeading").textContent="أفلام تستحق المشاهدة";loadVod();
+ if(view==="series"){vodKind="series";vodCategory="all";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="series"));$("#vodHeading").textContent="مسلسلات تستحق المتابعة";loadVod();return;}
+ vodKind="movie";vodCategory="all";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="movie"));$("#vodHeading").textContent="أفلام تستحق المشاهدة";loadVod();
 }
 function renderVodCategories(){
  const box=$("#vodCategories");box.replaceChildren();
@@ -609,14 +609,29 @@ async function openVodDetails(item){
   }
  }catch(error){body.innerHTML="";const p=document.createElement("p");p.className="vod-status";p.textContent="تعذر تحميل التفاصيل: "+(error.message||"");body.append(p)}
 }
-function playVod(id,extension,isEpisode,title){
+async function playVod(id,extension,isEpisode,title){
  const ext=["mp4","mkv","avi","m3u8","ts"].includes(String(extension).toLowerCase())?String(extension).toLowerCase():"mp4";
  stopPlayback();activeRow=null;
  const query=isEpisode?"episode_id=":"vod_id=";
- video.src=API+"/functions/v1/xtream-gateway?"+query+encodeURIComponent(id)+"&extension="+encodeURIComponent(ext);
- video.load();playerModal.classList.add("show");$("#playerTitle").textContent=title;$("#playerMeta").textContent=isEpisode?"SERIES • VELNIX":"MOVIE • VELNIX";$("#playerState").textContent="جارٍ تشغيل المحتوى...";
- video.play().then(()=>{$("#playerState").textContent="استمتع بالمشاهدة."}).catch(()=>{$("#playerState").textContent="اضغط تشغيل لبدء المشاهدة."});
+ const mediaUrl=API+"/functions/v1/xtream-gateway?"+query+encodeURIComponent(id)+"&extension="+encodeURIComponent(ext);
+ playerModal.classList.add("show");$("#playerTitle").textContent=title;$("#playerMeta").textContent=isEpisode?"SERIES • VELNIX":"MOVIE • VELNIX";$("#playerState").textContent="جارٍ تشغيل المحتوى...";
  $("#vodDetails").hidden=true;
+ try{
+  if(ext==="m3u8"){
+   const mod=await import("https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm").catch(()=>import("https://esm.sh/hls.js@1.6.15"));
+   Hls=mod.default||mod;
+   if(Hls.isSupported()){
+    hlsInstance=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:45,maxBufferLength:60,manifestLoadingMaxRetry:5,levelLoadingMaxRetry:5,fragLoadingMaxRetry:5});
+    const instance=hlsInstance;
+    instance.on(Hls.Events.MANIFEST_PARSED,()=>{if(instance===hlsInstance)video.play().then(()=>{$("#playerState").textContent="استمتع بالمشاهدة."}).catch(()=>{$("#playerState").textContent="اضغط تشغيل لبدء المشاهدة."})});
+    instance.on(Hls.Events.ERROR,(_e,d)=>{if(d.fatal&&instance===hlsInstance)$("#playerState").textContent="تعذر تشغيل هذا المصدر بصيغة HLS."});
+    instance.loadSource(mediaUrl);instance.attachMedia(video);return;
+   }
+   if(video.canPlayType("application/vnd.apple.mpegurl")){video.src=mediaUrl;video.load();await video.play();return}
+  }
+  video.src=mediaUrl;video.load();
+  await video.play().then(()=>{$("#playerState").textContent="استمتع بالمشاهدة."}).catch(()=>{$("#playerState").textContent="اضغط تشغيل لبدء المشاهدة."});
+ }catch(error){$("#playerState").textContent="تعذر تشغيل هذا المحتوى: "+(error.message||"")}
 }
 
 async function loadChannels(){
