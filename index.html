@@ -569,11 +569,12 @@ $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventList
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',()=>{localStorage.setItem('velnix:quality',qualitySelect.value);if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
-$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;$('#authModal').hidden=true;window.__VELNIX_AUTH_READY__=true;$('#displayName').hidden=true;$('#nameLabel').hidden=true;
+$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;$('#authModal').hidden=true;$('#displayName').hidden=true;$('#nameLabel').hidden=true;
 $('#loginBtn').addEventListener('click',()=>{renderAuth();openAuth()});$('#heroLogin').addEventListener('click',()=>openAuth());
 $('#authForm').addEventListener('submit',async e=>{e.preventDefault();authMessage('جارٍ التحقق…');try{let d;if(authMode==='signup')d=await authRequest('signup',{email:$('#authEmail').value.trim(),password:$('#authPassword').value,data:{display_name:$('#displayName').value.trim()}});else d=await authRequest('token?grant_type=password',{email:$('#authEmail').value.trim(),password:$('#authPassword').value});if(d.access_token){saveSession(d);renderAuth();await accountData();authMessage('تم تسجيل الدخول.');setTimeout(()=>$('#authModal').classList.remove('show'),700)}else authMessage('تم إنشاء الحساب. افحص بريدك لتأكيده إذا طُلب.')}catch(err){authMessage(err.message,true)}});
 $('#authSwitch').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';$('#displayName').hidden=authMode!=='signup';$('#nameLabel').hidden=authMode!=='signup';$('#authSubmit').textContent=authMode==='signup'?'إنشاء الحساب':'تسجيل الدخول';$('#authSwitch').textContent=authMode==='signup'?'لدي حساب بالفعل':'إنشاء حساب جديد'});
 $('#forgotPassword').addEventListener('click',async()=>{const email=$('#authEmail').value.trim();if(!email){authMessage('أدخل بريدك الإلكتروني أولاً.',true);return}try{await authRequest('recover',{email,redirect_to:location.origin+location.pathname});authMessage('إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.')}catch(e){authMessage(e.message,true)}});
+window.__VELNIX_AUTH_READY__=true;
 $('#signOutBtn').addEventListener('click',async()=>{try{if(authSession?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+authSession.access_token}})}catch(e){}authSession=null;localStorage.removeItem('velnix:auth');renderAuth();$('#authModal').classList.remove('show')});
 $('#openAccountBtn').addEventListener('click',()=>openAuth());$('#saveProfileBtn').addEventListener('click',saveProfile);$('#createListBtn').addEventListener('click',createList);$('#addToListBtn').addEventListener('click',addToList);
 $('#prevChannel').addEventListener('click',()=>adjacent(-1));$('#nextChannel').addEventListener('click',()=>adjacent(1));$('#pipBtn').addEventListener('click',pip);$('#shareChannelBtn').addEventListener('click',shareChannel);
@@ -588,4 +589,50 @@ renderAuth();loadChannels().then(async()=>{if(authSession?.access_token)await ac
 
 })();
 </script>
-<div class="assistant-window" id="qrModal" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>رمز مشاركة القناة</h2><button class="player-close" id="qrClose" type="button">×</button></div><p>امسح الرمز لفتح القناة على VELNIX.</p><img id="channelQrImage" alt="Channel QR code" style="display:block;width:220px;height:220px;max-width:100%;margin:18px auto;background:#fff;padding:8px;border-radius:12px"><p id="qrChannelLabel" style="text-align:center"></p></div></div><div class="assistant-window" id="assistantWindow" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>مساعد VELNIX</h2><button class="player-close" id="assistantClose" type="button">×</button></div><p>مساعد دعم إرشادي محلي، ولا يرسل بياناتك إلى خدمة خارجية.</p><div class="assistant-log" id="assistantLog"><div class="assistant-msg">أهلاً! اكتب مشكلتك بخصوص الدخول أو تشغيل القنوات أو البحث.</div></div><form class="assistant-form" id="assistantForm"><input class="field" id="assistantInput" placeholder="اكتب سؤالك..." required><button class="primary" type="submit">إرسال</button></form></div></div></body></html>
+<div class="assistant-window" id="qrModal" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>رمز مشاركة القناة</h2><button class="player-close" id="qrClose" type="button">×</button></div><p>امسح الرمز لفتح القناة على VELNIX.</p><img id="channelQrImage" alt="Channel QR code" style="display:block;width:220px;height:220px;max-width:100%;margin:18px auto;background:#fff;padding:8px;border-radius:12px"><p id="qrChannelLabel" style="text-align:center"></p></div></div><div class="assistant-window" id="assistantWindow" role="dialog" aria-modal="true"><div class="assistant-box"><div class="profile-row"><h2>مساعد VELNIX</h2><button class="player-close" id="assistantClose" type="button">×</button></div><p>مساعد دعم إرشادي محلي، ولا يرسل بياناتك إلى خدمة خارجية.</p><div class="assistant-log" id="assistantLog"><div class="assistant-msg">أهلاً! اكتب مشكلتك بخصوص الدخول أو تشغيل القنوات أو البحث.</div></div><form class="assistant-form" id="assistantForm"><input class="field" id="assistantInput" placeholder="اكتب سؤالك..." required><button class="primary" type="submit">إرسال</button></form></div></div>
+<script>
+/* Independent REST fallback: sign-in does not depend on a third-party CDN bundle. */
+(()=>{
+ const API='https://shungcjflcjwubdlhyzq.supabase.co';
+ const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
+ const $=id=>document.getElementById(id);
+ const show=(message,error=false)=>{const el=$('authMessage');if(el){el.textContent=message;el.classList.toggle('error',error)}};
+ let mode='login';
+ async function request(path,body){
+  const r=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||('تعذر الاتصال بخدمة الحسابات ('+r.status+')'));
+  return d;
+ }
+ const form=$('authForm');
+ if(!form||window.__VELNIX_AUTH_READY__===true)return;
+ window.__VELNIX_AUTH_FALLBACK__=true;
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const email=$('authEmail')?.value.trim(),password=$('authPassword')?.value;
+  if(!email||!password){show('أدخل البريد الإلكتروني وكلمة المرور.',true);return}
+  show('جارٍ الاتصال بخدمة تسجيل الدخول…');
+  try{
+   const d=mode==='signup'?await request('signup',{email,password,data:{display_name:$('displayName')?.value.trim()||''}}):await request('token?grant_type=password',{email,password});
+   if(d.access_token){
+    localStorage.setItem('velnix:auth',JSON.stringify({access_token:d.access_token,refresh_token:d.refresh_token,user:d.user,expires_at:Date.now()+(Number(d.expires_in)||3600)*1000}));
+    show('تم تسجيل الدخول. جارٍ تحديث الحساب…');location.reload();
+   }else show('تم إنشاء الحساب. افحص بريدك الإلكتروني إذا كان تأكيد البريد مطلوباً.');
+  }catch(error){show(error.message||'تعذر تسجيل الدخول. حاول مرة أخرى.',true)}
+ });
+ $('authSwitch')?.addEventListener('click',()=>{
+  mode=mode==='login'?'signup':'login';
+  if($('displayName'))$('displayName').hidden=mode!=='signup';
+  if($('nameLabel'))$('nameLabel').hidden=mode!=='signup';
+  if($('authSubmit'))$('authSubmit').textContent=mode==='signup'?'إنشاء الحساب':'تسجيل الدخول';
+  $('authSwitch').textContent=mode==='signup'?'لدي حساب بالفعل':'إنشاء حساب جديد';
+ });
+ $('forgotPassword')?.addEventListener('click',async()=>{
+  const email=$('authEmail')?.value.trim();
+  if(!email){show('أدخل بريدك الإلكتروني أولاً.',true);return}
+  try{await request('recover',{email,redirect_to:location.origin+location.pathname});show('إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.')}
+  catch(error){show(error.message||'تعذر إرسال رابط الاستعادة.',true)}
+ });
+})();
+</script>
+</body></html>
