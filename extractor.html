@@ -1,103 +1,31 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#090d18"><title>VELNIX EXTRACTOR</title>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090d18"><title>VELNIX EXTRACTOR</title>
 <style>
-:root{color-scheme:dark;--bg:#080c16;--panel:#111827;--line:#253247;--muted:#9aa8bc;--cyan:#42d7e8;--violet:#8b7cff;--text:#edf4ff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#14243a 0,transparent 42%),radial-gradient(ellipse at 95% 15%,#211638 0,transparent 36%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
-.wrap{max-width:1080px;margin:auto;padding:28px 18px 56px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:30px}.brand{font-weight:900;letter-spacing:2px;font-size:22px}.brand span{color:var(--cyan)}.private{border:1px solid #29505a;background:#10242c;color:#9debf2;border-radius:99px;padding:7px 12px;font-size:12px}
-h1{font-size:clamp(26px,5vw,42px);margin:0 0 8px}.lead{color:var(--muted);margin:0 0 24px;line-height:1.8}.panel{background:linear-gradient(145deg,rgba(19,29,46,.96),rgba(12,18,31,.97));border:1px solid var(--line);border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 18px 60px #0003}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}label{font-size:13px;color:#b8c6d9}input,select{width:100%;border:1px solid #34445c;background:#0b1220;color:var(--text);padding:13px 14px;border-radius:12px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #42d7e81a}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button{border:0;border-radius:12px;padding:12px 17px;font:inherit;font-weight:750;cursor:pointer;background:linear-gradient(110deg,var(--cyan),#8c91ff);color:#07101a}button.secondary{background:#202d43;color:#e5efff;border:1px solid #34445c}button:disabled{opacity:.5;cursor:not-allowed}.status{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.7;min-height:22px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.stat{padding:10px 14px;background:#0b1422;border:1px solid var(--line);border-radius:12px;color:#b9c8dc;font-size:13px}.stat b{color:var(--cyan);margin-inline-start:5px}.hidden{display:none!important}.tablewrap{overflow:auto;max-height:430px;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:11px 12px;border-bottom:1px solid #263247;text-align:right}th{position:sticky;top:0;background:#111b2c;color:#a9bbd1}td{color:#e0e9f6}.name{min-width:190px}.url{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:#91dce8}.note{font-size:12px;color:#91a1b7;line-height:1.8;margin-top:16px}.sectiontitle{font-size:18px;margin:0 0 14px}.danger{color:#ffb2b2}.foot{text-align:center;color:#718098;font-size:11px;margin-top:28px}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.wrap{padding:20px 13px 40px}.panel{padding:16px}.top{margin-bottom:24px}}
-</style>
-</head>
-<body><main class="wrap">
-<header class="top"><div class="brand">VELNIX <span>EXTRACTOR</span></div><div class="private">🔒 خاص · حساب المدير فقط</div></header>
-<h1>استخراج مكتبة القنوات</h1><p class="lead">اتصل بحساب Xtream، اعرض التصنيفات، واستخرج روابط القنوات المسموح باستخدامها بصيغ M3U وJSON وCSV. لا يتم حفظ بيانات الاشتراك في الموقع.</p>
-<section class="panel" id="loginPanel">
-<h2 class="sectiontitle">تسجيل الدخول الخاص</h2>
-<div class="grid"><div class="field"><label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="admin@example.com"></div><div class="field"><label for="loginPassword">كلمة مرور الموقع</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div></div>
-<div class="actions"><button id="loginBtn">دخول آمن</button></div><div class="status" id="loginStatus"></div>
-</section>
-<section class="panel hidden" id="toolPanel">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 class="sectiontitle">بيانات مزوّد Xtream</h2><button class="secondary" id="logoutBtn">تسجيل الخروج</button></div>
-<div class="grid">
-<div class="field full"><label for="server">عنوان السيرفر</label><input id="server" type="url" placeholder="http://server.example:8080"></div>
-<div class="field"><label for="username">اسم المستخدم</label><input id="username" autocomplete="off"></div>
-<div class="field"><label for="providerPassword">كلمة مرور Xtream</label><input id="providerPassword" type="password" autocomplete="new-password"></div>
-</div>
-<div class="actions"><button id="connectBtn">اتصال وجلب التصنيفات</button></div><div class="status" id="connectStatus"></div>
-<div id="extractArea" class="hidden">
-<div class="stats"><div class="stat">حالة الاشتراك <b id="accountStatus">—</b></div><div class="stat">التصنيفات <b id="categoryCount">0</b></div><div class="stat">القنوات المستخرجة <b id="channelCount">0</b></div></div>
-<div class="grid"><div class="field full"><label for="category">اختَر تصنيف القنوات</label><select id="category"><option value="">كل القنوات</option></select></div></div>
-<div class="actions"><button id="extractBtn">استخراج التصنيف المحدد</button><button class="secondary" id="allBtn">استخراج كل التصنيفات</button></div>
-<div class="status" id="extractStatus"></div>
-<div class="actions hidden" id="exportActions"><button id="m3uBtn">تنزيل M3U</button><button class="secondary" id="jsonBtn">تنزيل JSON</button><button class="secondary" id="csvBtn">تنزيل CSV</button></div>
-<div class="tablewrap hidden" id="tableWrap"><table><thead><tr><th>#</th><th>اسم القناة</th><th>التصنيف</th><th>رابط البث</th></tr></thead><tbody id="channelRows"></tbody></table></div>
-</div>
-</section>
-<p class="note">تنبيه أمني: روابط البث قد تتضمن بيانات اشتراكك. ملفات التصدير تُنشأ محلياً على جهازك؛ لا ترفعها أو تشاركها مع الآخرين. استخراج الروابط لا يلغي صلاحية المزوّد أو مدة الاشتراك.</p>
-<footer class="foot">VELNIX EXTRACTOR · Private utility</footer>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.80.0/dist/umd/supabase.js"></script>
+:root{color-scheme:dark;--bg:#080c16;--panel:#111827;--line:#29374c;--muted:#9aa8bc;--cyan:#42d7e8;--text:#edf4ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#162943,transparent 42%),radial-gradient(ellipse at 95% 10%,#24183c,transparent 35%),var(--bg);color:var(--text);font-family:system-ui,sans-serif}.wrap{max-width:1050px;margin:auto;padding:28px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:30px}.brand{font-size:22px;font-weight:900;letter-spacing:2px}.brand span{color:var(--cyan)}.tag{border:1px solid #29505a;background:#10242c;color:#9debf2;border-radius:30px;padding:7px 12px;font-size:12px}h1{font-size:clamp(27px,5vw,42px);margin:0 0 8px}.lead{color:var(--muted);line-height:1.8;margin:0 0 22px}.panel{background:linear-gradient(145deg,#131d2ef2,#0c121ff5);border:1px solid var(--line);border-radius:20px;padding:21px;margin:16px 0;box-shadow:0 18px 60px #0003}.title{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}label{display:block;color:#b8c6d9;font-size:13px;margin-bottom:7px}input,textarea{width:100%;border:1px solid #34445c;background:#0b1220;color:var(--text);padding:13px;border-radius:12px;font:inherit}textarea{min-height:150px;direction:ltr;text-align:left;resize:vertical}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:12px;padding:12px 17px;font:inherit;font-weight:750;cursor:pointer;background:linear-gradient(110deg,var(--cyan),#8c91ff);color:#07101a}button.alt{background:#202d43;color:#e5efff;border:1px solid #34445c}.status{font-size:13px;color:var(--muted);margin-top:13px;line-height:1.7;min-height:22px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.stat{padding:10px 14px;background:#0b1422;border:1px solid var(--line);border-radius:12px;color:#b9c8dc;font-size:13px}.stat b{color:var(--cyan);margin-right:5px}.tablewrap{overflow:auto;max-height:440px;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:11px;border-bottom:1px solid #263247;text-align:right}th{position:sticky;top:0;background:#111b2c;color:#a9bbd1}td.url{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:#91dce8}.hidden{display:none}.note{font-size:12px;color:#91a1b7;line-height:1.9;margin-top:16px}.foot{text-align:center;color:#718098;font-size:11px;margin-top:28px}@media(max-width:650px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.panel{padding:16px}.wrap{padding:20px 13px}}
+</style></head><body><main class="wrap">
+<header class="top"><div class="brand">VELNIX <span>EXTRACTOR</span></div><div class="tag">🔒 معالجة محلية · Offline</div></header>
+<h1>مكتبة القنوات الخاصة بك</h1><p class="lead">استورد ملف M3U أو الصق محتواه، ثم ابحث بالقنوات وصنّفها وصدّر القائمة بصيغ M3U وJSON وCSV. تتم المعالجة داخل متصفحك ولا تُرفع الملفات إلى أي خادم.</p>
+<section class="panel"><h2 class="title">1 · استيراد قائمة القنوات</h2><div class="grid">
+<div><label for="file">اختيار ملف M3U / M3U8</label><input id="file" type="file" accept=".m3u,.m3u8,.txt,audio/x-mpegurl,application/vnd.apple.mpegurl"></div>
+<div><label for="filter">تصفية حسب الاسم أو التصنيف</label><input id="filter" placeholder="ابحث عن قناة أو تصنيف..."></div>
+<div class="full"><label for="paste">أو الصق نص القائمة هنا</label><textarea id="paste" placeholder="#EXTM3U&#10;#EXTINF:-1 group-title=&quot;News&quot;,Channel name&#10;https://example.com/channel.m3u8"></textarea></div>
+</div><div class="actions"><button id="parse">تحليل القائمة</button><button class="alt" id="clear">مسح</button></div><div class="status" id="status">لم يتم استيراد قائمة بعد.</div></section>
+<section class="panel hidden" id="results"><h2 class="title">2 · القنوات المستخرجة</h2><div class="stats"><div class="stat">إجمالي القنوات <b id="total">0</b></div><div class="stat">التصنيفات <b id="groups">0</b></div><div class="stat">المعروض <b id="shown">0</b></div></div><div class="actions"><button id="m3u">تنزيل M3U</button><button class="alt" id="json">تنزيل JSON</button><button class="alt" id="csv">تنزيل CSV</button></div><div class="tablewrap" style="margin-top:16px"><table><thead><tr><th>#</th><th>اسم القناة</th><th>التصنيف</th><th>رابط القناة</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<p class="note">الخصوصية: هذه الأداة لا تتصل بخدمة Xtream ولا تطلب بيانات الدخول. استورد ملف قائمة حصلت عليه من مزوّدك بإذن. بعض الروابط قد تكون مؤقتة أو مرتبطة بالاشتراك؛ نسخ الرابط لا يلغي صلاحية المزوّد أو مدة الاشتراك.</p><footer class="foot">VELNIX EXTRACTOR · Offline edition</footer></main>
 <script>
-(()=>{
-const API='https://shungcjflcjwubdlhyzq.supabase.co';
-const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
-const client=window.supabase.createClient(API,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
-const $=id=>document.getElementById(id);
-let categories=[],channels=[];
-function status(id,msg,error=false){$(id).textContent=msg;$(id).classList.toggle('danger',error)}
-function showTool(user){if(user?.app_metadata?.role!=='admin'){status('loginStatus','هذا الحساب غير مخوّل لاستخدام الأداة.',true);return} $('loginPanel').classList.add('hidden');$('toolPanel').classList.remove('hidden')}
-function clearProvider(){['server','username','providerPassword'].forEach(id=>$(id).value='');categories=[];channels=[];$('extractArea').classList.add('hidden');$('exportActions').classList.add('hidden');$('tableWrap').classList.add('hidden')}
-async function invoke(body){
- const {data,error}=await client.functions.invoke('xtream-extractor',{body});
- if(error)throw new Error(data?.error||error.message||'تعذر تنفيذ الطلب');
- if(data?.error)throw new Error(data.error);
- return data;
-}
-function creds(){return {server_url:$('server').value.trim(),username:$('username').value.trim(),password:$('providerPassword').value}}
-function render(){
- $('channelRows').innerHTML=channels.slice(0,300).map((c,i)=>'<tr><td>'+(i+1)+'</td><td class="name">'+esc(c.name)+'</td><td>'+esc(c.category_name||'—')+'</td><td class="url" title="'+esc(c.stream_url)+'">'+esc(c.stream_url)+'</td></tr>').join('');
- $('channelCount').textContent=channels.length.toLocaleString('en-US');
- $('tableWrap').classList.toggle('hidden',channels.length===0);
- $('exportActions').classList.toggle('hidden',channels.length===0);
-}
+(()=>{'use strict';const $=id=>document.getElementById(id);let all=[];
+const attr=(line,key)=>{const re=new RegExp('(?:^|\\s)'+key+'="([^"]*)"','i');return(line.match(re)||[])[1]||''};
+function parse(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.some(x=>x.startsWith('#EXTM3U')))throw Error('الملف لا يبدو بصيغة M3U صحيحة؛ لم نجد #EXTM3U.');const out=[];let meta=null;for(const line of lines){if(line.startsWith('#EXTINF:')){meta=line;continue}if(line.startsWith('#')||!meta)continue;if(!/^https?:\/\//i.test(line)&&!/^rtmp:\/\//i.test(line)&&!/^rtsp:\/\//i.test(line)){meta=null;continue}const comma=meta.indexOf(',');out.push({name:(comma>=0?meta.slice(comma+1).trim():'قناة بدون اسم')||'قناة بدون اسم',group:attr(meta,'group-title')||'بدون تصنيف',logo:attr(meta,'tvg-logo'),tvgId:attr(meta,'tvg-id'),url:line});meta=null}return out}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function download(name,type,content){
- const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-function m3u(){return '#EXTM3U\n'+channels.map(c=>'#EXTINF:-1 tvg-id="'+String(c.id).replace(/"/g,'')+'" tvg-logo="'+String(c.logo||'').replace(/"/g,'')+'" group-title="'+String(c.category_name||'').replace(/"/g,'')+'",'+String(c.name).replace(/[\r\n]/g,' ')+'\n'+c.stream_url).join('\n')}
-function csv(){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+['name,category,stream_url,logo',...channels.map(c=>[c.name,c.category_name,c.stream_url,c.logo].map(q).join(','))].join('\n')}
-$('loginBtn').addEventListener('click',async()=>{
- const btn=$('loginBtn');btn.disabled=true;status('loginStatus','جارٍ التحقق من الحساب...');
- try{const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('loginPassword').value});if(error)throw error;if(data.user?.app_metadata?.role!=='admin'){await client.auth.signOut();throw new Error('الحساب ليس حساب مدير مخوّلاً')}showTool(data.user);status('loginStatus','تم تسجيل الدخول.')}
- catch(e){status('loginStatus',e.message||'فشل تسجيل الدخول',true)}finally{btn.disabled=false}
-});
-$('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();clearProvider();$('toolPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('loginPassword').value='';status('loginStatus','تم تسجيل الخروج.')});
-$('connectBtn').addEventListener('click',async()=>{
- const btn=$('connectBtn');btn.disabled=true;status('connectStatus','جارٍ الاتصال والتحقق من الاشتراك...');
- try{const data=await invoke({action:'connect',...creds()});categories=data.categories||[];$('category').innerHTML='<option value="">كل القنوات</option>'+categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');$('categoryCount').textContent=categories.length;$('accountStatus').textContent=data.account?.status||'نشط';$('extractArea').classList.remove('hidden');channels=[];render();status('connectStatus','نجح الاتصال. اختَر تصنيفاً أو استخرج القائمة كاملة.')}
- catch(e){status('connectStatus',e.message,true)}finally{btn.disabled=false}
-});
-async function getCategory(id){const data=await invoke({action:'channels',...creds(),category_id:id||''});return (data.channels||[]).map(c=>({...c,category_name:c.category_name||(categories.find(x=>x.id===c.category_id)?.name||'بدون تصنيف')}))}
-$('extractBtn').addEventListener('click',async()=>{
- const btn=$('extractBtn');btn.disabled=true;channels=[];render();status('extractStatus','جارٍ استخراج القنوات...');
- try{channels=await getCategory($('category').value);render();status('extractStatus','اكتمل استخراج '+channels.length+' قناة.')}
- catch(e){status('extractStatus',e.message,true)}finally{btn.disabled=false}
-});
-$('allBtn').addEventListener('click',async()=>{
- const btn=$('allBtn');btn.disabled=true;channels=[];render();
- try{
-  if(!categories.length){channels=await getCategory('')}
-  else{for(let i=0;i<categories.length;i++){status('extractStatus','استخراج '+categories[i].name+' · '+(i+1)+'/'+categories.length);const rows=await getCategory(categories[i].id);channels.push(...rows);$('channelCount').textContent=channels.length.toLocaleString('en-US')}}
-  render();status('extractStatus','اكتمل استخراج '+channels.length+' قناة من '+categories.length+' تصنيفاً.')
- }catch(e){render();status('extractStatus',e.message+' · احتُفظ بالقنوات التي اكتمل استخراجها.',true)}finally{btn.disabled=false}
-});
-$('m3uBtn').addEventListener('click',()=>download('velnix-channels.m3u','audio/x-mpegurl;charset=utf-8',m3u()));
-$('jsonBtn').addEventListener('click',()=>download('velnix-channels.json','application/json;charset=utf-8',JSON.stringify(channels,null,2)));
-$('csvBtn').addEventListener('click',()=>download('velnix-channels.csv','text/csv;charset=utf-8',csv()));
-client.auth.getSession().then(({data})=>{if(data.session?.user)showTool(data.session.user)});
+function filtered(){const q=$('filter').value.trim().toLocaleLowerCase();return all.filter(c=>(c.name+' '+c.group+' '+c.tvgId).toLocaleLowerCase().includes(q))}
+function render(){const data=filtered();$('total').textContent=all.length.toLocaleString('en-US');$('groups').textContent=new Set(all.map(c=>c.group)).size.toLocaleString('en-US');$('shown').textContent=data.length.toLocaleString('en-US');$('rows').innerHTML=data.slice(0,600).map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.group)+'</td><td class="url" title="'+esc(c.url)+'">'+esc(c.url)+'</td></tr>').join('');$('results').classList.toggle('hidden',!all.length);if(data.length>600)$('status').textContent='يعرض الجدول أول 600 نتيجة لتخفيف المتصفح؛ التصدير يشمل كل النتائج المطابقة.'}
+function download(name,type,content){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function makeM3U(data){return '#EXTM3U\n'+data.map(c=>'#EXTINF:-1'+(c.tvgId?' tvg-id="'+c.tvgId.replace(/"/g,'')+'"':'')+(c.logo?' tvg-logo="'+c.logo.replace(/"/g,'')+'"':'')+' group-title="'+c.group.replace(/"/g,'')+'",'+c.name.replace(/[\r\n]/g,' ')+'\n'+c.url).join('\n')}
+function makeCSV(data){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+['name,group,tvg_id,logo,url',...data.map(c=>[c.name,c.group,c.tvgId,c.logo,c.url].map(q).join(','))].join('\n')}
+$('parse').addEventListener('click',async()=>{try{let raw=$('paste').value;if(!raw&&$('file').files[0])raw=await $('file').files[0].text();if(!raw.trim())throw Error('اختر ملفاً أو الصق نص M3U أولاً.');all=parse(raw);render();$('status').textContent='تم تحليل '+all.length+' قناة بنجاح. لم يتم رفع أي بيانات.'}catch(e){all=[];$('results').classList.add('hidden');$('status').textContent=e.message}});
+$('filter').addEventListener('input',render);$('clear').addEventListener('click',()=>{$('file').value='';$('paste').value='';$('filter').value='';all=[];$('results').classList.add('hidden');$('status').textContent='تم مسح القائمة.'});
+$('m3u').addEventListener('click',()=>download('velnix-channels.m3u','audio/x-mpegurl;charset=utf-8',makeM3U(filtered())));
+$('json').addEventListener('click',()=>download('velnix-channels.json','application/json;charset=utf-8',JSON.stringify(filtered(),null,2)));
+$('csv').addEventListener('click',()=>download('velnix-channels.csv','text/csv;charset=utf-8',makeCSV(filtered())));
 })();
 </script></body></html>
