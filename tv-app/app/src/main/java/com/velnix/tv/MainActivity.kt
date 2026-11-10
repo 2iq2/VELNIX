@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +42,7 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -192,7 +194,7 @@ private fun VelnixTvApp() {
                     item {
                         CategoryPill("المفضلة", selectedCategory == "favorites") { selectedCategory = "favorites" }
                     }
-                    items(categories) { category ->
+                    items(categories, key = { it.id }, contentType = { "category" }) { category ->
                         CategoryPill(category.title, selectedCategory == category.id) { selectedCategory = category.id }
                     }
                 }
@@ -237,7 +239,7 @@ private fun VelnixTvApp() {
                         contentPadding = PaddingValues(bottom = 30.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(visibleChannels, key = { it.id }) { channel ->
+                        items(visibleChannels, key = { it.id }, contentType = { "channel" }) { channel ->
                             ChannelCard(
                                 channel = channel,
                                 favorite = favorites.contains(channel.id),
@@ -282,6 +284,12 @@ private fun ChannelCard(
     onFavorite: () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val logoRequest = remember(channel.logo) {
+        channel.logo?.let { url ->
+            ImageRequest.Builder(context).data(url).size(160, 160).crossfade(false).build()
+        }
+    }
     Box(
         modifier = Modifier.height(112.dp).clip(RoundedCornerShape(15.dp))
             .background(if (focused) Color(0xFF1C3947) else Panel)
@@ -295,7 +303,7 @@ private fun ChannelCard(
         ) {
             Box(Modifier.size(58.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF20334A)), contentAlignment = Alignment.Center) {
                 if (channel.logo != null) {
-                    AsyncImage(model = channel.logo, contentDescription = channel.name, modifier = Modifier.fillMaxSize().padding(5.dp))
+                    AsyncImage(model = logoRequest, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(5.dp))
                 } else {
                     Text(channel.name.take(2), color = Accent, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 }
