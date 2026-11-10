@@ -170,7 +170,7 @@ let lang='ar',channelRows=[];
 let authSession=null,authMode='login',userLists=[],activeListId=null,adminCategories=[];try{authSession=JSON.parse(localStorage.getItem('velnix:auth')||'null')}catch(e){}
 const $=(s,r=document)=>r.querySelector(s);
 const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
-let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
+let hlsInstance=null,mpegtsPlayer=null,dashPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
 async function rest(path){
@@ -255,6 +255,7 @@ let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTim
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
+ if(dashPlayer){try{dashPlayer.reset()}catch(e){}dashPlayer=null}
 }
 function stopPlayback(){
  playbackGeneration++;activeRow=null;recovering=false;retryCount=0;
@@ -341,6 +342,15 @@ async function startPlayback(row,generation,reason='initial'){
   });
   instance.attachMediaElement(video);instance.load();
   instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ إعادة الاتصال التلقائية مفعّلة.':'Connected; automatic recovery enabled.')}).catch(e=>{if(generation===playbackGeneration)state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+  return;
+ }
+ if(type==='dash'){
+  const mod=await import('https://esm.sh/dashjs@5.0.3');
+  if(generation!==playbackGeneration)return;
+  const dash=mod.default||mod;
+  dashPlayer=dash.MediaPlayer().create();
+  dashPlayer.initialize(video,url,true);
+  state(lang==='ar'?'مشغل DASH التكيفي جاهز.':'Adaptive DASH player ready.');
   return;
  }
  video.src=url;await video.play().catch(()=>{});
