@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -18,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
-import androidx.tv.material3.Surface as TvSurface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +47,6 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
-import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
@@ -134,6 +131,7 @@ private fun VelnixTvApp() {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var favorites by remember { mutableStateOf(loadFavorites(context)) }
+    val scope = rememberCoroutineScope()
 
     suspend fun refresh() {
         loading = true
@@ -225,7 +223,7 @@ private fun VelnixTvApp() {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(error!!, color = Color.White, fontSize = 18.sp)
                             Spacer(Modifier.height(12.dp))
-                            Button(onClick = { kotlinx.coroutines.GlobalScope.launch(Dispatchers.Main) { refresh() } }) { Text("إعادة المحاولة") }
+                            Button(onClick = { scope.launch { refresh() } }) { Text("إعادة المحاولة") }
                         }
                     }
                     visibleChannels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -262,12 +260,12 @@ private fun VelnixTvApp() {
 @Composable
 private fun CategoryPill(title: String, active: Boolean, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
-    TvSurface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = when { active -> Accent; focused -> Color(0xFF23434A); else -> Color(0xFF152238) },
-        border = BorderStroke(1.dp, if (focused || active) Accent else Color(0x223B5268)),
-        modifier = Modifier.onFocusChanged { focused = it.isFocused }
+    Box(
+        modifier = Modifier.clip(RoundedCornerShape(50))
+            .background(when { active -> Accent; focused -> Color(0xFF23434A); else -> Color(0xFF152238) })
+            .clickable(onClick = onClick).focusable()
+            .onFocusChanged { focused = it.isFocused }
+            .padding(1.dp)
     ) {
         Text(title, color = if (active) Night else Color.White, fontSize = 14.sp,
             fontWeight = if (active || focused) FontWeight.Bold else FontWeight.Medium,
@@ -283,12 +281,12 @@ private fun ChannelCard(
     onFavorite: () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
-    Surface(
-        onClick = onOpen,
-        shape = RoundedCornerShape(15.dp),
-        color = if (focused) Color(0xFF1C3947) else Panel,
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Accent else Color(0x223B5268)),
-        modifier = Modifier.height(112.dp).onFocusChanged { focused = it.isFocused }
+    Box(
+        modifier = Modifier.height(112.dp).clip(RoundedCornerShape(15.dp))
+            .background(if (focused) Color(0xFF1C3947) else Panel)
+            .clickable(onClick = onOpen).focusable()
+            .onFocusChanged { focused = it.isFocused }
+            .padding(1.dp)
     ) {
         Row(
             Modifier.fillMaxSize().padding(12.dp),
