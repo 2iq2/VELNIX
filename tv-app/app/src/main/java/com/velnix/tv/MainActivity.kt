@@ -37,6 +37,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
@@ -230,7 +231,7 @@ private fun VelnixTvApp() {
                         Text("ماكو قنوات بهالقسم", color = Muted, fontSize = 18.sp)
                     }
                     else -> LazyVerticalGrid(
-                        columns = GridCells.Fixed(5),
+                        columns = GridCells.Fixed(4),
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         contentPadding = PaddingValues(bottom = 30.dp),
@@ -318,12 +319,20 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
     val context = LocalContext.current
     var playbackError by remember { mutableStateOf<String?>(null) }
     var retryCount by remember { mutableIntStateOf(0) }
+    val currentRetryCount by rememberUpdatedState(retryCount)
     val player = remember(channel.id) {
         val dataSource = DefaultHttpDataSource.Factory()
             .setUserAgent("VELNIX-TV/1.0")
+            .setConnectTimeoutMs(20_000)
+            .setReadTimeoutMs(60_000)
             .setAllowCrossProtocolRedirects(true)
             .setDefaultRequestProperties(mapOf("apikey" to BuildConfig.SUPABASE_PUBLISHABLE_KEY))
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(30_000, 90_000, 5_000, 15_000)
+            .setBackBuffer(0, false)
+            .build()
         ExoPlayer.Builder(context)
+            .setLoadControl(loadControl)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
             .build().apply {
                 playWhenReady = true
@@ -339,9 +348,9 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
-                if (retryCount < 4) {
-                    retryCount++
-                    playbackError = "انقطع الاتصال، إعادة المحاولة ${retryCount}/4..."
+                if (currentRetryCount < 4) {
+                    retryCount = currentRetryCount + 1
+                    playbackError = "انقطع الاتصال، إعادة المحاولة ${currentRetryCount + 1}/4..."
                     player.playWhenReady = false
                 } else {
                     playbackError = "تعذر تشغيل القناة. جرّب قناة ثانية أو أعد المحاولة."
