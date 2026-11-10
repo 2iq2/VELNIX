@@ -146,74 +146,6 @@ footer{border-color:#ffffff12;background:#08090d}
  .channel{min-height:82px;border-radius:9px}
  .filters .filter{padding:9px 13px}
 }
- 
-/* VELNIX streaming-first home */
-header nav{display:none!important}
-.menu-wrap{position:relative}
-.menu-toggle{width:42px;height:42px;border:1px solid #ffffff20;border-radius:9px;background:#17181e;color:#fff;font-size:27px;line-height:1}
-.site-menu{position:absolute;top:calc(100% + 12px);inset-inline-end:0;z-index:60;width:210px;padding:7px;background:#17181e;border:1px solid #ffffff20;border-radius:11px;box-shadow:0 18px 55px #000b}
-.site-menu button{display:block;width:100%;text-align:right;border:0;background:transparent;color:#f5f5f6;padding:13px 12px;border-radius:7px;font:600 14px "Tajawal",sans-serif}
-.site-menu button:hover{background:#ffffff12;color:#fff}
-.streaming-home{display:block;background:#08090d;min-height:calc(100vh - 74px)}
-.streaming-hero{position:relative;min-height:490px;overflow:hidden;display:flex;align-items:center;padding:70px max(6vw,calc((100vw - 1220px)/2));isolation:isolate;background:linear-gradient(90deg,#08090d 0%,rgba(8,9,13,.9) 42%,rgba(8,9,13,.35) 100%),linear-gradient(0deg,#08090d 0%,transparent 65%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1800&q=85') center 38%/cover}
-.streaming-hero-copy{position:relative;z-index:2;max-width:580px}
-.streaming-kicker{color:#ff6269;font:700 11px "DM Sans","Tajawal",sans-serif;letter-spacing:2px}
-.streaming-hero h1{font-size:clamp(42px,6vw,72px);margin:17px 0 12px;line-height:1.2}
-.streaming-hero h1 span{color:#e50914}
-.streaming-hero p{color:#d0d0d4;font-size:17px;line-height:1.8;max-width:460px}
-.vod-hero-button{margin-top:15px;background:#e50914;color:white;border:0;border-radius:7px;padding:13px 22px;font:700 14px "Tajawal",sans-serif}
-.streaming-hero-art{position:absolute;inset-inline-end:9%;top:50%;transform:translateY(-50%);width:320px;height:320px;border:1px solid #ffffff1b;border-radius:22px;background:linear-gradient(145deg,#272a35aa,#0d0e14dd);display:grid;place-items:center;box-shadow:0 30px 90px #0009;rotate:5deg}
-.art-glow{position:absolute;inset:15%;border-radius:50%;background:#e509142b;filter:blur(45px)}
-.art-title{position:relative;text-align:center;font:800 35px "DM Sans",sans-serif;letter-spacing:6px;color:white;text-shadow:0 8px 40px #000}
-.art-title span{font-size:13px;letter-spacing:5px;color:#f0444b}
-.vod-main{width:min(1220px,calc(100% - 48px));padding:30px 0 70px}
-.vod-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:19px}
-.vod-tabs{display:flex;gap:9px}
-.vod-tab{border:1px solid #ffffff1c;background:#15161d;color:#c7c7cd;border-radius:7px;padding:10px 20px;font:600 14px "Tajawal",sans-serif}
-.vod-tab.active{background:#e50914;color:#fff;border-color:#e50914}
-.vod-search{display:flex;align-items:center;gap:9px;width:min(340px,100%);border:1px solid #ffffff20;background:#15161d;border-radius:8px;padding:0 12px;color:#aaa}
-.vod-search input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:#fff;padding:12px 0;font:14px "Tajawal",sans-serif}
-.vod-categories{display:flex;gap:8px;overflow:auto;padding:3px 0 16px;scrollbar-width:thin}
-.vod-category{white-space:nowrap;border:1px solid #ffffff18;background:#14151b;color:#bdbdc5;border-radius:30px;padding:8px 15px;font:12px "Tajawal",sans-serif}
-.vod-category.active,.vod-category:hover{background:#fff;color:#111;border-color:#fff}
-.vod-heading{display:flex;justify-content:space-between;align-items:end;margin:8px 0 18px}
-.vod-heading h2{font-size:25px;margin:6px 0 0}
-.vod-count{font-size:12px;color:#92939b}
-.vod-status{color:#aaa;font-size:13px;padding:10px 0 18px}
-.vod-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 13px}
-.vod-card{min-width:0;cursor:pointer;position:relative}
-.vod-poster{aspect-ratio:2/3;position:relative;overflow:hidden;border-radius:8px;background:linear-gradient(145deg,#262833,#101117);border:1px solid #ffffff12;box-shadow:0 9px 25px #0005;transition:transform .22s,border-color .22s}
-.vod-card:hover .vod-poster{transform:scale(1.035);border-color:#ffffff55}
-.vod-poster img{width:100%;height:100%;object-fit:cover;display:block}
-.vod-poster-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;color:#eee;font-weight:800;font-size:18px;background:radial-gradient(circle at 50% 35%,#4b2026,#15151c 68%)}
-.vod-poster-fallback[hidden]{display:none}
-.vod-play-overlay{position:absolute;inset:0;display:grid;place-items:center;background:#0000;opacity:0;transition:.2s}
-.vod-card:hover .vod-play-overlay{opacity:1;background:#0005}
-.vod-play-overlay span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#e50914;color:#fff;font-size:19px}
-.vod-card h3{font-size:13px;line-height:1.5;margin:9px 1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vod-card-meta{display:flex;gap:9px;color:#999aa2;font-size:10px}
-.vod-more{display:block;margin:28px auto 0;border:1px solid #ffffff28;background:#17181e;color:white;border-radius:7px;padding:11px 28px}
-.vod-modal{position:fixed;inset:0;z-index:100;background:#000d;display:grid;place-items:center;padding:18px;backdrop-filter:blur(9px)}
-.vod-modal[hidden]{display:none}
-.vod-detail-panel{position:relative;width:min(760px,100%);max-height:90vh;overflow:auto;border:1px solid #ffffff20;border-radius:14px;background:#15161d;box-shadow:0 30px 90px #000c;padding:28px}
-.vod-detail-close{position:absolute;top:12px;inset-inline-end:13px;width:36px;height:36px;border:0;border-radius:8px;background:#0008;color:#fff;font-size:25px;z-index:2}
-.vod-detail-layout{display:grid;grid-template-columns:190px 1fr;gap:25px}
-.vod-detail-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#252630}
-.vod-detail-copy h2{font-size:27px;margin:4px 0 10px}
-.vod-detail-copy p{color:#c0c0c6;font-size:14px;line-height:1.9}
-.vod-detail-meta{color:#aaa;font-size:12px;margin-bottom:13px}
-.vod-play-button{background:#e50914;color:#fff;border:0;border-radius:7px;padding:12px 20px;font:700 14px "Tajawal",sans-serif;margin-top:10px}
-.vod-season{margin-top:22px;border-top:1px solid #ffffff16;padding-top:16px}
-.vod-season h3{font-size:15px}
-.vod-episode{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px;border-radius:8px;background:#ffffff08;margin:7px 0}
-.vod-episode span{font-size:13px;color:#eee}
-.vod-episode button{background:#e50914;border:0;color:#fff;border-radius:6px;padding:7px 12px;font:12px "Tajawal",sans-serif}
-@media(max-width:950px){.vod-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.streaming-hero-art{inset-inline-end:4%;width:250px;height:250px;opacity:.7}}
-@media(max-width:600px){.streaming-hero{min-height:430px;padding:52px 22px;background-position:58% center}.streaming-hero-art{width:150px;height:180px;inset-inline-end:-35px;opacity:.3}.art-title{font-size:20px}.vod-main{width:calc(100% - 28px);padding-top:22px}.vod-toolbar{align-items:stretch;flex-direction:column}.vod-tabs{width:100%}.vod-tab{flex:1}.vod-search{width:100%}.vod-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px 9px}.vod-card h3{font-size:12px}.vod-heading h2{font-size:21px}.vod-detail-panel{padding:22px 15px}.vod-detail-layout{grid-template-columns:105px 1fr;gap:13px}.vod-detail-copy h2{font-size:19px}.vod-detail-copy p{font-size:12px}.vod-episode{padding:9px}.vod-episode span{font-size:11px}}
-body.view-vod #home,body.view-vod #categories,body.view-vod #about{display:none!important}
-body.view-live #streamingHome,body.view-live #home,body.view-live #about{display:none!important}
-body.view-series #home,body.view-series #categories,body.view-series #about{display:none!important}
-
 </style>
 </head>
 <body>
@@ -221,34 +153,9 @@ body.view-series #home,body.view-series #categories,body.view-series #about{disp
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
 <nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav>
-<div class="actions"><button class="lang" id="langBtn" type="button">EN</button><div class="menu-wrap"><button class="menu-toggle" id="menuToggle" type="button" aria-label="القائمة" aria-expanded="false">⋮</button><div class="site-menu" id="siteMenu" hidden><button type="button" data-view="vod">واجهة الأفلام</button><button type="button" data-view="series">المسلسلات</button><button type="button" data-view="live">قائمة البث المباشر</button></div></div></div>
+<div class="actions"><button class="lang" id="langBtn" type="button">EN</button><button class="login" id="loginBtn" data-ar="تسجيل الدخول" data-en="Sign in">تسجيل الدخول</button></div>
 </div></header>
 <main>
-<section class="streaming-home" id="streamingHome">
- <div class="streaming-hero">
-  <div class="streaming-hero-copy">
-   <span class="streaming-kicker">VELNIX • STREAMING</span>
-   <h1>عالم من الأفلام<br><span>بين يديك.</span></h1>
-   <p>اكتشف الأفلام والمسلسلات، واختر ما تريد مشاهدته في أي وقت.</p>
-   <button class="vod-hero-button" id="heroBrowseMovies" type="button">▶ استكشف المكتبة</button>
-  </div>
-  <div class="streaming-hero-art" aria-hidden="true"><div class="art-glow"></div><div class="art-title">VELNIX<br><span>ORIGINALS</span></div></div>
- </div>
- <div class="vod-main wrap">
-  <div class="vod-toolbar">
-   <div class="vod-tabs"><button class="vod-tab active" data-vod-kind="movie" type="button">الأفلام</button><button class="vod-tab" data-vod-kind="series" type="button">المسلسلات</button></div>
-   <label class="vod-search"><span>⌕</span><input id="vodSearch" type="search" placeholder="ابحث عن فيلم أو مسلسل..." autocomplete="off"></label>
-  </div>
-  <div class="vod-categories" id="vodCategories"></div>
-  <div class="vod-heading"><div><span class="streaming-kicker">اختيارات VELNIX</span><h2 id="vodHeading">أفلام تستحق المشاهدة</h2></div><span id="vodCount" class="vod-count"></span></div>
-  <div id="vodStatus" class="vod-status" role="status">جارٍ تحميل مكتبة الأفلام...</div>
-  <div class="vod-grid" id="vodGrid"></div>
-  <button class="vod-more" id="loadMoreVod" type="button" hidden>عرض المزيد</button>
- </div>
-</section>
-<div class="vod-modal" id="vodDetails" hidden role="dialog" aria-modal="true" aria-label="تفاصيل المحتوى">
- <div class="vod-detail-panel"><button class="vod-detail-close" id="closeVodDetails" type="button" aria-label="إغلاق">×</button><div id="vodDetailsBody"></div></div>
-</div>
 <section class="wrap hero" id="home">
 <div>
 <div class="eyebrow" data-ar="تجربة ترفيه بمستوى مختلف" data-en="A premium entertainment experience">تجربة ترفيه بمستوى مختلف</div>
@@ -528,112 +435,6 @@ function renderChannels(){
  const more=$('#loadMoreChannels');more.hidden=rows.length<=visibleLimit;more.textContent=lang==='ar'?'عرض المزيد · '+Math.min(90,rows.length-visibleLimit).toLocaleString('ar-IQ')+' قناة':'Load more · '+Math.min(90,rows.length-visibleLimit)+' channels';
  const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة في هذا القسم.':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels in this category.';
 }
- 
-let vodKind="movie",vodItems=[],vodCategories=[],vodCategory="all",vodVisible=42,selectedVod=null;
-function setView(view){
- document.body.classList.remove("view-vod","view-live","view-series");
- document.body.classList.add(view==="live"?"view-live":view==="series"?"view-series":"view-vod");
- const menu=$("#siteMenu");menu.hidden=true;$("#menuToggle").setAttribute("aria-expanded","false");
- if(view==="live"){document.body.classList.add("view-live");$("#categories").scrollIntoView({behavior:"instant",block:"start"});return;}
- if(view==="series"){vodKind="series";vodCategory="all";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="series"));$("#vodHeading").textContent="مسلسلات تستحق المتابعة";loadVod();return;}
- vodKind="movie";vodCategory="all";document.querySelectorAll("[data-vod-kind]").forEach(b=>b.classList.toggle("active",b.dataset.vodKind==="movie"));$("#vodHeading").textContent="أفلام تستحق المشاهدة";loadVod();
-}
-function renderVodCategories(){
- const box=$("#vodCategories");box.replaceChildren();
- const all=document.createElement("button");all.className="vod-category"+(vodCategory==="all"?" active":"");all.textContent="الكل";all.addEventListener("click",()=>{vodCategory="all";loadVod()});box.append(all);
- vodCategories.forEach(cat=>{const b=document.createElement("button");b.className="vod-category"+(vodCategory===cat.id?" active":"");b.textContent=cat.name;b.addEventListener("click",()=>{vodCategory=cat.id;loadVod()});box.append(b)});
-}
-function renderVod(){
- const grid=$("#vodGrid");grid.replaceChildren();
- const q=$("#vodSearch").value.trim().toLocaleLowerCase();
- const filtered=vodItems.filter(item=>(!q||item.name.toLocaleLowerCase().includes(q)||String(item.plot||"").toLocaleLowerCase().includes(q))&&(vodCategory==="all"||item.category_id===vodCategory));
- $("#vodCount").textContent=filtered.length+" عنوان";
- filtered.slice(0,vodVisible).forEach(item=>{
-  const card=document.createElement("article");card.className="vod-card";card.tabIndex=0;
-  const poster=document.createElement("div");poster.className="vod-poster";
-  const fallback=document.createElement("div");fallback.className="vod-poster-fallback";fallback.textContent=item.name;poster.append(fallback);
-  if(item.poster){const img=document.createElement("img");img.src=item.poster;img.alt=item.name;img.loading="lazy";img.referrerPolicy="no-referrer";img.addEventListener("load",()=>fallback.hidden=true);img.addEventListener("error",()=>img.remove());poster.append(img)}
-  const overlay=document.createElement("div");overlay.className="vod-play-overlay";overlay.innerHTML="<span>▶</span>";poster.append(overlay);
-  const title=document.createElement("h3");title.textContent=item.name;
-  const meta=document.createElement("div");meta.className="vod-card-meta";if(item.year){const y=document.createElement("span");y.textContent=item.year;meta.append(y)}if(item.rating&&item.rating!=="0"){const r=document.createElement("span");r.textContent="★ "+item.rating;meta.append(r)}
-  card.append(poster,title,meta);card.addEventListener("click",()=>openVodDetails(item));card.addEventListener("keydown",e=>{if(e.key==="Enter"){openVodDetails(item)}});
-  grid.append(card);
- });
- $("#vodStatus").textContent=filtered.length?(filtered.length>vodVisible?"":"تم تحميل "+filtered.length+" عنوان."):"ماكو محتوى بهذا القسم حالياً، أو أن مصدر الاشتراك ما يوفره.";
- $("#loadMoreVod").hidden=filtered.length<=vodVisible;
-}
-async function loadVod(){
- const status=$("#vodStatus");status.textContent="جارٍ تحميل مكتبة "+(vodKind==="series"?"المسلسلات":"الأفلام")+"...";
- $("#vodGrid").replaceChildren();vodVisible=42;
- try{
-  const data=await gateway({action:"vod_catalog",kind:vodKind,category_id:vodCategory==="all"?"":vodCategory});
-  vodCategories=data.categories||[];vodItems=data.items||[];
-  renderVodCategories();renderVod();
- }catch(error){console.error("VELNIX VOD catalogue:",error);status.textContent="تعذر تحميل مكتبة المحتوى: "+(error.message||"تحقق من مصدر الاشتراك");$("#vodGrid").replaceChildren()}
-}
-async function openVodDetails(item){
- selectedVod=item;const modal=$("#vodDetails"),body=$("#vodDetailsBody");modal.hidden=false;body.innerHTML='<div class="vod-status">جارٍ تحميل التفاصيل...</div>';
- try{
-  const details=await gateway({action:"vod_details",kind:vodKind,id:item.id});
-  const info=details.info||{},movieData=details.movie_data||{};
-  const poster=item.poster||info.cover||info.movie_image||"";
-  const title=info.name||item.name;
-  const plot=info.plot||item.plot||"لا تتوفر تفاصيل إضافية لهذا العنوان.";
-  const year=info.releasedate||info.releaseDate||info.year||item.year||"";
-  const rating=info.rating||item.rating||"";
-  const layout=document.createElement("div");layout.className="vod-detail-layout";
-  const image=document.createElement("img");image.className="vod-detail-poster";image.alt=title;if(poster)image.src=poster;
-  const copy=document.createElement("div");copy.className="vod-detail-copy";
-  const h=document.createElement("h2");h.textContent=title;
-  const meta=document.createElement("div");meta.className="vod-detail-meta";meta.textContent=[year,rating?"★ "+rating:""].filter(Boolean).join("  •  ");
-  const p=document.createElement("p");p.textContent=plot;
-  copy.append(h,meta,p);
-  if(vodKind==="movie"){
-   const play=document.createElement("button");play.className="vod-play-button";play.textContent="▶ تشغيل الفيلم";play.addEventListener("click",()=>playVod(item.id,movieData.container_extension||item.extension||"mp4",false,title));copy.append(play);
-  }
-  layout.append(image,copy);body.replaceChildren(layout);
-  if(vodKind==="series"){
-   const seasons=details.seasons||[];
-   seasons.forEach(season=>{
-    const section=document.createElement("section");section.className="vod-season";
-    const sh=document.createElement("h3");sh.textContent="الموسم "+season.season;section.append(sh);
-    (season.episodes||[]).forEach(ep=>{
-     const row=document.createElement("div");row.className="vod-episode";
-     const label=document.createElement("span");label.textContent="الحلقة "+(ep.episode_num||ep.title);
-     const play=document.createElement("button");play.textContent="▶ تشغيل";play.addEventListener("click",()=>playVod(ep.id,ep.extension||"mp4",true,title+" - "+label.textContent));
-     row.append(label,play);section.append(row);
-    });
-    body.append(section);
-   });
-   if(!seasons.length){const no=document.createElement("p");no.className="vod-status";no.textContent="لا توجد حلقات متاحة لهذا المسلسل.";body.append(no)}
-  }
- }catch(error){body.innerHTML="";const p=document.createElement("p");p.className="vod-status";p.textContent="تعذر تحميل التفاصيل: "+(error.message||"");body.append(p)}
-}
-async function playVod(id,extension,isEpisode,title){
- const ext=["mp4","mkv","avi","m3u8","ts"].includes(String(extension).toLowerCase())?String(extension).toLowerCase():"mp4";
- stopPlayback();activeRow=null;
- const query=isEpisode?"episode_id=":"vod_id=";
- const mediaUrl=API+"/functions/v1/xtream-gateway?"+query+encodeURIComponent(id)+"&extension="+encodeURIComponent(ext);
- playerModal.classList.add("show");$("#playerTitle").textContent=title;$("#playerMeta").textContent=isEpisode?"SERIES • VELNIX":"MOVIE • VELNIX";$("#playerState").textContent="جارٍ تشغيل المحتوى...";
- $("#vodDetails").hidden=true;
- try{
-  if(ext==="m3u8"){
-   const mod=await import("https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm").catch(()=>import("https://esm.sh/hls.js@1.6.15"));
-   Hls=mod.default||mod;
-   if(Hls.isSupported()){
-    hlsInstance=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:45,maxBufferLength:60,manifestLoadingMaxRetry:5,levelLoadingMaxRetry:5,fragLoadingMaxRetry:5});
-    const instance=hlsInstance;
-    instance.on(Hls.Events.MANIFEST_PARSED,()=>{if(instance===hlsInstance)video.play().then(()=>{$("#playerState").textContent="استمتع بالمشاهدة."}).catch(()=>{$("#playerState").textContent="اضغط تشغيل لبدء المشاهدة."})});
-    instance.on(Hls.Events.ERROR,(_e,d)=>{if(d.fatal&&instance===hlsInstance)$("#playerState").textContent="تعذر تشغيل هذا المصدر بصيغة HLS."});
-    instance.loadSource(mediaUrl);instance.attachMedia(video);return;
-   }
-   if(video.canPlayType("application/vnd.apple.mpegurl")){video.src=mediaUrl;video.load();await video.play();return}
-  }
-  video.src=mediaUrl;video.load();
-  await video.play().then(()=>{$("#playerState").textContent="استمتع بالمشاهدة."}).catch(()=>{$("#playerState").textContent="اضغط تشغيل لبدء المشاهدة."});
- }catch(error){$("#playerState").textContent="تعذر تشغيل هذا المحتوى: "+(error.message||"")}
-}
-
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  try{
@@ -661,20 +462,7 @@ $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventList
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
-if($('#loginBtn'))$('#loginBtn').hidden=true;if($('#heroLogin'))$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
- 
-$("#menuToggle").addEventListener("click",()=>{const m=$("#siteMenu");m.hidden=!m.hidden;$("#menuToggle").setAttribute("aria-expanded",String(!m.hidden))});
-$("#siteMenu").addEventListener("click",e=>{const b=e.target.closest("[data-view]");if(b)setView(b.dataset.view)});
-document.addEventListener("click",e=>{if(!e.target.closest(".menu-wrap")){$("#siteMenu").hidden=true;$("#menuToggle").setAttribute("aria-expanded","false")}});
-document.querySelectorAll("[data-vod-kind]").forEach(b=>b.addEventListener("click",()=>{vodKind=b.dataset.vodKind;vodCategory="all";document.querySelectorAll("[data-vod-kind]").forEach(x=>x.classList.toggle("active",x===b));$("#vodHeading").textContent=vodKind==="series"?"مسلسلات تستحق المتابعة":"أفلام تستحق المشاهدة";loadVod()}));
-$("#vodSearch").addEventListener("input",renderVod);
-$("#loadMoreVod").addEventListener("click",()=>{vodVisible+=42;renderVod()});
-$("#heroBrowseMovies").addEventListener("click",()=>$("#vodGrid").scrollIntoView({behavior:"smooth",block:"start"}));
-$("#closeVodDetails").addEventListener("click",()=>$("#vodDetails").hidden=true);
-$("#vodDetails").addEventListener("click",e=>{if(e.target===$("#vodDetails"))$("#vodDetails").hidden=true});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#vodDetails").hidden=true});
-
-setView('vod');
+$('#loginBtn').hidden=true;$('#heroLogin').hidden=true;$('#authModal').hidden=true;$('#adminTools').hidden=true;
 loadChannels();
 })();
 </script>
