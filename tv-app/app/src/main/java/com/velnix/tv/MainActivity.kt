@@ -255,6 +255,13 @@ private fun VelnixTvApp() {
             loading = true
             error = null
             try {
+                val refreshed = VelnixApi.validSession(context)
+                if (refreshed == null) {
+                    session = null
+                    error = "انتهت جلسة الدخول. سجّل الدخول مرة ثانية."
+                    return@launch
+                }
+                session = refreshed
                 val result = VelnixApi.loadCatalog(context)
                 categories = result.first
                 channels = result.second
@@ -534,7 +541,10 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
             message = ""
         } catch (e: Exception) {
             message = e.message ?: "تعذر تشغيل القناة"
-            retry = currentRetry + 1
+            val detail = message
+            val requiresUserAction = detail.contains("سجّل الدخول") || detail.contains("القسم مقفول") ||
+                detail.contains("غير متاح") || detail.contains("غير مربوط") || detail.contains("403") || detail.contains("401") || detail.contains("404")
+            if (!requiresUserAction) retry = currentRetry + 1
         }
     }
 
