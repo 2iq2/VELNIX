@@ -237,11 +237,24 @@ class VelnixApi(private val context: Context) {
         }.parse(clean)?.time ?: 0L
     } catch (_: Exception) { 0L }
 
+    suspend fun activateSubscriptionCode(code: String): String {
+        val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
+            JSONObject().put("action", "activate_subscription_code").put("code", code.trim().uppercase()).toString()))
+        if (!response.optBoolean("success", false)) throw IllegalStateException(response.optString("error").ifBlank { "تعذر تفعيل كود الباقة" })
+        val sub = response.optJSONObject("subscription")
+        return (sub?.optString("plan_code").orEmpty().ifBlank { "اشتراك" }) + " · " + response.optString("expires_at")
+    }
+
     suspend fun activateBeinCode(code: String): String {
         val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
             JSONObject().put("action", "activate_bein_code").put("code", code.trim().uppercase()).toString()))
-        if (!response.optBoolean("success", false)) throw IllegalStateException("تعذر تفعيل الكود")
+        if (!response.optBoolean("success", false)) throw IllegalStateException(response.optString("error").ifBlank { "تعذر تفعيل كود beIN" })
         return response.optString("expires_at")
+    }
+
+    suspend fun activateAnyCode(code: String): String {
+        return try { activateSubscriptionCode(code) }
+        catch (_: Exception) { activateBeinCode(code) }
     }
 
     suspend fun beinAccessExpiry(): String? {
