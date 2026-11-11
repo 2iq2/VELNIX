@@ -709,8 +709,8 @@ function buildChannelGroups(){
  const groups=[];
  for(const bucket of buckets.values()){
   const variants=bucket.rows;
-  const hasQuality=variants.some(v=>v._quality);
-  const isGroup=variants.length>1&&hasQuality;
+  const distinctQualities=new Set(variants.map(v=>v._quality||'SOURCE'));
+  const isGroup=variants.length>1&&distinctQualities.size>1;
   variants.sort((a,b)=>b._qualityRank-a._qualityRank);
   const representative=variants[0];
   const baseAr=qualityInfo(representative.name_ar||representative.name_en).base||bucket.base;
