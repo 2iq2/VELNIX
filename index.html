@@ -495,25 +495,34 @@ function stopPlayback(){
 function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
 function state(value){$('#playerState').textContent=value;if(/تم رصد توقف البث|تعذر|error|متصل بالبث|اضغط تشغيل|reconnecting|interruption/i.test(String(value)))showSiteToast(value,/تعذر|error|failed/i.test(String(value))?'error':/متصل بالبث/i.test(String(value))?'success':'info')}
 function qualities(){
- qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
+ qualitySelect.innerHTML='';
  qualitySelect.disabled=false;
- if(!hlsInstance||!hlsInstance.levels?.length){
-  const sourceOption=document.createElement('option');
-  sourceOption.value='source';sourceOption.textContent='جودة المصدر';
-  qualitySelect.append(sourceOption);qualitySelect.disabled=true;
-  $('#vcQuality').textContent='المصدر';
-  return;
+ if(activeRow?.variants?.length>1){
+  const group=document.createElement('optgroup');group.label='نسخ القناة';
+  activeRow.variants.forEach(variant=>{
+   const o=document.createElement('option');o.value='variant:'+variant.id;
+   o.textContent=variant._quality||'نسخة إضافية';
+   group.append(o);
+  });
+  qualitySelect.append(group);
  }
- hlsInstance.levels.forEach((level,i)=>{
-  const o=document.createElement('option');o.value=String(i);
-  const height=level.height?level.height+'p':'دقة غير محددة';
-  const bitrate=level.bitrate?Math.round(level.bitrate/1000)+' kbps':'';
-  const fps=level.frameRate?Math.round(level.frameRate)+'fps':'';
-  o.textContent=[height,bitrate,fps].filter(Boolean).join(' • ');
-  qualitySelect.append(o);
- });
- qualitySelect.value='-1';
- $('#vcQuality').textContent='AUTO';
+ const auto=document.createElement('option');auto.value='-1';auto.textContent='تلقائي / Auto';qualitySelect.append(auto);
+ if(hlsInstance?.levels?.length){
+  const group=document.createElement('optgroup');group.label='دقة مصدر البث';
+  hlsInstance.levels.forEach((level,i)=>{
+   const o=document.createElement('option');o.value=String(i);
+   const height=level.height?level.height+'p':'دقة غير محددة';
+   const bitrate=level.bitrate?Math.round(level.bitrate/1000)+' kbps':'';
+   const fps=level.frameRate?Math.round(level.frameRate)+'fps':'';
+   o.textContent=[height,bitrate,fps].filter(Boolean).join(' • ');
+   group.append(o);
+  });
+  qualitySelect.append(group);
+ }
+ const chosen=activeRow?.selectedVariantId;
+ if(chosen&&activeRow?.variants?.length>1)qualitySelect.value='variant:'+chosen;
+ else qualitySelect.value='-1';
+ $('#vcQuality').textContent=chosen&&activeRow?.variants?.length>1?(activeRow.variants.find(v=>v.id===chosen)?._quality||'نسخة'):'AUTO';
 }
 function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
@@ -532,9 +541,10 @@ function scheduleRecovery(reason,generation=playbackGeneration){
 async function startPlayback(row,generation,reason='initial'){
  if(generation!==playbackGeneration||!activeRow)return;
  state(lang==='ar'?(reason==='initial'?'جارٍ تجهيز البث...':'جارٍ إعادة تشغيل البث...'):(reason==='initial'?'Preparing stream...':'Restarting stream...'));
- const stream=await gateway({action:'stream',channel_id:row.id});
+ const sourceRow=row.variants?.find(v=>v.id===row.selectedVariantId)||row;
+ const stream=await gateway({action:'stream',channel_id:sourceRow.id});
  if(generation!==playbackGeneration)return;
- const url=stream.stream_url,type=(stream.stream_type||row.stream_type||'hls').toLowerCase();
+ const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
  if(type==='hls'){
@@ -592,11 +602,15 @@ async function startPlayback(row,generation,reason='initial'){
  video.src=url;await video.play().catch(()=>{});
 }
 async function playChannel(row){
- stopPlayback();activeRow=row;const generation=playbackGeneration;
+ stopPlayback();
+ const variants=(row.variants?.length?row.variants:[row]).slice().sort((a,b)=>(b._qualityRank||0)-(a._qualityRank||0));
+ activeRow={...row,variants,selectedVariantId:variants[0].id};
+ const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
+ qualities();
  retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();
- const id=row.id;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}
- try{await startPlayback(row,generation,'initial')}
+ const id=activeRow.selectedVariantId;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}
+ try{await startPlayback(activeRow,generation,'initial')}
  catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
 }
 function fmtTime(value){if(!Number.isFinite(value)||value<0)return '00:00';const n=Math.floor(value),h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?[h,m,s].map(x=>String(x).padStart(2,'0')).join(':'):[m,s].map(x=>String(x).padStart(2,'0')).join(':')}
@@ -673,25 +687,67 @@ function initialsFor(name){
  const words=String(name||'TV').replace(/[^a-z0-9 ]/gi,' ').trim().split(/\s+/).filter(Boolean);
  return (words.length>1?words[0][0]+words[1][0]:String(words[0]||'TV').slice(0,2)).toUpperCase();
 }
+function qualityInfo(value){
+ const raw=cleanChannelName(value);
+ const match=raw.match(/(?:\\s+|[-_.])(FULL\\s*HD|ULTRA\\s*HD|FHD|UHD|4K|8K|1080P|720P|576P|480P|SD|HD)$/i);
+ if(!match)return {base:raw,quality:"",rank:0};
+ const token=match[1].replace(/\\s+/g,"").toUpperCase();
+ const rank=/^(FHD|UHD|4K|8K|1080P|ULTRAHD)$/.test(token)?4:/^(HD|720P)$/.test(token)?3:/^(SD|576P|480P)$/.test(token)?2:1;
+ const quality=/^(FHD|UHD|4K|8K|1080P|ULTRAHD)$/.test(token)?"FHD":/^(HD|720P)$/.test(token)?"HD":/^(SD|576P|480P)$/.test(token)?"SD":token;
+ return {base:raw.slice(0,match.index).replace(/[\\s._-]+$/,"").trim(),quality,rank};
+}
+function buildChannelGroups(){
+ const buckets=new Map();
+ for(const row of channelRows){
+  const sourceName=cleanChannelName(row.name_en||row.name_ar);
+  const info=qualityInfo(sourceName);
+  const category=row.channel_categories?.slug||"";
+  const key=[row.source_provider||"",category,info.base.toLocaleLowerCase()].join("|");
+  if(!buckets.has(key))buckets.set(key,{base:info.base||sourceName,rows:[]});
+  buckets.get(key).rows.push({...row,_quality:info.quality,_qualityRank:info.rank,_base:info.base||sourceName});
+ }
+ const groups=[];
+ for(const bucket of buckets.values()){
+  const variants=bucket.rows;
+  const hasQuality=variants.some(v=>v._quality);
+  const isGroup=variants.length>1&&hasQuality;
+  variants.sort((a,b)=>b._qualityRank-a._qualityRank);
+  const representative=variants[0];
+  const baseAr=qualityInfo(representative.name_ar||representative.name_en).base||bucket.base;
+  const baseEn=qualityInfo(representative.name_en||representative.name_ar).base||bucket.base;
+  groups.push({
+   ...representative,
+   id:representative.id,
+   name_ar:baseAr,
+   name_en:baseEn,
+   variants:isGroup?variants:[representative],
+   selectedVariantId:representative.id,
+   _variantGroup:isGroup,
+   _searchText:variants.map(v=>[v.name_ar,v.name_en,v._quality].join(" ")).join(" ").toLocaleLowerCase()
+  });
+ }
+ return groups;
+}
 function renderChannels(){
  const grid=$('#channelsGrid');grid.replaceChildren();
  const active=$('#filters .filter.active')?.dataset.cat||'all';
  const q=($('#channelSearch')?.value||'').trim().toLocaleLowerCase();
- let rows=channelRows.filter(r=>{
+ let rows=buildChannelGroups().filter(r=>{
   const category=categoryFor(r),catOk=active==='all'||category===active;
-  const name=(String(r.name_ar||'')+' '+String(r.name_en||'')+' '+cleanChannelName(r.name_en)+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
+  const name=(r._searchText+' '+String(r.name_ar||'')+' '+String(r.name_en||'')+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
   const searchOk=!q||name.includes(q);
-  const modeOk=catalogMode==='all'||(catalogMode==='favorites'?favorites.has(r.id):recentChannels.includes(r.id));
+  const modeOk=catalogMode==='all'||(catalogMode==='favorites'?(favorites.has(r.id)||r.variants.some(v=>favorites.has(v.id))):(r.variants.some(v=>recentChannels.includes(v.id))));
   return catOk&&searchOk&&modeOk;
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
- if(catalogMode==='recent')rows.sort((a,b)=>recentChannels.indexOf(a.id)-recentChannels.indexOf(b.id));
+ if(catalogMode==='recent')rows.sort((a,b)=>Math.min(...a.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n}))-Math.min(...b.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n})));
  else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  rows.slice(0,visibleLimit).forEach(row=>{
   const card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
   const name=displayName(row),cat=categoryFor(row),meta=CATEGORY_META[cat];
-  const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(favorites.has(row.id)?' active':'');fav.textContent=favorites.has(row.id)?'★':'☆';fav.setAttribute('aria-label',lang==='ar'?'إضافة أو إزالة من المفضلة':'Toggle favorite');
-  fav.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(row.id))favorites.delete(row.id);else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
+  const isFav=favorites.has(row.id)||row.variants.some(v=>favorites.has(v.id));
+  const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(isFav?' active':'');fav.textContent=isFav?'★':'☆';fav.setAttribute('aria-label',lang==='ar'?'إضافة أو إزالة من المفضلة':'Toggle favorite');
+  fav.addEventListener('click',e=>{e.stopPropagation();if(isFav){row.variants.forEach(v=>favorites.delete(v.id));favorites.delete(row.id)}else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
   const logo=document.createElement('div');logo.className='channel-logo';
   const fallback=document.createElement('span');fallback.className='channel-logo-fallback';fallback.textContent=initialsFor(name);logo.append(fallback);
   if(row.logo_url){
@@ -703,16 +759,16 @@ function renderChannels(){
   const copy=document.createElement('div');copy.className='channel-copy';
   const title=document.createElement('h3');title.textContent=name;
   const desc=document.createElement('p');const channelDescription=String(row.description||'').trim();desc.textContent=(/^m3u$/i.test(channelDescription)?'':channelDescription)||meta[lang]||meta.en;
-  const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'ضمن دليل القنوات':'CHANNEL GUIDE';
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=row._variantGroup?(lang==='ar'?'نسخ متعددة · '+row.variants.length+' دقات':'MULTIPLE QUALITIES · '+row.variants.length):(lang==='ar'?'ضمن دليل القنوات':'CHANNEL GUIDE');
   copy.append(title,desc,tag);card.append(fav,logo,copy);
   card.addEventListener('click',()=>playChannel(row));
   card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});
   grid.append(card);
  });
  if(!rows.length){const empty=document.createElement('p');empty.className='channel-status';empty.textContent=lang==='ar'?'ماكو قنوات تطابق البحث أو القسم الحالي.':'No channels match this search or category.';grid.append(empty)}
- $('#catalogCount').textContent=channelRows.length.toLocaleString(lang==='ar'?'ar-IQ':'en-US');
+ $('#catalogCount').textContent=rows.length.toLocaleString(lang==='ar'?'ar-IQ':'en-US');
  const more=$('#loadMoreChannels');more.hidden=rows.length<=visibleLimit;more.textContent=lang==='ar'?'عرض المزيد · '+Math.min(90,rows.length-visibleLimit).toLocaleString('ar-IQ')+' قناة':'Load more · '+Math.min(90,rows.length-visibleLimit)+' channels';
- const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة في هذا القسم.':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels in this category.';
+ const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة (بعد دمج الدقات).':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels (qualities grouped).';
 }
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
@@ -739,8 +795,23 @@ $('#recentFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=cat
 $('#playerRetry').addEventListener('click',()=>{if(!activeRow)return;if(retryTimer){clearTimeout(retryTimer);retryTimer=null}recovering=false;retryCount=0;userPaused=false;scheduleRecovery('Manual reconnect')});
 $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
-qualitySelect.addEventListener('change',()=>{
+qualitySelect.addEventListener('change',async()=>{
  const selected=qualitySelect.value;
+ if(selected.startsWith('variant:')){
+  const variantId=selected.slice(8);
+  if(!activeRow?.variants?.some(v=>v.id===variantId))return;
+  if(activeRow.selectedVariantId===variantId)return;
+  activeRow.selectedVariantId=variantId;
+  const variant=activeRow.variants.find(v=>v.id===variantId);
+  $('#vcQuality').textContent=variant?._quality||'نسخة';
+  playbackGeneration++;const generation=playbackGeneration;
+  if(retryTimer){clearTimeout(retryTimer);retryTimer=null}
+  recovering=false;retryCount=0;destroyPlayerEngine();suppressPauseTracking=true;video.pause();suppressPauseTracking=false;video.removeAttribute('src');video.load();
+  try{await startPlayback(activeRow,generation,'initial')}
+  catch(err){if(generation===playbackGeneration){state(err?.message||'Playback error');scheduleRecovery(err?.message||'variant switch failed',generation)}}
+  showSiteToast('تم تغيير نسخة القناة إلى '+(variant?._quality||'نسخة أخرى'),'success');
+  return;
+ }
  if(!hlsInstance||selected==='source')return;
  const level=Number(selected);
  if(!Number.isInteger(level)||level < -1)return;
