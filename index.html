@@ -358,14 +358,14 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .clayko-intro-core{position:relative;z-index:1;text-align:center;padding:30px 24px;animation:clayko-arrive 1s cubic-bezier(.2,.8,.2,1) both}
 .clayko-intro-kicker{display:block;margin-bottom:15px;color:#c6d5e6;font-family:"Alexandria","Tajawal",sans-serif;font-size:clamp(13px,2.8vw,17px);font-weight:500;letter-spacing:2px;text-shadow:0 0 18px rgba(119,204,255,.48)}
 .clayko-intro-name{position:relative;display:inline-block;color:#f4fbff;font-family:"DM Sans","Alexandria",sans-serif;font-size:clamp(42px,10vw,70px);font-weight:800;letter-spacing:clamp(5px,1.5vw,11px);line-height:1.15;background:linear-gradient(100deg,#fff 5%,#9beaff 32%,#e1c9ff 52%,#fff 70%,#8de7ff 92%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 13px rgba(94,213,255,.48)) drop-shadow(0 0 34px rgba(169,129,255,.28));animation:clayko-shimmer 2.1s ease-in-out infinite}
-.clayko-intro-name:after{content:"CLAYKO";position:absolute;inset:0;display:block;white-space:nowrap;font:inherit;letter-spacing:inherit;line-height:inherit;background:linear-gradient(105deg,transparent 0%,transparent 39%,rgba(255,255,255,.98) 49%,rgba(157,235,255,.9) 53%,transparent 63%,transparent 100%);background-size:220% 100%;background-position:-120% center;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;transform:skewX(-12deg);mix-blend-mode:screen;filter:drop-shadow(0 0 7px rgba(255,255,255,.85));pointer-events:none;animation:clayko-beam 2.7s .35s ease-in-out infinite}
+.clayko-intro-name:after{content:"CLAYKO";position:absolute;inset:0;display:block;white-space:nowrap;font:inherit;letter-spacing:inherit;line-height:inherit;background:linear-gradient(105deg,transparent 0%,transparent 39%,rgba(255,255,255,.98) 49%,rgba(157,235,255,.9) 53%,transparent 63%,transparent 100%);background-size:220% 100%;background-position:-120% center;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;transform:skewX(-12deg);mix-blend-mode:screen;filter:drop-shadow(0 0 7px rgba(255,255,255,.85));pointer-events:none;animation:clayko-beam 4.8s 1.25s cubic-bezier(.22,.7,.2,1) both}
 .clayko-intro-line{width:76px;height:2px;margin:22px auto 0;border-radius:10px;background:linear-gradient(90deg,transparent,#8feaff,#c9a9ff,transparent);box-shadow:0 0 16px rgba(111,219,255,.8);animation:clayko-line 1.4s ease both}
 .clayko-intro.is-leaving{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes clayko-rays{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @keyframes clayko-pulse{0%,100%{opacity:.48;scale:.94}50%{opacity:.95;scale:1.04}}
 @keyframes clayko-arrive{from{opacity:0;transform:translateY(14px) scale(.96);filter:blur(7px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @keyframes clayko-shimmer{0%,100%{background-position:0% center}50%{background-position:100% center}}
-@keyframes clayko-beam{0%,8%{background-position:-120% center;opacity:0}18%{opacity:1}78%{background-position:120% center;opacity:1}90%,100%{background-position:120% center;opacity:0}}
+@keyframes clayko-beam{0%,12%{background-position:-120% center;opacity:0}22%{opacity:1}86%{background-position:120% center;opacity:1}100%{background-position:120% center;opacity:0}}
 @keyframes clayko-line{from{width:0;opacity:0}to{width:76px;opacity:1}}
 @media(prefers-reduced-motion:reduce){.clayko-intro:before,.clayko-intro:after,.clayko-intro-core,.clayko-intro-name,.clayko-intro-name:after,.clayko-intro-line{animation:none!important}.clayko-intro{transition:opacity .3s ease,visibility .3s ease}}
 
@@ -483,7 +483,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
   </div>
 </div>
 <script>
-(()=>{const intro=document.getElementById('claykoIntro');if(!intro)return;setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),950)},4300)})();
+(()=>{const intro=document.getElementById('claykoIntro');if(!intro)return;setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),950)},7200)})();
 </script>
 <div class="topline"></div>
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" aria-atomic="true"><span class="site-toast-icon" id="siteToastIcon">V</span><span class="site-toast-copy" id="siteToastText"></span></div>
