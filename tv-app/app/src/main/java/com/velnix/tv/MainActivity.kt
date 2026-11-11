@@ -418,6 +418,10 @@ private fun VelnixTvApp() {
     }
 
     fun requestChannel(channel: TvChannel) {
+        if (isBeinCategory(channel.name) && !beinAccess) {
+            selectedCategory = "bein-gate"
+            return
+        }
         if (pinEnabled && pinHash.isNotBlank()) {
             pinTarget = channel
             pinInput = ""
