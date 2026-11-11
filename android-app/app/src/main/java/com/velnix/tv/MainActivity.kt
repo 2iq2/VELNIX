@@ -53,7 +53,7 @@ import kotlinx.coroutines.delay
 
 private val Navy = Color(0xFF080D16)
 private val Panel = Color(0xFF111B29)
-private val Gold = Color(0xFFC9A96E)
+private val Gold = Color(0xFF39D5E8)
 private val Muted = Color(0xFF9BA8B8)
 
 class MainActivity : ComponentActivity() {
@@ -75,6 +75,10 @@ private fun VelnixApp(activity: ComponentActivity) {
     var signup by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
+    var codeDialog by remember { mutableStateOf(false) }
+    var codeInput by remember { mutableStateOf("") }
+    var codeBusy by remember { mutableStateOf(false) }
+    var codeMessage by remember { mutableStateOf("") }
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
@@ -147,6 +151,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 Text(if (beinAccess) "beIN SPORTS مفعّل" else "beIN SPORTS غير مفعّل", color = if(beinAccess) Gold else Muted, fontSize = 10.sp)
                             }
                             Spacer(Modifier.width(12.dp))
+                            TextButton(onClick = { codeDialog = true; codeMessage = "" }) { Text("تفعيل كود", color = Gold) }
                             TextButton(onClick = { refreshCatalog() }) { Text("تحديث", color = Gold) }
                             TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
                         }
@@ -244,6 +249,36 @@ private fun VelnixApp(activity: ComponentActivity) {
                 }
             }
         }
+        if (codeDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!codeBusy) codeDialog = false },
+                containerColor = Panel,
+                title = { Text("تفعيل كود الاشتراك", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("أدخل كود VELNIX المرتبط بحسابك لتفعيل صلاحية المشاهدة.", color = Muted, fontSize = 13.sp)
+                        OutlinedTextField(value = codeInput, onValueChange = { codeInput = it.uppercase() }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("VELNIX-XXXX-XXXX-XXXX") })
+                        if (codeMessage.isNotBlank()) Text(codeMessage, color = Color(0xFFFF8A80), fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !codeBusy && codeInput.isNotBlank(), onClick = {
+                        scope.launch {
+                            codeBusy = true; codeMessage = ""
+                            try {
+                                api.activateBeinCode(codeInput)
+                                beinAccess = api.checkBein()
+                                codeDialog = false; codeInput = ""
+                                status = "تم تفعيل صلاحية beIN SPORTS بنجاح"
+                                refreshCatalog()
+                            } catch (e: Exception) { codeMessage = e.message ?: "تعذر تفعيل الكود" }
+                            finally { codeBusy = false }
+                        }
+                    }) { Text(if (codeBusy) "جارٍ التفعيل…" else "تفعيل", color = Gold) }
+                },
+                dismissButton = { TextButton(enabled = !codeBusy, onClick = { codeDialog = false }) { Text("إلغاء", color = Muted) } }
+            )
+        }
     }
 }
 
@@ -260,7 +295,7 @@ private fun IntroScreen() {
             Text("V", color=Color(0xFFF0D9AD), fontSize=43.sp, fontWeight=FontWeight.Black)
         }
         Spacer(Modifier.height(28.dp))
-        Text("THE NEXT DIMENSION", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
+        Text("CINEMATIC ENTERTAINMENT", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
         Spacer(Modifier.height(8.dp))
         Text("VELNIX", color=Color(0xFFF4E6CA), fontSize=42.sp, fontWeight=FontWeight.Black, letterSpacing=8.sp)
         Spacer(Modifier.height(18.dp))
