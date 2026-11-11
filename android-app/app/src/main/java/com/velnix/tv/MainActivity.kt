@@ -209,7 +209,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                 busy=true
                                                 try {
                                                     if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id)
+                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id, c.streamType)
                                                     streamUrl = source.url; streamType = source.type; selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
                                                     api.saveRecent(recent)
@@ -424,7 +424,7 @@ val CATEGORIES = listOf(
     Category("kids","الأطفال"), Category("documentaries","وثائقيات"), Category("music","موسيقى وراديو"),
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
-data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null)
+data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null,val streamType:String = "hls")
 data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
 
 fun categoryFor(group:String,name:String):String {
