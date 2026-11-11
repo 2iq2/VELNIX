@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -320,6 +322,11 @@ private fun IntroScreen() {
 }
 @Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
     val context=androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var epg by remember { mutableStateOf<List<EpgProgram>>(emptyList()) }
+    var epgLoading by remember { mutableStateOf(false) }
+    var epgVisible by remember { mutableStateOf(false) }
+    var epgMessage by remember { mutableStateOf("") }
     val player= remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(45000, 120000, 5000, 15000)
@@ -376,11 +383,35 @@ private fun IntroScreen() {
             } },modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
-        Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=8.dp, vertical=6.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=4.dp, vertical=5.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
+            TextButton(onClick={
+                epgVisible = !epgVisible
+                if (epgVisible && epg.isEmpty()) scope.launch {
+                    epgLoading = true
+                    try { epg = api.epg(channel); epgMessage = if (epg.isEmpty()) "لا توجد بيانات برامج متاحة لهذه القناة حالياً" else "" }
+                    catch (e: Exception) { epgMessage = e.message ?: "تعذر تحميل دليل البرامج" }
+                    epgLoading = false
+                }
+            }) { Text("دليل البرامج", color=Gold) }
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "جودة الصورة", player, C.TRACK_TYPE_VIDEO).build().show() }) { Text("الجودة", color=Gold) }
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show() }) { Text("الصوت", color=Gold) }
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show() }) { Text("الترجمة", color=Gold) }
             TextButton(onClick={ player.seekToDefaultPosition(); player.prepare(); player.playWhenReady=true }) { Text("إعادة الاتصال", color=Gold) }
+        }
+        if (epgVisible) {
+            Column(Modifier.fillMaxWidth().heightIn(max=220.dp).background(Panel).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Text("دليل البرامج · EPG", color=Gold, fontWeight=FontWeight.Bold)
+                if (epgLoading) CircularProgressIndicator(color=Gold, modifier=Modifier.size(24.dp))
+                else if (epg.isEmpty()) Text(epgMessage.ifBlank { "لا توجد برامج مدرجة حالياً" }, color=Muted, fontSize=12.sp)
+                else epg.take(12).forEach { item ->
+                    val active = System.currentTimeMillis() in item.startsAt until item.endsAt
+                    Column(Modifier.fillMaxWidth().background(if (active) Gold.copy(alpha=.12f) else Navy, RoundedCornerShape(10.dp)).padding(10.dp), verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                        Text(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.startsAt)) + " – " + java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.endsAt)), color=Gold, fontSize=10.sp)
+                        Text(item.title, color=Color.White, fontWeight=FontWeight.SemiBold, fontSize=13.sp)
+                        if (item.description.isNotBlank()) Text(item.description, color=Muted, fontSize=11.sp, maxLines=2)
+                    }
+                }
+            }
         }
         Text("مشغل VELNIX المحسّن · استعادة تلقائية عند انقطاع البث",color=Muted,fontSize=10.sp,modifier=Modifier.padding(10.dp))
     }
