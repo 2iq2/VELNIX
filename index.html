@@ -69,14 +69,14 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 
 
 /* CSS-only fullscreen: avoids Android/Chrome native fullscreen gesture banner */
-.player-modal.css-fullscreen{padding:0;place-items:stretch;z-index:200}
-.player-modal.css-fullscreen .player-shell{width:100%;height:100%;max-width:none;max-height:100dvh;border:0;border-radius:0;display:flex;flex-direction:column}
+.player-modal.css-fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;min-height:100vh;min-height:100dvh;padding:0!important;margin:0!important;display:block!important;overflow:hidden!important;place-items:initial;z-index:2147483000;background:#000!important;backdrop-filter:none!important}
+.player-modal.css-fullscreen .player-shell{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;box-shadow:none!important}
 .player-modal.css-fullscreen .player-head,
 .player-modal.css-fullscreen .player-toolbar,
 .player-modal.css-fullscreen .player-state{display:none!important}
-.player-modal.css-fullscreen .video-wrap{width:100%;height:100%;max-height:none;min-height:0;flex:1;aspect-ratio:auto}
-.player-modal.css-fullscreen .video-wrap video{width:100%;height:100%;object-fit:contain}
-@supports(height:100svh){.player-modal.css-fullscreen .player-shell{max-height:100svh}}
+.player-modal.css-fullscreen .video-wrap{position:relative!important;width:100%!important;height:auto!important;max-height:none!important;min-height:0!important;min-width:0!important;flex:1 1 auto!important;aspect-ratio:auto!important;margin:0!important;padding:0!important}
+.player-modal.css-fullscreen .video-wrap video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important}
+html.player-css-fullscreen,body.player-css-fullscreen{overflow:hidden!important;overscroll-behavior:none!important}
 
 /* VELNIX OTT visual identity — cinematic streaming layout */
 :root{--bg:#08090d;--panel:#14151b;--panel2:#1b1c24;--gold:#e50914;--gold2:#fff;--text:#f7f7f8;--muted:#a4a5ad;--line:rgba(255,255,255,.11);--radius:12px}
@@ -578,6 +578,8 @@ velnixControls.addEventListener('click',e=>e.stopPropagation());
 $('#vcTopbar').addEventListener('click',e=>e.stopPropagation());
 function setPlayerFullscreen(enabled){
  playerModal.classList.toggle('css-fullscreen',!!enabled);
+ document.documentElement.classList.toggle('player-css-fullscreen',!!enabled);
+ document.body.classList.toggle('player-css-fullscreen',!!enabled);
  const label=enabled?'خروج من ملء الشاشة':'إغلاق المشغّل';
  vcExit.querySelector('span').textContent=label;
  vcExit.setAttribute('aria-label',label);
