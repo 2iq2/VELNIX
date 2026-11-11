@@ -98,8 +98,8 @@ $('connect').addEventListener('click',async()=>{
 });
 $('search').addEventListener('input',render);$('category').addEventListener('change',render);
 $('extension').addEventListener('change',()=>{if(all.length){$('status').textContent='امتداد TS/M3U8 المختار يؤثر على صيغة الروابط عند التصدير التالي.'}});
-$('m3u').addEventListener('click',()=>download('velnix-xtream-channels.m3u','audio/x-mpegurl;charset=utf-8',makeM3U(filtered())));
+$('m3u').addEventListener('click',()=>download('velnix-xtream-channels.m3u','audio/x-mpegurl;charset=utf-8',makeM3U(outputData(filtered()))));
 $('txt').addEventListener('click',()=>download('velnix-xtream-links.txt','text/plain;charset=utf-8',filtered().map(c=>c.url).join('\n')));
-$('csv').addEventListener('click',()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';download('velnix-xtream-channels.csv','text/csv;charset=utf-8','\uFEFF'+['name,category,url',...filtered().map(c=>[c.name,c.group,c.url].map(q).join(','))].join('\n'))});
+$('csv').addEventListener('click',()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';download('velnix-xtream-channels.csv','text/csv;charset=utf-8','\uFEFF'+['name,category,url',...outputData(filtered()).map(c=>[c.name,c.group,c.url].map(q).join(','))].join('\n'))});
 $('clear').addEventListener('click',()=>{all=[];['xtBase','xtUser','xtPass','search'].forEach(id=>$(id).value='');$('category').innerHTML='<option value="">كل التصنيفات</option>';$('results').classList.add('hidden');$('status').textContent='تم مسح البيانات من الصفحة.'});
 })();</script></body></html>
