@@ -939,7 +939,7 @@ async function startPlayback(row,generation,reason='initial'){
    instance.on(Hls.Events.MANIFEST_PARSED,()=>{
     if(generation!==playbackGeneration||instance!==hlsInstance)return;
     qualities();state(lang==='ar'?'البث جاهز؛ تتم مراقبة الاتصال تلقائياً.':'Stream ready; connection recovery is enabled.');
-    video.play().catch(()=>state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.'));
+    video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
    });
    instance.on(Hls.Events.ERROR,(_e,d)=>{
     if(generation!==playbackGeneration||instance!==hlsInstance)return;
@@ -949,7 +949,7 @@ async function startPlayback(row,generation,reason='initial'){
    });
    instance.loadSource(url);instance.attachMedia(video);return;
   }
-  if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{});return}
+  if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{userPaused=true});return}
   throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
  }
  if(['file','mpegts','ts'].includes(type)){
@@ -969,10 +969,10 @@ async function startPlayback(row,generation,reason='initial'){
    if(generation===playbackGeneration&&instance===mpegtsPlayer)scheduleRecovery(info?.msg||d||'MPEG-TS error',generation);
   });
   instance.attachMediaElement(video);instance.load();
-  instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ إعادة الاتصال التلقائية مفعّلة.':'Connected; automatic recovery enabled.')}).catch(e=>{if(generation===playbackGeneration)state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+  instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ إعادة الاتصال التلقائية مفعّلة.':'Connected; automatic recovery enabled.')}).catch(e=>{if(generation===playbackGeneration){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}});
   return;
  }
- video.src=url;await video.play().catch(()=>{});
+ video.src=url;await video.play().catch(()=>{userPaused=true});
 }
 async function playChannel(row){
  if(!currentSession){showSiteToast('لازم تسجّل دخول حتى تشاهد القنوات.','error');$('#loginBtn').click();return;}
