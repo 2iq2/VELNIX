@@ -514,6 +514,9 @@ body[data-theme="light"] .fixture-score{color:#172033}
 @keyframes vx-flare-in{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}35%{opacity:.95;transform:translate(-50%,-50%) scale(1.5)}100%{opacity:.12;transform:translate(-50%,-50%) scale(24)}}
 @media(prefers-reduced-motion:reduce){.velnix-cinematic *{animation-duration:.01ms!important;animation-iteration-count:1!important}.velnix-cinematic{transition:none}}
 </style>
+<style id="velnix-upgrade-css">
+.admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
+</style>
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
@@ -574,7 +577,14 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="bein-gate-form" id="beinGateForm"><input id="beinActivationCode" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود تفعيل beIN"><button id="activateBeinBtn" type="button">تفعيل الكود</button></div>
 <span class="bein-gate-status" id="beinGateStatus" role="status"></span>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div><div class="bein-admin" id="beinAdminTools">
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
+<div class="admin-dashboard" id="adminDashboard">
+ <div class="admin-dashboard-head"><h3>لوحة تحكم VELNIX</h3><button class="filter" id="adminRefresh" type="button">تحديث الإحصائيات</button></div>
+ <div class="admin-stats" id="adminStats"><div>جارٍ تحميل الإحصائيات…</div></div>
+ <div class="admin-card"><h4>إدارة اشتراكات المستخدمين</h4><div class="admin-form-row"><input id="adminUserEmail" type="email" placeholder="البريد الإلكتروني للحساب"><button class="filter" id="adminFindUser" type="button">بحث عن الحساب</button></div><div id="adminUserResult" class="admin-inline-status">ابحث بالبريد الإلكتروني لعرض الحساب واشتراكاته.</div><div class="admin-form-row"><select id="adminPlan"><option value="standard">قياسية</option><option value="premium">مميزة</option><option value="gold">ذهبية</option><option value="platinum">بلاتينية</option><option value="basic">أساسية</option></select><input id="adminPlanDays" type="number" min="1" max="3650" value="30"><button class="filter" id="adminActivatePlan" type="button">تفعيل / تجديد الباقة</button></div></div>
+ <div class="admin-card"><h4>إضافة برنامج إلى دليل EPG</h4><div class="admin-form-row"><select id="adminEpgChannel"><option value="">اختر القناة</option></select><input id="adminEpgTitle" maxlength="240" placeholder="اسم البرنامج"></div><div class="admin-form-row"><label>من <input id="adminEpgStart" type="datetime-local"></label><label>إلى <input id="adminEpgEnd" type="datetime-local"></label></div><textarea id="adminEpgDescription" maxlength="2000" placeholder="وصف البرنامج (اختياري)"></textarea><button class="filter" id="adminSaveEpg" type="button">حفظ البرنامج</button><span id="adminEpgStatus" class="admin-inline-status"></span></div>
+</div>
+<div class="bein-admin" id="beinAdminTools">
 <h3>إدارة أكواد beIN SPORTS</h3>
 <div class="bein-admin-form"><input id="beinCodeCount" type="number" min="1" max="50" value="5" aria-label="عدد الأكواد"><input id="beinCodeDays" type="number" min="1" max="3650" value="30" aria-label="مدة الصلاحية بالأيام"><button id="generateBeinCodes" type="button">إنشاء أكواد التفعيل</button><button id="refreshBeinCodes" type="button">تحديث القائمة</button></div>
 <div class="bein-admin-output" id="beinGeneratedCodes" hidden></div><button id="copyBeinCodes" type="button" hidden style="margin-top:8px">نسخ الأكواد</button>
@@ -597,7 +607,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="VELNIX تجمع القنوات المباشرة والرياضة والأخبار والترفيه في تجربة مشاهدة واحدة، بتصميم سينمائي يناسب جميع أجهزتك." data-en="Live channels, sports, news and entertainment in one cinematic viewing experience, designed for every screen.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
-<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap" id="videoStage"><video id="liveVideo" playsinline preload="auto"></video><div class="velnix-watermark" id="velnixWatermark" aria-hidden="true"><span class="watermark-mark">V</span><span class="watermark-name">VELNIX</span></div><div class="vc-topbar" id="vcTopbar"><span class="vc-top-title" id="vcTopTitle">VELNIX LIVE</span><button class="vc-exit" id="vcExit" type="button" aria-label="الخروج من ملء الشاشة">↗ <span>خروج</span></button></div><div class="velnix-controls" id="velnixControls" dir="rtl"><div class="vc-progress-row"><span class="vc-time" id="vcCurrent">00:00</span><input id="vcSeek" class="vc-seek" type="range" min="0" max="1000" value="0" aria-label="تقدم البث"><span class="vc-time" id="vcDuration">LIVE</span></div><div class="vc-actions"><div class="vc-main-actions"><button class="vc-icon" id="vcPlay" type="button" aria-label="تشغيل أو إيقاف">▶</button><button class="vc-icon" id="vcBack" type="button" aria-label="رجوع 10 ثوان">↶10</button><button class="vc-icon" id="vcForward" type="button" aria-label="تقديم 10 ثوان">↷10</button><span class="vc-volume-wrap"><button class="vc-icon" id="vcMute" type="button" aria-label="كتم الصوت">◖))</button><input id="vcVolume" type="range" min="0" max="1" step="0.05" value="1" aria-label="مستوى الصوت"></span></div><div class="vc-status"><span class="vc-live-dot"></span><span>VELNIX LIVE</span></div><div class="vc-extra-actions"><button class="vc-quality" id="vcQuality" type="button">AUTO</button><button class="vc-icon" id="vcFullscreen" type="button" aria-label="ملء الشاشة">⛶</button></div></div></div></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-retry" id="playerEpgBtn" type="button">دليل البرامج</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap" id="videoStage"><video id="liveVideo" playsinline preload="auto"></video><div class="velnix-watermark" id="velnixWatermark" aria-hidden="true"><span class="watermark-mark">V</span><span class="watermark-name">VELNIX</span></div><div class="vc-topbar" id="vcTopbar"><span class="vc-top-title" id="vcTopTitle">VELNIX LIVE</span><button class="vc-exit" id="vcExit" type="button" aria-label="الخروج من ملء الشاشة">↗ <span>خروج</span></button></div><div class="velnix-controls" id="velnixControls" dir="rtl"><div class="vc-progress-row"><span class="vc-time" id="vcCurrent">00:00</span><input id="vcSeek" class="vc-seek" type="range" min="0" max="1000" value="0" aria-label="تقدم البث"><span class="vc-time" id="vcDuration">LIVE</span></div><div class="vc-actions"><div class="vc-main-actions"><button class="vc-icon" id="vcPlay" type="button" aria-label="تشغيل أو إيقاف">▶</button><button class="vc-icon" id="vcBack" type="button" aria-label="رجوع 10 ثوان">↶10</button><button class="vc-icon" id="vcForward" type="button" aria-label="تقديم 10 ثوان">↷10</button><span class="vc-volume-wrap"><button class="vc-icon" id="vcMute" type="button" aria-label="كتم الصوت">◖))</button><input id="vcVolume" type="range" min="0" max="1" step="0.05" value="1" aria-label="مستوى الصوت"></span></div><div class="vc-status"><span class="vc-live-dot"></span><span>VELNIX LIVE</span></div><div class="vc-extra-actions"><button class="vc-quality" id="vcQuality" type="button">AUTO</button><button class="vc-icon" id="vcFullscreen" type="button" aria-label="ملء الشاشة">⛶</button></div></div></div></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-epg-panel" id="playerEpgPanel" hidden><div class="player-epg-head"><strong>دليل البرامج · EPG</strong><span id="playerEpgStatus">جارٍ التحميل…</span></div><div id="playerEpgList" class="player-epg-list"></div></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
 <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle"><div class="profile-dialog"><div class="profile-head"><h2 id="profileTitle">ملفي الشخصي</h2><button class="close" id="closeProfileBtn" type="button" aria-label="إغلاق">×</button></div><div class="profile-current"><span class="account-avatar" id="profilePreviewAvatar">🙂</span><span><strong id="profilePreviewName">مستخدم VELNIX</strong><small>اختر شخصية من مكتبة VELNIX</small></span></div><label class="profile-field" for="profileNameInput">اسم العرض</label><input class="profile-input" id="profileNameInput" maxlength="40" placeholder="اكتب الاسم الذي يظهر للآخرين"><div class="profile-field">اختر صورة شخصيتك</div><div class="avatar-grid" id="avatarGrid"></div><div class="subscription-card"><h3>💎 تفاصيل الاشتراك</h3><div class="subscription-grid"><div class="subscription-item"><small>الباقة</small><strong id="subPlan">جارٍ التحميل…</strong></div><div class="subscription-item"><small>الحالة</small><strong id="subStatus">—</strong></div><div class="subscription-item"><small>تاريخ التفعيل</small><strong id="subStart">—</strong></div><div class="subscription-item"><small>تاريخ الانتهاء</small><strong id="subExpiry">—</strong></div><div class="subscription-item"><small>المدة المتبقية</small><strong id="subRemaining">—</strong></div><div class="subscription-item"><small>نوع الوصول</small><strong id="subAccessType">—</strong></div></div><div class="subscription-status" id="subStatusNote"></div></div><div id="profileStatus" role="status"></div><div class="profile-actions"><button class="primary" id="saveProfileBtn" type="button">حفظ التغييرات</button><button class="secondary" id="cancelProfileBtn" type="button">إغلاق</button></div></div></div><div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script>
 /* Keep the sign-in dialog usable even if a third-party module fails to load. */
@@ -692,9 +702,9 @@ async function refreshAuth(){
  if(user){
   $('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;
   try{const access=await gateway({action:'check_bein_access'});beinAccess=!!access.has_access;beinExpiresAt=access.expires_at||null;}catch(e){beinAccess=false;beinExpiresAt=null;}
-  await loadUserProfile();
+  await loadUserProfile();await loadPersonalLists();if(admin)loadAdminDashboard();
  }else{
-  beinAccess=false;beinExpiresAt=null;$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;$('#accountMenu').hidden=true;
+  beinAccess=false;beinExpiresAt=null;favorites=new Set();recentChannels=[];$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;$('#accountMenu').hidden=true;
  }
  if(channelRows.length)renderChannels();
  syncBeinGate();
@@ -824,6 +834,27 @@ async function gateway(body){
  return data;
 }
 let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
+async function loadPersonalLists(){
+ const user=currentSession?.user;if(!user)return;
+ try{
+  const [favRows,historyRows]=await Promise.all([userRest('favorites?select=channel_id&order=created_at.desc'),userRest('watch_history?select=channel_id,watched_at&order=watched_at.desc&limit=30')]);
+  if(favRows.length===0&&favorites.size){const legacy=[...favorites].map(channel_id=>({user_id:user.id,channel_id}));await userRest('favorites?on_conflict=user_id,channel_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify(legacy)})}else favorites=new Set(favRows.map(x=>x.channel_id));
+  if(historyRows.length===0&&recentChannels.length){const legacy=recentChannels.map((channel_id,i)=>({user_id:user.id,channel_id,watched_at:new Date(Date.now()-i*1000).toISOString()}));await userRest('watch_history?on_conflict=user_id,channel_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(legacy)})}else recentChannels=historyRows.map(x=>x.channel_id);
+  localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]));localStorage.setItem('velnix:recent',JSON.stringify(recentChannels));
+ }catch(error){console.warn('Personal lists sync failed:',error);showSiteToast('تعذر مزامنة المفضلة وسجل المشاهدة حالياً','info')}
+}
+async function toggleFavorite(row,isFav){
+ const ids=[...new Set([row.id,...(row.variants||[]).map(v=>v.id)])];
+ if(isFav)ids.forEach(id=>favorites.delete(id));else ids.forEach(id=>favorites.add(id));
+ try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(e){}
+ renderChannels();if(!currentSession?.user)return;
+ try{if(isFav)await userRest('favorites?channel_id=in.('+ids.join(',')+')',{method:'DELETE'});else await userRest('favorites?on_conflict=user_id,channel_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify(ids.map(channel_id=>({user_id:currentSession.user.id,channel_id})))})}
+ catch(error){showSiteToast('تعذر حفظ المفضلة بالحساب: '+(error.message||''),'error')}
+}
+async function saveWatchHistory(channelId){
+ if(!currentSession?.user||!channelId)return;
+ try{await userRest('watch_history?on_conflict=user_id,channel_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:currentSession.user.id,channel_id:channelId,watched_at:new Date().toISOString()})})}catch(error){console.warn('Watch history save failed:',error)}
+}
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
@@ -896,8 +927,8 @@ async function startPlayback(row,generation,reason='initial'){
   if(Hls.isSupported()){
    hlsInstance=new Hls({
     enableWorker:true,lowLatencyMode:false,
-    backBufferLength:120,maxBufferLength:120,maxMaxBufferLength:240,maxBufferSize:120*1000*1000,
-    maxBufferHole:0.5,highBufferWatchdogPeriod:2,liveSyncDurationCount:10,liveMaxLatencyDurationCount:30,
+    backBufferLength:45,maxBufferLength:90,maxMaxBufferLength:150,maxBufferSize:72*1000*1000,
+    maxBufferHole:0.5,highBufferWatchdogPeriod:2,liveSyncDurationCount:8,liveMaxLatencyDurationCount:24,
     maxLiveSyncPlaybackRate:1.04,nudgeOffset:0.2,nudgeMaxRetry:12,
     manifestLoadingMaxRetry:12,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:30000,
     levelLoadingMaxRetry:12,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:30000,
@@ -928,8 +959,8 @@ async function startPlayback(row,generation,reason='initial'){
   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
   // Use the stream URL returned by the gateway. Protected beIN streams include their short-lived access token here.
   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url},{
-   enableWorker:true,enableStashBuffer:true,stashInitialSize:8*1024*1024,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:90,liveBufferLatencyMinRemain:15,
+   enableWorker:true,enableStashBuffer:true,stashInitialSize:12*1024*1024,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:120,liveBufferLatencyMinRemain:20,
    autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:120,autoCleanupMinBackwardDuration:60,
    fixAudioTimestampGap:true,accurateSeek:false
   });
@@ -953,7 +984,7 @@ async function playChannel(row){
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
  qualities();
  retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();
- const id=activeRow.selectedVariantId;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}
+ const id=activeRow.selectedVariantId;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}saveWatchHistory(id);
  try{await startPlayback(activeRow,generation,'initial')}
  catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
 }
@@ -1014,11 +1045,51 @@ $('#generateBeinCodes').addEventListener('click',async()=>{
  finally{button.disabled=false}
 });
 $('#refreshBeinCodes').addEventListener('click',loadBeinCodes);
+function populateAdminEpgChannels(){
+ const select=$('#adminEpgChannel');if(!select)return;const current=select.value;select.replaceChildren(new Option('اختر القناة',''));
+ channelRows.forEach(row=>select.add(new Option(row.name_ar||row.name_en,row.id)));if(current)select.value=current;
+}
+async function loadAdminDashboard(){
+ const stats=$('#adminStats');if(!stats||currentSession?.user?.app_metadata?.role!=='admin')return;stats.textContent='جارٍ تحميل الإحصائيات…';
+ try{const result=await gateway({action:'admin_dashboard'}),data=result.stats||{};const items=[['القنوات النشطة',data.active_channels??0],['الحسابات',data.users??0],['الاشتراكات الفعالة',data.active_subscriptions??0],['برامج EPG',data.epg_programs??0]];
+ stats.replaceChildren();items.forEach(([label,value])=>{const card=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=Number(value).toLocaleString('ar-IQ');small.textContent=label;card.append(strong,small);stats.append(card)});populateAdminEpgChannels()
+ }catch(error){stats.textContent='تعذر تحميل الإحصائيات: '+(error.message||'')}
+}
+async function adminFindUser(){
+ const email=$('#adminUserEmail').value.trim().toLowerCase(),out=$('#adminUserResult');out.textContent='جارٍ البحث عن الحساب…';$('#adminFindUser').disabled=true;
+ try{const result=await gateway({action:'admin_search_user',email});out.replaceChildren();const title=document.createElement('strong');title.textContent=(result.user.display_name||'مستخدم')+' · '+result.user.email;const id=document.createElement('small');id.textContent='معرّف الحساب: '+result.user.id;const history=document.createElement('div');history.className='admin-sub-history';
+ (result.subscriptions||[]).forEach(row=>{const item=document.createElement('div');item.textContent=(row.plan_code||'—')+' · '+row.status+' · ينتهي '+(row.expires_at?formatDate(row.expires_at):'بدون تاريخ');history.append(item)});if(!history.childNodes.length)history.textContent='لا توجد اشتراكات مسجلة.';out.append(title,id,history);out.dataset.userId=result.user.id
+ }catch(error){out.textContent=error.message||'تعذر العثور على الحساب';out.dataset.userId=''}finally{$('#adminFindUser').disabled=false}
+}
+async function adminActivatePlan(){
+ const email=$('#adminUserEmail').value.trim().toLowerCase();if(!$('#adminUserResult').dataset.userId){await adminFindUser();if(!$('#adminUserResult').dataset.userId)return}
+ const button=$('#adminActivatePlan');button.disabled=true;
+ try{const result=await gateway({action:'admin_set_subscription',email,plan_code:$('#adminPlan').value,days:Number($('#adminPlanDays').value)||30});showSiteToast('تم تفعيل باقة '+result.subscription.plan_code+' للحساب بنجاح','success');await adminFindUser();await loadAdminDashboard()}catch(error){showSiteToast(error.message||'تعذر تفعيل الاشتراك','error')}finally{button.disabled=false}
+}
+async function adminSaveEpg(){
+ const button=$('#adminSaveEpg'),status=$('#adminEpgStatus');button.disabled=true;status.textContent='جارٍ الحفظ…';
+ try{const starts=$('#adminEpgStart').value,ends=$('#adminEpgEnd').value;if(!starts||!ends)throw new Error('حدد وقت البداية والنهاية');const result=await gateway({action:'admin_save_epg',channel_id:$('#adminEpgChannel').value,title:$('#adminEpgTitle').value,description:$('#adminEpgDescription').value,starts_at:new Date(starts).toISOString(),ends_at:new Date(ends).toISOString(),is_published:true});status.textContent='تم حفظ البرنامج: '+result.program.title;$('#adminEpgTitle').value='';$('#adminEpgDescription').value='';await loadAdminDashboard()}catch(error){status.textContent=error.message||'تعذر حفظ البرنامج'}finally{button.disabled=false}
+}
+$('#adminRefresh').addEventListener('click',loadAdminDashboard);$('#adminFindUser').addEventListener('click',adminFindUser);$('#adminActivatePlan').addEventListener('click',adminActivatePlan);$('#adminSaveEpg').addEventListener('click',adminSaveEpg);
 $('#copyBeinCodes').addEventListener('click',async()=>{
  try{await navigator.clipboard.writeText($('#beinGeneratedCodes').textContent);showSiteToast('تم نسخ الأكواد','success')}
  catch(e){showSiteToast('حدد الأكواد وانسخها يدوياً','info')}
 });
 
+function decodeEpgText(value){const raw=String(value||'');try{const binary=atob(raw);return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)))}catch(e){return raw}}
+function epgDate(value,timestamp){if(timestamp!==undefined&&timestamp!==null&&String(timestamp)!==''){const n=Number(timestamp);if(Number.isFinite(n))return new Date(n>1e12?n:n*1000)}const d=new Date(value);return Number.isNaN(d.getTime())?null:d}
+async function loadChannelEpg(){
+ const panel=$('#playerEpgPanel'),list=$('#playerEpgList'),status=$('#playerEpgStatus');panel.hidden=false;list.replaceChildren();status.textContent='جارٍ تحميل دليل البرامج…';
+ if(!activeRow){status.textContent='اختر قناة أولاً';return}
+ try{
+  const source=activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)||activeRow;let programs=[];
+  if(source.source_provider==='xtream'&&/^\\d+$/.test(String(source.source_external_id||''))){try{const result=await gateway({action:'epg',stream_id:String(source.source_external_id)});programs=(result.epg_listings||[]).map(item=>({title:decodeEpgText(item.title),description:decodeEpgText(item.description),start:epgDate(item.start,item.start_timestamp),end:epgDate(item.end,item.stop_timestamp)})).filter(x=>x.title&&x.start&&x.end)}catch(error){console.warn('Xtream EPG unavailable:',error)}}
+  if(!programs.length){const result=await gateway({action:'epg_database',channel_id:source.id});programs=(result.programs||[]).map(x=>({title:x.title,description:x.description,start:new Date(x.starts_at),end:new Date(x.ends_at)}))}
+  list.replaceChildren();if(!programs.length){status.textContent='لا توجد بيانات برامج متاحة لهذه القناة حالياً.';return}
+  const now=Date.now();programs.sort((a,b)=>a.start-b.start).forEach(program=>{const card=document.createElement('article');card.className='player-epg-item'+(program.start.getTime()<=now&&program.end.getTime()>now?' current':'');const time=document.createElement('small');time.textContent=program.start.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'})+' — '+program.end.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'});const title=document.createElement('strong');title.textContent=program.title;const desc=document.createElement('p');desc.textContent=program.description||'';card.append(time,title,desc);list.append(card)});
+  status.textContent='تم تحميل '+programs.length+' برامج للقناة.'
+ }catch(error){status.textContent=error.message||'تعذر تحميل دليل البرامج'}
+}
 function fmtTime(value){if(!Number.isFinite(value)||value<0)return '00:00';const n=Math.floor(value),h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?[h,m,s].map(x=>String(x).padStart(2,'0')).join(':'):[m,s].map(x=>String(x).padStart(2,'0')).join(':')}
 function syncCustomControls(){const duration=video.duration,current=video.currentTime||0,finite=Number.isFinite(duration)&&duration>0;$('#vcCurrent').textContent=fmtTime(current);$('#vcDuration').textContent=finite?fmtTime(duration):'LIVE';const seek=$('#vcSeek');seek.disabled=!finite;const pct=finite?Math.min(100,Math.max(0,current/duration*100)):0;seek.value=String(Math.round(pct*10));seek.style.setProperty('--progress',pct+'%');$('#vcPlay').textContent=video.paused?'▶':'Ⅱ';$('#vcMute').textContent=video.muted||video.volume===0?'◖×':'◖))';$('#vcVolume').value=String(video.muted?0:video.volume);const selected=qualitySelect.options[qualitySelect.selectedIndex];$('#vcQuality').textContent=selected?(selected.value==='-1'?'AUTO':selected.textContent):'AUTO'}
 video.addEventListener('timeupdate',syncCustomControls);video.addEventListener('durationchange',syncCustomControls);video.addEventListener('loadedmetadata',syncCustomControls);video.addEventListener('play',syncCustomControls);video.addEventListener('pause',syncCustomControls);video.addEventListener('volumechange',syncCustomControls);
@@ -1036,7 +1107,7 @@ $('#vcQuality').addEventListener('click',()=>{qualitySelect.focus();qualitySelec
 video.addEventListener('timeupdate',()=>{
  if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
 });
-video.addEventListener('pause',()=>{syncCustomControls()});
+video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!recovering&&!suppressPauseTracking&&!video.ended)userPaused=true});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
 video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;$('#bufferText').textContent='التخزين المؤقت نشط • اتصال مباشر'});
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
@@ -1153,7 +1224,7 @@ function renderChannels(){
   const name=displayName(row),cat=categoryFor(row),meta=CATEGORY_META[cat];
   const isFav=favorites.has(row.id)||row.variants.some(v=>favorites.has(v.id));
   const fav=document.createElement('button');fav.type='button';fav.className='channel-fav'+(isFav?' active':'');fav.textContent=isFav?'★':'☆';fav.setAttribute('aria-label',lang==='ar'?'إضافة أو إزالة من المفضلة':'Toggle favorite');
-  fav.addEventListener('click',e=>{e.stopPropagation();if(isFav){row.variants.forEach(v=>favorites.delete(v.id));favorites.delete(row.id)}else favorites.add(row.id);try{localStorage.setItem('velnix:favorites',JSON.stringify([...favorites]))}catch(err){}renderChannels()});
+  fav.addEventListener('click',e=>{e.stopPropagation();toggleFavorite(row,isFav)});
   const logo=document.createElement('div');logo.className='channel-logo';
   const fallback=document.createElement('span');fallback.className='channel-logo-fallback';fallback.textContent=initialsFor(name);logo.append(fallback);
   if(row.logo_url){
@@ -1180,13 +1251,13 @@ async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  try{
   const all=[];
-  const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=';
+  const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=';
   for(let base=0;base<10000;base+=2000){
    const pages=await Promise.all([0,500,1000,1500].map(offset=>rest(query+(base+offset))));
    for(const rows of pages)all.push(...rows);
    if(pages.some(rows=>rows.length<500))break;
   }
-  channelRows=all;renderChannels();
+  channelRows=all;renderChannels();populateAdminEpgChannels();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.';showSiteToast(status.textContent,'error')}
 }
@@ -1199,6 +1270,7 @@ $('#loadMoreChannels').addEventListener('click',()=>{visibleLimit+=90;renderChan
 $('#favoritesFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='favorites'?'all':'favorites';$('#favoritesFilter').classList.toggle('active',catalogMode==='favorites');$('#recentFilter').classList.remove('active');renderChannels()});
 $('#recentFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=catalogMode==='recent'?'all':'recent';$('#recentFilter').classList.toggle('active',catalogMode==='recent');$('#favoritesFilter').classList.remove('active');renderChannels()});
 $('#playerRetry').addEventListener('click',()=>{if(!activeRow)return;if(retryTimer){clearTimeout(retryTimer);retryTimer=null}recovering=false;retryCount=0;userPaused=false;scheduleRecovery('Manual reconnect')});
+$('#playerEpgBtn').addEventListener('click',loadChannelEpg);
 $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
 qualitySelect.addEventListener('change',async()=>{
