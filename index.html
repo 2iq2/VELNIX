@@ -475,10 +475,9 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 (async()=>{
 const API='https://shungcjflcjwubdlhyzq.supabase.co';
 const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
-let supabaseModule;try{supabaseModule=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')}catch(firstError){supabaseModule=await import('https://esm.sh/@supabase/supabase-js@2')}const {createClient}=supabaseModule;
-window.__VELNIX_AUTH_READY__=true;
-const supabase=createClient(API,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const SESSION_KEY='velnix:auth-session';
 let currentSession=null;
+let authMode='login';
 let lang='ar',channelRows=[];
 let beinAccess=false,beinExpiresAt=null;
 const $=(s,r=document)=>r.querySelector(s);
@@ -487,6 +486,46 @@ const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qual
 let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
+const authListeners=new Set();
+function readSavedSession(){
+ try{const value=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');return value&&value.access_token?value:null}catch(e){return null}
+}
+function saveSession(session){
+ currentSession=session;
+ try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY)}catch(e){}
+ authListeners.forEach(fn=>{try{fn('SIGNED_IN',session)}catch(err){}});
+}
+async function authRequest(path,payload,token){
+ const response=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(payload||{})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||'تعذر الاتصال بخدمة تسجيل الدخول');
+ return data;
+}
+async function refreshSessionIfNeeded(){
+ let session=currentSession||readSavedSession();
+ if(!session){currentSession=null;return null}
+ const expiresAt=Number(session.expires_at||0);
+ if(expiresAt&&expiresAt>Date.now()/1000+90){currentSession=session;return session}
+ if(!session.refresh_token){saveSession(null);return null}
+ try{
+  const next=await authRequest('token?grant_type=refresh_token',{refresh_token:session.refresh_token});
+  const updated={...next,expires_at:Math.floor(Date.now()/1000)+Number(next.expires_in||3600)};
+  saveSession(updated);return updated;
+ }catch(e){saveSession(null);return null}
+}
+const supabase={auth:{
+ getSession:async()=>({data:{session:await refreshSessionIfNeeded()}}),
+ signInWithPassword:async({email,password})=>{
+  try{const data=await authRequest('token?grant_type=password',{email,password});const session={...data,expires_at:Math.floor(Date.now()/1000)+Number(data.expires_in||3600)};saveSession(session);return {data:{session,user:data.user},error:null}}
+  catch(error){return {data:{session:null,user:null},error}}
+ },
+ signOut:async()=>{
+  const session=currentSession||readSavedSession();
+  if(session?.access_token){try{await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token}})}catch(e){}}
+  saveSession(null);authListeners.forEach(fn=>{try{fn('SIGNED_OUT',null)}catch(e){}});return {error:null}
+ },
+ onAuthStateChange:(callback)=>{authListeners.add(callback);return {data:{subscription:{unsubscribe:()=>authListeners.delete(callback)}}}}
+}};
 async function refreshAuth(){
  const {data}=await supabase.auth.getSession();currentSession=data.session;
  const user=currentSession?.user,admin=user?.app_metadata?.role==='admin';
@@ -501,8 +540,41 @@ async function refreshAuth(){
  syncBeinGate();
  if(admin&&$('#beinCodesList'))loadBeinCodes();
 }
+function setAuthMode(mode){
+ authMode=mode;
+ const signup=mode==='signup';
+ $('#modalTitle').textContent=signup?'إنشاء حساب VELNIX جديد':'مرحباً بك في VELNIX';
+ $('#authIntro').textContent=signup?'اكتب بريدك الإلكتروني وكلمة المرور، وسيدخل حسابك مباشرة دون رابط تأكيد.':'سجّل الدخول إلى حسابك في VELNIX.';
+ $('#authSubmit').textContent=signup?'إنشاء الحساب والدخول':'تسجيل الدخول';
+ $('#authSwitch').textContent=signup?'عندي حساب بالفعل — تسجيل الدخول':'إنشاء حساب جديد';
+ $('#forgotPassword').hidden=signup;
+ $('#authMessage').textContent='';$('#authMessage').classList.remove('error');
+ $('#authPassword').value='';
+ $('#authPassword').setAttribute('autocomplete',signup?'new-password':'current-password');
+}
+$('#authSwitch').addEventListener('click',()=>setAuthMode(authMode==='login'?'signup':'login'));
 $('#authModal').hidden=false;$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
-$('#authForm').addEventListener('submit',async e=>{e.preventDefault();$('#authMessage').textContent='جارٍ تسجيل الدخول...';const {data,error}=await supabase.auth.signInWithPassword({email:$('#authEmail').value.trim(),password:$('#authPassword').value});if(error){$('#authMessage').textContent=error.message;$('#authMessage').classList.add('error');showSiteToast(error.message,'error');return;}currentSession=data.session;await refreshAuth();$('#authModal').classList.remove('show');showSiteToast('تم تسجيل الدخول بنجاح','success');});
+$('#authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const email=$('#authEmail').value.trim().toLowerCase(),password=$('#authPassword').value;
+ const button=$('#authSubmit'),status=$('#authMessage');
+ button.disabled=true;status.classList.remove('error');
+ try{
+  if(authMode==='signup'){
+   status.textContent='جارٍ إنشاء الحساب...';
+   await gateway({action:'register_user',email,password});
+   status.textContent='تم إنشاء الحساب. جارٍ تسجيل الدخول...';
+  }else status.textContent='جارٍ تسجيل الدخول...';
+  const {data,error}=await supabase.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  currentSession=data.session;await refreshAuth();$('#authModal').classList.remove('show');
+  showSiteToast(authMode==='signup'?'تم إنشاء الحساب وتسجيل الدخول بنجاح':'تم تسجيل الدخول بنجاح','success');
+  setAuthMode('login');
+ }catch(error){
+  const message=String(error.message||'حدث خطأ غير متوقع');
+  status.textContent=message;status.classList.add('error');showSiteToast(message,'error');
+ }finally{button.disabled=false}
+});
 $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();await refreshAuth();});
 supabase.auth.onAuthStateChange(()=>refreshAuth());refreshAuth();
 async function rest(path){
@@ -511,7 +583,8 @@ async function rest(path){
  return response.json();
 }
 async function gateway(body){
- const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Authorization':'Bearer '+(currentSession?.access_token||KEY),'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const session=await refreshSessionIfNeeded();
+ const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Authorization':'Bearer '+(session?.access_token||KEY),'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
