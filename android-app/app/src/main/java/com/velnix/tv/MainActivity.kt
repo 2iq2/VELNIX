@@ -71,7 +71,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
-    var favorites by remember { mutableStateOf(setOf<String>()) }
+    var favorites by remember { mutableStateOf(api.loadFavorites()) }
     var recent by remember { mutableStateOf(listOf<String>()) }
     var selected by remember { mutableStateOf<Channel?>(null) }
     var streamUrl by remember { mutableStateOf<String?>(null) }
