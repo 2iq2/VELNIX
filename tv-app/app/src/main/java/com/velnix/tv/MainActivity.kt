@@ -159,7 +159,7 @@ private object VelnixApi {
         withContext(Dispatchers.IO) {
             val body = JSONObject().put("action", "register_user")
                 .put("email", email.trim().lowercase()).put("password", password)
-            request(BuildConfig.GATEWAY_URL, "POST", body)
+            request(BuildConfig.GATEWAY_URL, "POST", body, key)
         }
         return signIn(context, email, password)
     }
