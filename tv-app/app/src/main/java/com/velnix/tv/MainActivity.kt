@@ -194,7 +194,7 @@ private object VelnixApi {
     }
 
     suspend fun loadCatalog(context: Context): Pair<List<TvCategory>, List<TvChannel>> = withContext(Dispatchers.IO) {
-        val session = validSession(context)
+        validSession(context)
         val categoriesJson = JSONArray(request(
             "$api/rest/v1/channel_categories?select=id,name_ar,name_en,sort_order&is_active=eq.true&order=sort_order.asc",
             token = null
@@ -538,7 +538,7 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
         }
     }
 
-    DisposableEffect(channel.id) { onDispose { player?.release() } }
+    DisposableEffect(player) { onDispose { player?.release() } }
     BackHandler { onClose() }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
