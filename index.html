@@ -329,13 +329,15 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
  .foot{flex-wrap:wrap;justify-content:center;text-align:center;gap:9px}
 }
 
+
+.nav-utility{display:flex!important;align-items:center;gap:8px;flex:none}.nav-utility .login{display:inline-flex!important;align-items:center;justify-content:center;white-space:nowrap;border:1px solid rgba(112,224,211,.28);border-radius:12px;background:linear-gradient(135deg,#153244,#102536);color:#c8fff5;padding:10px 14px;font:600 12px "Tajawal",sans-serif}.nav-utility [hidden]{display:none!important}@media(max-width:600px){.nav{gap:8px}.nav nav{gap:9px}.nav nav a{font-size:11px}.nav-utility .login{padding:8px 9px;font-size:11px}}
 </style>
 </head>
 <body>
 <div class="topline"></div>
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
-<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav>
+<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button></div>
 
 </div></header>
 <main>
@@ -404,7 +406,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 (async()=>{
 const API='https://shungcjflcjwubdlhyzq.supabase.co';
 const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
-const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+let supabaseModule;try{supabaseModule=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')}catch(firstError){supabaseModule=await import('https://esm.sh/@supabase/supabase-js@2')}const {createClient}=supabaseModule;
 window.__VELNIX_AUTH_READY__=true;
 const supabase=createClient(API,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let currentSession=null;
@@ -414,7 +416,7 @@ const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qual
 let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
-async function refreshAuth(){const {data}=await supabase.auth.getSession();currentSession=data.session;const user=currentSession?.user;const admin=user?.app_metadata?.role==='admin';$('#loginBtn').hidden=!!user;$('#heroLogin').hidden=!!user;$('#adminTools').hidden=!admin;if(user){$('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;}else{$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;}}
+async function refreshAuth(){const {data}=await supabase.auth.getSession();currentSession=data.session;const user=currentSession?.user;const admin=user?.app_metadata?.role==='admin';$('#loginBtn').hidden=!!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;if(user){$('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;}else{$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;}}
 $('#authModal').hidden=false;$('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
 $('#authForm').addEventListener('submit',async e=>{e.preventDefault();$('#authMessage').textContent='جارٍ تسجيل الدخول...';const {data,error}=await supabase.auth.signInWithPassword({email:$('#authEmail').value.trim(),password:$('#authPassword').value});if(error){$('#authMessage').textContent=error.message;$('#authMessage').classList.add('error');return;}currentSession=data.session;await refreshAuth();$('#authModal').classList.remove('show');});
 $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();await refreshAuth();});
@@ -644,7 +646,8 @@ async function loadChannels(){
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.'}
 }
 
-$('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
+$('#adminBtn').addEventListener('click',()=>{const panel=$('#adminTools');panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});});
+ $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels()});
 $('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
 $('#loadMoreChannels').addEventListener('click',()=>{visibleLimit+=90;renderChannels()});
@@ -658,6 +661,6 @@ $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(e
 $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
 $('#m3uFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';try{if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';const result=await gateway({action:'admin_import_m3u',content});status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';await loadChannels();}catch(err){status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');}finally{e.target.value='';}});
 loadChannels();
-})();
+})().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
 </script>
 </body></html>
