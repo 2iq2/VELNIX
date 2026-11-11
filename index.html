@@ -494,9 +494,10 @@ body[data-theme="light"] .fixture-score{color:#172033}
  const intro=document.getElementById('claykoIntro');
  if(!intro)return;
  const name=intro.querySelector('.clayko-intro-name');
- const brand=document.querySelector('header .brand');
- const mark=brand?.querySelector('.brand-mark');
  const beginMorph=()=>{
+  // Header is parsed after the intro script, so resolve it when the animation starts.
+  const brand=document.querySelector('header .brand');
+  const mark=brand?.querySelector('.brand-mark');
   if(!name||!brand||!mark)return;
   const from=name.getBoundingClientRect(),to=mark.getBoundingClientRect();
   brand.classList.add('brand-morph-pending');
