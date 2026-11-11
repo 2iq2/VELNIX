@@ -148,7 +148,8 @@ class VelnixApi(private val context: Context) {
                     provider = r.optString("source_provider"),
                     quality = best.quality.ifBlank { if (combine) "مصادر متعددة" else "" },
                     streamIds = set.map { it.row.getString("id") },
-                    externalId = r.optString("source_external_id").takeIf { it.isNotBlank() && it != "null" }
+                    externalId = r.optString("source_external_id").takeIf { it.isNotBlank() && it != "null" },
+                    streamType = r.optString("stream_type").ifBlank { "hls" }
                 )
             }
         }.sortedBy { it.name.lowercase() }
@@ -175,12 +176,12 @@ class VelnixApi(private val context: Context) {
         return Triple(value.substring(0, match.range.first).trimEnd(' ','.','_','-'), label, rank)
     }
 
-    suspend fun stream(channelId: String): StreamInfo {
+    suspend fun stream(channelId: String, fallbackType: String = "hls"): StreamInfo {
         val payload = JSONObject().put("action", "stream").put("channel_id", channelId).toString()
         val result = JSONObject(request("functions/v1/xtream-gateway", "POST", payload))
         val url = result.optString("stream_url").takeIf { it.isNotBlank() && it != "null" }
             ?: throw IllegalStateException("مصدر البث غير مربوط لهذه القناة")
-        return StreamInfo(url, result.optString("stream_type").ifBlank { "hls" })
+        return StreamInfo(url, result.optString("stream_type").ifBlank { fallbackType.ifBlank { "hls" } })
     }
 
     suspend fun epg(channel: Channel): List<EpgProgram> {
