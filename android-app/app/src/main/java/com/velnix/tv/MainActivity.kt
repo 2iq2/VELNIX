@@ -36,11 +36,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.TrackSelectionDialogBuilder
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
@@ -72,7 +77,8 @@ private fun VelnixApp(activity: ComponentActivity) {
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
     var favorites by remember { mutableStateOf(api.loadFavorites()) }
-    var recent by remember { mutableStateOf(listOf<String>()) }
+    var recent by remember { mutableStateOf(api.loadRecent()) }
+    var streamType by remember { mutableStateOf("hls") }
     var selected by remember { mutableStateOf<Channel?>(null) }
     var streamUrl by remember { mutableStateOf<String?>(null) }
     var beinAccess by remember { mutableStateOf(false) }
@@ -107,7 +113,7 @@ private fun VelnixApp(activity: ComponentActivity) {
             if (introVisible) {
                 IntroScreen()
             } else if (selected != null && streamUrl != null) {
-                NativePlayer(api, selected!!, streamUrl!!, onBack = { selected = null; streamUrl = null })
+                NativePlayer(api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
             } else if (session == null) {
                 AuthScreen(email, { email = it }, password, { password = it }, signup,
                     { signup = !signup; error = "" }, busy, error,
@@ -139,6 +145,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 Text(if (beinAccess) "beIN SPORTS مفعّل" else "beIN SPORTS غير مفعّل", color = if(beinAccess) Gold else Muted, fontSize = 10.sp)
                             }
                             Spacer(Modifier.width(12.dp))
+                            TextButton(onClick = { refreshCatalog() }) { Text("تحديث", color = Gold) }
                             TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
                         }
                     }
@@ -171,6 +178,11 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 placeholder = { Text("ابحث عن قناة…", color = Muted) },
                                 singleLine = true, shape = RoundedCornerShape(14.dp)
                             )
+                            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                StatCard("القنوات", channels.size.toString(), Modifier.weight(1f))
+                                StatCard("المفضلة", favorites.size.toString(), Modifier.weight(1f))
+                                StatCard("آخر مشاهدة", recent.size.toString(), Modifier.weight(1f))
+                            }
                             Text(status, color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom=8.dp))
                             val grouped = remember(channels, category, query, favorites, recent, beinAccess) {
                                 channels.filter { c ->
@@ -195,8 +207,10 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                 busy=true
                                                 try {
                                                     if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    streamUrl = api.stream(c.streamIds.firstOrNull() ?: c.id); selected=c
+                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id)
+                                                    streamUrl = source.url; streamType = source.type; selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
+                                                    api.saveRecent(recent)
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
                                             }
@@ -211,8 +225,10 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                 busy=true
                                                 try {
                                                     if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    streamUrl = api.stream(c.streamIds.firstOrNull() ?: c.id); selected=c
+                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id)
+                                                    streamUrl = source.url; streamType = source.type; selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
+                                                    api.saveRecent(recent)
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
                                             }
@@ -279,6 +295,13 @@ private fun IntroScreen() {
         TextButton(onClick=onFavorite) { Text(if(favorite) "★" else "☆", color=Gold, fontSize=20.sp) }
     }
 }
+@Composable private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier.background(Panel, RoundedCornerShape(13.dp)).padding(horizontal = 12.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(value, color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = Muted, fontSize = 10.sp)
+    }
+}
+
 @Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onSubmit:()->Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
         Text("VELNIX", color=Gold, fontSize=36.sp, fontWeight=FontWeight.Black, letterSpacing=4.sp)
@@ -295,13 +318,25 @@ private fun IntroScreen() {
         TextButton(onClick=onSwitch) { Text(if(signup) "لدي حساب بالفعل" else "إنشاء حساب جديد",color=Gold) }
     }
 }
-@Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,onBack:()->Unit) {
+@Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
     val context=androidx.compose.ui.platform.LocalContext.current
-    val player= remember(url) {
+    val player= remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(30000, 90000, 4000, 12000)
+            .setBufferDurationsMs(45000, 120000, 5000, 15000)
             .build()
-        ExoPlayer.Builder(context).setLoadControl(loadControl).build().apply {
+        val trackSelector = DefaultTrackSelector(context).apply {
+            parameters = buildUponParameters()
+                .setPreferredVideoMimeTypes(MimeTypes.VIDEO_H264, MimeTypes.VIDEO_H265)
+                .build()
+        }
+        val renderersFactory = DefaultRenderersFactory(context).setEnableDecoderFallback(true)
+        val mediaItem = MediaItem.Builder().setUri(url).apply {
+            when {
+                streamType.contains("dash", true) || url.contains(".mpd", true) -> setMimeType(MimeTypes.APPLICATION_MPD)
+                streamType.contains("hls", true) || streamType.contains("m3u8", true) || url.contains(".m3u8", true) -> setMimeType(MimeTypes.APPLICATION_M3U8)
+            }
+        }.build()
+        ExoPlayer.Builder(context, renderersFactory).setTrackSelector(trackSelector).setLoadControl(loadControl).build().apply {
             val exo = this
             var retryCount = 0
             val retryHandler = Handler(Looper.getMainLooper())
@@ -310,17 +345,16 @@ private fun IntroScreen() {
                     if (retryCount >= 5) return
                     retryCount++
                     retryHandler.postDelayed({
-                        if (exo.playbackState == Player.STATE_IDLE) {
-                            exo.prepare()
-                            exo.playWhenReady = true
-                        }
+                        exo.seekToDefaultPosition()
+                        exo.prepare()
+                        exo.playWhenReady = true
                     }, 3500L)
                 }
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     if (playbackState == Player.STATE_READY) retryCount = 0
                 }
             })
-            setMediaItem(MediaItem.fromUri(url))
+            setMediaItem(mediaItem)
             playWhenReady=true
             prepare()
         }
@@ -332,10 +366,23 @@ private fun IntroScreen() {
             Text(channel.name,color=Color.White,fontWeight=FontWeight.Bold)
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            AndroidView(factory={ ctx -> PlayerView(ctx).apply { this.player=player; useController=true } },modifier=Modifier.fillMaxSize())
+            AndroidView(factory={ ctx -> PlayerView(ctx).apply {
+                this.player=player
+                useController=true
+                useTextureView=true
+                keepScreenOn=true
+                controllerShowTimeoutMs=5500
+                resizeMode=androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+            } },modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
-        Text("إعادة المحاولة التلقائية مفعّلة عند أخطاء التشغيل. ثبات البث يعتمد أيضاً على المصدر والشبكة والجهاز.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(12.dp))
+        Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=8.dp, vertical=6.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
+            TextButton(onClick={ TrackSelectionDialogBuilder(context, "جودة الصورة", player, C.TRACK_TYPE_VIDEO).build().show() }) { Text("الجودة", color=Gold) }
+            TextButton(onClick={ TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show() }) { Text("الصوت", color=Gold) }
+            TextButton(onClick={ TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show() }) { Text("الترجمة", color=Gold) }
+            TextButton(onClick={ player.seekToDefaultPosition(); player.prepare(); player.playWhenReady=true }) { Text("إعادة الاتصال", color=Gold) }
+        }
+        Text("مشغل VELNIX المحسّن · استعادة تلقائية عند انقطاع البث",color=Muted,fontSize=10.sp,modifier=Modifier.padding(10.dp))
     }
 }
 
