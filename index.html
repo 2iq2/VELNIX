@@ -689,12 +689,12 @@ function initialsFor(name){
 }
 function qualityInfo(value){
  const raw=cleanChannelName(value);
- const match=raw.match(/(?:\\s+|[-_.])(FULL\\s*HD|ULTRA\\s*HD|FHD|UHD|4K|8K|1080P|720P|576P|480P|SD|HD)$/i);
+ const match=raw.match(/(?:\s+|[-_.])(FULL\s*HD|ULTRA\s*HD|FHD|UHD|4K|8K|1080P|720P|576P|480P|SD|HD)$/i);
  if(!match)return {base:raw,quality:"",rank:0};
- const token=match[1].replace(/\\s+/g,"").toUpperCase();
+ const token=match[1].replace(/\s+/g,"").toUpperCase();
  const rank=/^(FHD|UHD|4K|8K|1080P|ULTRAHD)$/.test(token)?4:/^(HD|720P)$/.test(token)?3:/^(SD|576P|480P)$/.test(token)?2:1;
  const quality=/^(FHD|UHD|4K|8K|1080P|ULTRAHD)$/.test(token)?"FHD":/^(HD|720P)$/.test(token)?"HD":/^(SD|576P|480P)$/.test(token)?"SD":token;
- return {base:raw.slice(0,match.index).replace(/[\\s._-]+$/,"").trim(),quality,rank};
+ return {base:raw.slice(0,match.index).replace(/[\s._-]+$/,"").trim(),quality,rank};
 }
 function buildChannelGroups(){
  const buckets=new Map();
