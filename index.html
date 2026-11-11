@@ -76,7 +76,7 @@ header{background:rgba(8,9,13,.91);border-bottom:1px solid rgba(255,255,255,.08)
 .nav{height:72px}
 .brand{font-size:25px;letter-spacing:3.5px}
 .brand-mark{background:#e50914;color:white;border:0;border-radius:8px;transform:none;box-shadow:0 5px 24px #e5091440}
-.brand-mark span{transform:none}
+..brand-mark span{transform:none}
 nav{gap:30px}
 nav a{font-weight:600;color:#d1d1d5}
 nav a:hover{color:#fff}
@@ -258,7 +258,7 @@ body{background:radial-gradient(ellipse at 12% 4%,rgba(44,119,142,.19),transpare
 .topline{height:2px;background:linear-gradient(90deg,transparent,#66e2d0 28%,#8798ff 72%,transparent)}
 header{position:sticky;top:0;z-index:40;background:rgba(8,14,24,.86);backdrop-filter:blur(24px);border-bottom:1px solid rgba(181,215,237,.1)}
 .nav{height:78px}.brand{font-size:25px;letter-spacing:3.8px;gap:13px}
-.brand-mark{width:40px;height:40px;border-radius:14px;background:linear-gradient(145deg,#76f0df,#4e91bb);color:#07141c;box-shadow:0 8px 30px #56d6c52e}
+.brand-mark{width:17px;height:17px;display:grid;place-items:center;border:1px solid rgba(218,239,245,.48);border-radius:5px;background:rgba(5,13,20,.16);color:rgba(235,249,252,.78);font:800 10px "DM Sans",sans-serif;transform:rotate(45deg);box-shadow:none}
 nav{gap:7px}nav a{font-size:13px;font-weight:700;color:#a8b8ca;padding:11px 16px;border-radius:12px;transition:background .2s,color .2s}
 nav a:hover{background:#ffffff0b;color:#dffffa}.actions{display:none!important}
 #home.hero{width:min(1320px,100%);max-width:1320px;min-height:510px;margin:0 auto;padding:94px 58px 84px;display:flex;align-items:center;position:relative;isolation:isolate;overflow:hidden;border-bottom:1px solid rgba(174,214,236,.08)}
@@ -314,7 +314,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 @media(max-width:1000px){.channels{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:850px){nav{display:none}#home.hero{min-height:470px;padding:72px 34px 65px}#home.hero:after{inset-inline-end:-90px;opacity:.65}.channels{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){
- .nav{height:66px}.brand{font-size:21px}.brand-mark{width:35px;height:35px}
+ .nav{height:66px}.brand{font-size:21px}.brand-mark{width:17px;height:17px}
  #home.hero{min-height:430px;padding:57px 22px 50px}#home.hero:after{width:230px;height:230px;inset-inline-end:-115px;opacity:.55}
  #home h1{font-size:42px;letter-spacing:-.8px}#home .intro{font-size:14px;line-height:1.95}
  #home .hero-ctas{margin-top:23px}#home .primary{padding:13px 18px}
