@@ -195,14 +195,13 @@ private object VelnixApi {
 
     suspend fun loadCatalog(context: Context): Pair<List<TvCategory>, List<TvChannel>> = withContext(Dispatchers.IO) {
         val session = validSession(context)
-        val authToken = session?.accessToken
         val categoriesJson = JSONArray(request(
             "$api/rest/v1/channel_categories?select=id,name_ar,name_en,sort_order&is_active=eq.true&order=sort_order.asc",
-            token = authToken
+            token = null
         ))
         val channelsJson = JSONArray(request(
             "$api/rest/v1/channels?select=id,category_id,name_ar,name_en,logo_url,stream_type&is_active=eq.true&order=name_en.asc&limit=5000",
-            token = authToken
+            token = null
         ))
         val categories = buildList {
             for (i in 0 until categoriesJson.length()) {
@@ -420,7 +419,7 @@ private fun LoginScreen(
                 if (!error.isNullOrBlank()) Text(error, color = Color(0xFFFF9A91), fontSize = 12.sp)
                 Button(
                     onClick = { if (createAccount) onRegister(email, password) else onLogin(email, password) },
-                    enabled = !busy && email.contains("@") && password.length >= 6,
+                    enabled = !busy && email.contains("@") && password.length >= if (createAccount) 8 else 6,
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Night)
                 ) {
@@ -517,7 +516,7 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
             ).build()
             player = newPlayer
             val item = MediaItem.Builder().setUri(stream.url).apply {
-                if (stream.type.contains("hls") || stream.type.contains("m3u8")) setMimeType(MimeTypes.APPLICATION_M3U8)
+                if (stream.type.contains("hls") || stream.type.contains("m3u8")) setMimeType(MimeTypes.APPLICATION_M3U8)\n                else if (stream.type.contains("dash") || stream.type.contains("mpd")) setMimeType(MimeTypes.APPLICATION_MPD)
             }.build()
             newPlayer.setMediaItem(item)
             newPlayer.addListener(object : Player.Listener {
