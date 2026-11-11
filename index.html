@@ -432,7 +432,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 <div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div><div class="bein-admin" id="beinAdminTools">
 <h3>إدارة أكواد beIN SPORTS</h3>
 <div class="bein-admin-form"><input id="beinCodeCount" type="number" min="1" max="50" value="5" aria-label="عدد الأكواد"><input id="beinCodeDays" type="number" min="1" max="3650" value="30" aria-label="مدة الصلاحية بالأيام"><button id="generateBeinCodes" type="button">إنشاء أكواد التفعيل</button><button id="refreshBeinCodes" type="button">تحديث القائمة</button></div>
-<div class="bein-admin-output" id="beinGeneratedCodes" hidden></div>
+<div class="bein-admin-output" id="beinGeneratedCodes" hidden></div><button id="copyBeinCodes" type="button" hidden style="margin-top:8px">نسخ الأكواد</button>
 <div class="bein-admin-list" id="beinCodesList"></div>
 </div>
 </div>
@@ -675,7 +675,7 @@ async function loadBeinCodes(){
    const status=code.revoked_at?'ملغي':code.used_by?(new Date(code.access_expires_at)<new Date()?'منتهي':'مستخدم'):'متاح';
    const span=document.createElement('span');span.textContent=code.code_hint+' · '+status+' · '+code.valid_days+' يوم'+(code.used_by?' · حساب: '+code.used_by.slice(0,8):'');
    row.append(span);
-   if(!code.revoked_at&&!code.used_by){const btn=document.createElement('button');btn.textContent='إلغاء';btn.addEventListener('click',async()=>{btn.disabled=true;try{await gateway({action:'admin_revoke_bein_code',code_id:code.id});loadBeinCodes()}catch(e){showSiteToast(e.message,'error');btn.disabled=false}});row.append(btn)}
+   if(!code.revoked_at){const btn=document.createElement('button');btn.textContent=code.used_by?'إلغاء الصلاحية':'إلغاء الكود';btn.addEventListener('click',async()=>{btn.disabled=true;try{await gateway({action:'admin_revoke_bein_code',code_id:code.id});loadBeinCodes()}catch(e){showSiteToast(e.message,'error');btn.disabled=false}});row.append(btn)}
    list.append(row);
   });
   if(!(result.codes||[]).length)list.textContent='لا توجد أكواد منشأة بعد.';
@@ -699,12 +699,16 @@ $('#generateBeinCodes').addEventListener('click',async()=>{
   const count=Math.max(1,Math.min(50,Number($('#beinCodeCount').value)||1));
   const valid_days=Math.max(1,Math.min(3650,Number($('#beinCodeDays').value)||30));
   const result=await gateway({action:'admin_generate_bein_codes',count,valid_days});
-  const out=$('#beinGeneratedCodes');out.hidden=false;out.textContent=result.codes.join('\n');
+  const out=$('#beinGeneratedCodes');out.hidden=false;out.textContent=result.codes.join('\n');$('#copyBeinCodes').hidden=false;
   showSiteToast('تم إنشاء '+result.count+' كود تفعيل','success');loadBeinCodes();
  }catch(e){showSiteToast(e.message||'تعذر إنشاء الأكواد','error')}
  finally{button.disabled=false}
 });
 $('#refreshBeinCodes').addEventListener('click',loadBeinCodes);
+$('#copyBeinCodes').addEventListener('click',async()=>{
+ try{await navigator.clipboard.writeText($('#beinGeneratedCodes').textContent);showSiteToast('تم نسخ الأكواد','success')}
+ catch(e){showSiteToast('حدد الأكواد وانسخها يدوياً','info')}
+});
 
 function fmtTime(value){if(!Number.isFinite(value)||value<0)return '00:00';const n=Math.floor(value),h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?[h,m,s].map(x=>String(x).padStart(2,'0')).join(':'):[m,s].map(x=>String(x).padStart(2,'0')).join(':')}
 function syncCustomControls(){const duration=video.duration,current=video.currentTime||0,finite=Number.isFinite(duration)&&duration>0;$('#vcCurrent').textContent=fmtTime(current);$('#vcDuration').textContent=finite?fmtTime(duration):'LIVE';const seek=$('#vcSeek');seek.disabled=!finite;const pct=finite?Math.min(100,Math.max(0,current/duration*100)):0;seek.value=String(Math.round(pct*10));seek.style.setProperty('--progress',pct+'%');$('#vcPlay').textContent=video.paused?'▶':'Ⅱ';$('#vcMute').textContent=video.muted||video.volume===0?'◖×':'◖))';$('#vcVolume').value=String(video.muted?0:video.volume);const selected=qualitySelect.options[qualitySelect.selectedIndex];$('#vcQuality').textContent=selected?(selected.value==='-1'?'AUTO':selected.textContent):'AUTO'}
