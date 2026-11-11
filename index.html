@@ -496,8 +496,24 @@ function closePlayer(){stopPlayback();playerModal.classList.remove('show')}
 function state(value){$('#playerState').textContent=value;if(/تم رصد توقف البث|تعذر|error|متصل بالبث|اضغط تشغيل|reconnecting|interruption/i.test(String(value)))showSiteToast(value,/تعذر|error|failed/i.test(String(value))?'error':/متصل بالبث/i.test(String(value))?'success':'info')}
 function qualities(){
  qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
- if(!hlsInstance)return;
- hlsInstance.levels.forEach((level,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=level.height?level.height+'p':Math.round(level.bitrate/1000)+' kbps';qualitySelect.append(o)});
+ qualitySelect.disabled=false;
+ if(!hlsInstance||!hlsInstance.levels?.length){
+  const sourceOption=document.createElement('option');
+  sourceOption.value='source';sourceOption.textContent='جودة المصدر';
+  qualitySelect.append(sourceOption);qualitySelect.disabled=true;
+  $('#vcQuality').textContent='المصدر';
+  return;
+ }
+ hlsInstance.levels.forEach((level,i)=>{
+  const o=document.createElement('option');o.value=String(i);
+  const height=level.height?level.height+'p':'دقة غير محددة';
+  const bitrate=level.bitrate?Math.round(level.bitrate/1000)+' kbps':'';
+  const fps=level.frameRate?Math.round(level.frameRate)+'fps':'';
+  o.textContent=[height,bitrate,fps].filter(Boolean).join(' • ');
+  qualitySelect.append(o);
+ });
+ qualitySelect.value='-1';
+ $('#vcQuality').textContent='AUTO';
 }
 function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
@@ -723,7 +739,17 @@ $('#recentFilter').addEventListener('click',()=>{visibleLimit=90;catalogMode=cat
 $('#playerRetry').addEventListener('click',()=>{if(!activeRow)return;if(retryTimer){clearTimeout(retryTimer);retryTimer=null}recovering=false;retryCount=0;userPaused=false;scheduleRecovery('Manual reconnect')});
 $('#closePlayer').addEventListener('click',closePlayer);playerModal.addEventListener('click',e=>{if(e.target===playerModal)closePlayer()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer()});
-qualitySelect.addEventListener('change',()=>{if(hlsInstance)hlsInstance.currentLevel=Number(qualitySelect.value)});
+qualitySelect.addEventListener('change',()=>{
+ const selected=qualitySelect.value;
+ if(!hlsInstance||selected==='source')return;
+ const level=Number(selected);
+ if(!Number.isInteger(level)||level < -1)return;
+ hlsInstance.currentLevel=level;
+ const label=level===-1?'تلقائي':qualitySelect.options[qualitySelect.selectedIndex]?.textContent||'مخصص';
+ $('#vcQuality').textContent=level===-1?'AUTO':(hlsInstance.levels[level]?.height? hlsInstance.levels[level].height+'p':'مخصص');
+ state('تم تغيير جودة البث إلى '+label);
+ showSiteToast('جودة البث: '+label,'success');
+});
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
 $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
 $('#m3uFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';try{if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';const result=await gateway({action:'admin_import_m3u',content});status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';showSiteToast(status.textContent,'success');await loadChannels();}catch(err){status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error');}finally{e.target.value='';}});
