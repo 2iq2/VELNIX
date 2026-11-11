@@ -488,7 +488,7 @@ function categoryFor(row){
  const group=String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'').toLowerCase();
  const name=String(row.name_en||row.name_ar||'').toLowerCase();
  const both=group+' '+name;
- if(/bein[\s._-]*sports|بي\s*ان\s*سبورت|بين\s*سبورت/.test(both))return 'bein';
+ if(/bein[\s._-]*sp.{0,3}rts|بي\s*ان\s*سبورت|بين\s*سبورت/.test(both))return 'bein';
  if(/sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
  if(/news|info|actualité|actualite|inform|اخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
  if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
@@ -537,7 +537,7 @@ function renderChannels(){
   }
   const copy=document.createElement('div');copy.className='channel-copy';
   const title=document.createElement('h3');title.textContent=name;
-  const desc=document.createElement('p');desc.textContent=row.description||meta[lang]||meta.en;
+  const desc=document.createElement('p');const channelDescription=String(row.description||'').trim();desc.textContent=(/^m3u$/i.test(channelDescription)?'':channelDescription)||meta[lang]||meta.en;
   const tag=document.createElement('span');tag.className='tag';tag.textContent=lang==='ar'?'ضمن دليل القنوات':'CHANNEL GUIDE';
   copy.append(title,desc,tag);card.append(fav,logo,copy);
   card.addEventListener('click',()=>playChannel(row));
