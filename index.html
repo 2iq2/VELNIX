@@ -843,6 +843,7 @@ async function startPlayback(row,generation,reason='initial'){
  video.src=url;await video.play().catch(()=>{});
 }
 async function playChannel(row){
+ if(!currentSession){showSiteToast('لازم تسجّل دخول حتى تشاهد القنوات.','error');$('#loginBtn').click();return;}
  if(categoryFor(row)==='bein'&&!beinAccess&&currentSession?.user?.app_metadata?.role!=='admin'){showSiteToast('قسم beIN SPORTS مقفول. فعّل حسابك أولاً.','error');syncBeinGate();return;}
  stopPlayback();
  const variants=(row.variants?.length?row.variants:[row]).slice().sort((a,b)=>(b._qualityRank||0)-(a._qualityRank||0));
