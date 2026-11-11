@@ -39,12 +39,12 @@ class VelnixApi(private val context: Context) {
         val raw = prefs.getString(SESSION, null) ?: return null
         return try {
             val j = JSONObject(raw)
-            UserSession(j.getString("access_token"), j.getString("refresh_token"), j.optJSONObject("user")?.optString("email").orEmpty()).also { current = it }
+            UserSession(j.getString("access_token"), j.getString("refresh_token"), j.optJSONObject("user")?.optString("email").orEmpty(), j.optJSONObject("user")?.optString("id").orEmpty()).also { current = it }
         } catch (_: Exception) { null }
     }
 
     private fun saveSession(json: JSONObject): UserSession {
-        val value = UserSession(json.getString("access_token"), json.getString("refresh_token"), json.optJSONObject("user")?.optString("email").orEmpty())
+        val value = UserSession(json.getString("access_token"), json.getString("refresh_token"), json.optJSONObject("user")?.optString("email").orEmpty(), json.optJSONObject("user")?.optString("id").orEmpty())
         prefs.edit().putString(SESSION, json.toString()).apply()
         current = value
         return value
@@ -56,6 +56,7 @@ class VelnixApi(private val context: Context) {
             .header("apikey", KEY)
             .header("Accept", "application/json")
         builder.header("Authorization", "Bearer ${token ?: session()?.accessToken ?: KEY}")
+        if (rest && method == "POST") builder.header("Prefer", "resolution=merge-duplicates,return=minimal")
         if (body != null) builder.method(method, body.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()))
         else builder.method(method, if (method == "GET" || method == "HEAD") null else ByteArray(0).toRequestBody(null))
         client.newCall(builder.build()).execute().use { response ->
@@ -254,6 +255,70 @@ class VelnixApi(private val context: Context) {
             JSONObject(request("functions/v1/xtream-gateway", "POST", JSONObject().put("action","check_bein_access").toString()))
                 .optBoolean("has_access", false)
         } catch (_: Exception) { false }
+    }
+
+    suspend fun syncFavorites(local: Set<String>): Set<String> {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) return local
+        val rows = JSONArray(request("favorites?select=channel_id&user_id=eq.$userId", rest = true))
+        val remote = (0 until rows.length()).mapNotNull { rows.optJSONObject(it)?.optString("channel_id")?.takeIf { value -> value.isNotBlank() } }.toSet()
+        val merged = remote + local
+        val missing = merged - remote
+        if (missing.isNotEmpty()) {
+            val payload = JSONArray()
+            missing.forEach { id -> payload.put(JSONObject().put("user_id", userId).put("channel_id", id)) }
+            request("favorites", "POST", payload.toString(), rest = true)
+        }
+        return merged
+    }
+
+    suspend fun setFavorite(channelId: String, enabled: Boolean) {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) return
+        if (enabled) {
+            val payload = JSONArray().put(JSONObject().put("user_id", userId).put("channel_id", channelId))
+            request("favorites", "POST", payload.toString(), rest = true)
+        } else {
+            request("favorites?user_id=eq.$userId&channel_id=eq.$channelId", "DELETE", rest = true)
+        }
+    }
+
+    suspend fun syncRecent(local: List<String>): List<String> {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) return local
+        val rows = JSONArray(request("watch_history?select=channel_id&user_id=eq.$userId&order=watched_at.desc&limit=30", rest = true))
+        val remote = (0 until rows.length()).mapNotNull { rows.optJSONObject(it)?.optString("channel_id")?.takeIf { value -> value.isNotBlank() } }
+        val merged = (remote + local).distinct().take(30)
+        val missing = merged.filterNot { it in remote }
+        if (missing.isNotEmpty()) {
+            val payload = JSONArray()
+            missing.forEach { id -> payload.put(JSONObject().put("user_id", userId).put("channel_id", id)) }
+            request("watch_history", "POST", payload.toString(), rest = true)
+        }
+        return merged
+    }
+
+    suspend fun recordWatch(channelId: String) {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) return
+        val payload = JSONArray().put(JSONObject().put("user_id", userId).put("channel_id", channelId).put("watched_at", java.time.Instant.now().toString()))
+        request("watch_history", "POST", payload.toString(), rest = true)
+    }
+
+    suspend fun accountInfo(): AccountInfo {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) throw IllegalStateException("جلسة الحساب غير صالحة")
+        val profiles = JSONArray(request("profiles?select=display_name&id=eq.$userId", rest = true))
+        val profile = profiles.optJSONObject(0)
+        val subscriptions = JSONArray(request("subscriptions?select=plan_code,status,expires_at&user_id=eq.$userId&order=created_at.desc&limit=1", rest = true))
+        val sub = subscriptions.optJSONObject(0)
+        return AccountInfo(profile?.optString("display_name").orEmpty(), sub?.optString("plan_code").orEmpty().ifBlank { "مجاني" }, sub?.optString("status").orEmpty().ifBlank { "غير مشترك" }, sub?.optString("expires_at").orEmpty())
+    }
+
+    suspend fun updateDisplayName(name: String) {
+        val userId = session()?.userId.orEmpty()
+        if (userId.isBlank()) throw IllegalStateException("جلسة الحساب غير صالحة")
+        request("profiles?id=eq.$userId", "PATCH", JSONObject().put("display_name", name.trim()).toString(), rest = true)
     }
 
     fun loadFavorites(): Set<String> = prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
