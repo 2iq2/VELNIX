@@ -4,6 +4,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.View
+import android.app.PictureInPictureParams
+import android.util.Rational
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -119,10 +123,21 @@ private fun VelnixApp(activity: ComponentActivity) {
             if (introVisible) {
                 IntroScreen()
             } else if (selected != null && streamUrl != null) {
-                NativePlayer(api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
+                NativePlayer(activity, api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
             } else if (session == null) {
                 AuthScreen(email, { email = it }, password, { password = it }, signup,
                     { signup = !signup; error = "" }, busy, error,
+                    onForgot = {
+                        if (email.isBlank()) error = "اكتب بريدك الإلكتروني أولاً"
+                        else scope.launch {
+                            busy = true
+                            try {
+                                api.resetPassword(email)
+                                error = "إذا كان البريد مسجلاً، سيصلك رابط إعادة تعيين كلمة المرور."
+                            } catch (e: Exception) { error = e.message ?: "تعذر إرسال رابط الاستعادة" }
+                            finally { busy = false }
+                        }
+                    },
                     onSubmit = {
                         scope.launch {
                             busy = true; error = ""
@@ -339,7 +354,7 @@ private fun IntroScreen() {
     }
 }
 
-@Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onSubmit:()->Unit) {
+@Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onForgot:()->Unit,onSubmit:()->Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
         Text("VELNIX", color=Gold, fontSize=36.sp, fontWeight=FontWeight.Black, letterSpacing=4.sp)
         Text("PREMIUM LIVE TV", color=Muted, fontSize=11.sp, letterSpacing=3.sp, modifier=Modifier.padding(bottom=30.dp))
@@ -353,18 +368,22 @@ private fun IntroScreen() {
             Text(if(busy) "يرجى الانتظار…" else if(signup) "إنشاء الحساب" else "تسجيل الدخول")
         }
         TextButton(onClick=onSwitch) { Text(if(signup) "لدي حساب بالفعل" else "إنشاء حساب جديد",color=Gold) }
+        if (!signup) TextButton(onClick=onForgot, enabled=!busy) { Text("نسيت كلمة المرور؟", color=Muted) }
     }
 }
-@Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
+@Composable private fun NativePlayer(activity: ComponentActivity, api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
     val context=androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var epg by remember { mutableStateOf<List<EpgProgram>>(emptyList()) }
     var epgLoading by remember { mutableStateOf(false) }
     var epgVisible by remember { mutableStateOf(false) }
     var epgMessage by remember { mutableStateOf("") }
+    var playerView by remember { mutableStateOf<PlayerView?>(null) }
+    var resizeMode by remember { mutableStateOf(0) }
+    var immersive by remember { mutableStateOf(false) }
     val player= remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(45000, 120000, 5000, 15000)
+            .setBufferDurationsMs(30000, 90000, 5000, 12000)
             .build()
         val trackSelector = DefaultTrackSelector(context).apply {
             parameters = buildUponParameters()
@@ -401,7 +420,10 @@ private fun IntroScreen() {
             prepare()
         }
     }
-    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player) { onDispose {
+        activity.window.decorView.systemUiVisibility = 0
+        player.release()
+    } }
     Column(Modifier.fillMaxSize().background(Color.Black)) {
         Row(Modifier.fillMaxWidth().background(Panel).padding(12.dp), verticalAlignment=Alignment.CenterVertically) {
             TextButton(onClick=onBack) { Text("رجوع",color=Gold) }
@@ -411,7 +433,9 @@ private fun IntroScreen() {
             AndroidView(factory={ ctx ->
                 (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as android.view.LayoutInflater)
                     .inflate(R.layout.velnix_player_view, null) as PlayerView
-            }, update={ view -> view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 }, modifier=Modifier.fillMaxSize())
+            }.let { factory -> { ctx -> factory(ctx).also { playerView = it } } },
+                update={ view -> view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 },
+                modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=4.dp, vertical=5.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
@@ -428,6 +452,27 @@ private fun IntroScreen() {
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show() }) { Text("الصوت", color=Gold) }
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show() }) { Text("الترجمة", color=Gold) }
             TextButton(onClick={ player.seekToDefaultPosition(); player.prepare(); player.playWhenReady=true }) { Text("إعادة الاتصال", color=Gold) }
+            TextButton(onClick={
+                resizeMode = (resizeMode + 1) % 3
+                playerView?.resizeMode = when (resizeMode) {
+                    0 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    1 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    else -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+                }
+            }) { Text(listOf("ملاءمة", "تكبير", "تمديد")[resizeMode], color=Gold) }
+            TextButton(onClick={
+                immersive = !immersive
+                activity.window.decorView.systemUiVisibility = if (immersive)
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                else 0
+            }) { Text(if (immersive) "إظهار القوائم" else "ملء الشاشة", color=Gold) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                TextButton(onClick={
+                    activity.enterPictureInPictureMode(
+                        PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+                    )
+                }) { Text("نافذة عائمة", color=Gold) }
+            }
         }
         if (epgVisible) {
             Column(Modifier.fillMaxWidth().heightIn(max=220.dp).background(Panel).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
