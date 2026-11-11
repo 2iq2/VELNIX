@@ -324,6 +324,7 @@ footer{margin-top:45px;background:#080c14;border-color:#b4d0e312;color:#8192a6}
 const API='https://shungcjflcjwubdlhyzq.supabase.co';
 const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
 const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+window.__VELNIX_AUTH_READY__=true;
 const supabase=createClient(API,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let currentSession=null;
 let lang='ar',channelRows=[];
