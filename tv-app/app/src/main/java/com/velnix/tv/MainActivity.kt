@@ -523,7 +523,8 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
             ).build()
             player = newPlayer
             val item = MediaItem.Builder().setUri(stream.url).apply {
-                if (stream.type.contains("hls") || stream.type.contains("m3u8")) setMimeType(MimeTypes.APPLICATION_M3U8)\n                else if (stream.type.contains("dash") || stream.type.contains("mpd")) setMimeType(MimeTypes.APPLICATION_MPD)
+                if (stream.type.contains("hls") || stream.type.contains("m3u8")) setMimeType(MimeTypes.APPLICATION_M3U8)
+                else if (stream.type.contains("dash") || stream.type.contains("mpd")) setMimeType(MimeTypes.APPLICATION_MPD)
             }.build()
             newPlayer.setMediaItem(item)
             newPlayer.addListener(object : Player.Listener {
