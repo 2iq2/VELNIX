@@ -5,6 +5,7 @@
     <application
         android:allowBackup="false"
         android:label="VELNIX"
+        android:icon="@drawable/ic_velnix"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
