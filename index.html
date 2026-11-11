@@ -694,8 +694,8 @@ async function startPlayback(row,generation,reason='initial'){
   if(generation!==playbackGeneration)return;
   mpegts=mod.default||mod;
   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
-  const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
-  mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{
+  // Use the stream URL returned by the gateway. Protected beIN streams include their short-lived access token here.
+  mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url},{
    enableWorker:true,enableStashBuffer:true,stashInitialSize:8*1024*1024,
    liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:90,liveBufferLatencyMinRemain:15,
    autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:120,autoCleanupMinBackwardDuration:60,
