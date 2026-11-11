@@ -126,24 +126,29 @@ class VelnixApi(private val context: Context) {
         val grouped = parts.groupBy { p ->
             "${p.row.optString("source_provider")}|${p.category}|${p.base.lowercase()}"
         }
-        return grouped.values.map { variants ->
+        return grouped.values.flatMap { variants ->
             val sorted = variants.sortedByDescending { it.rank }
-            val best = sorted.first()
-            val r = best.row
-            val cat = best.category
-            val ar = cleanName(r.optString("name_ar").ifBlank { r.optString("name_en") })
-            val en = cleanName(r.optString("name_en").ifBlank { r.optString("name_ar") })
-            Channel(
-                id = r.getString("id"),
-                name = ar.ifBlank { en },
-                english = en.ifBlank { ar },
-                category = cat,
-                categoryLabel = CATEGORIES.firstOrNull { it.id == cat }?.title ?: "منوعات",
-                logo = r.optString("logo_url").takeIf { it.isNotBlank() && it != "null" },
-                provider = r.optString("source_provider"),
-                quality = best.quality.ifBlank { if (sorted.size > 1) "مصادر متعددة" else "" },
-                streamIds = sorted.map { it.row.getString("id") }
-            )
+            val distinctQualities = sorted.map { it.quality.ifBlank { "SOURCE" } }.distinct()
+            val combine = sorted.size > 1 && distinctQualities.size > 1
+            val sets = if (combine) listOf(sorted) else sorted.map { listOf(it) }
+            sets.map { set ->
+                val best = set.first()
+                val r = best.row
+                val cat = best.category
+                val ar = quality(cleanName(r.optString("name_ar").ifBlank { r.optString("name_en") })).first
+                val en = quality(cleanName(r.optString("name_en").ifBlank { r.optString("name_ar") })).first
+                Channel(
+                    id = r.getString("id"),
+                    name = ar.ifBlank { en },
+                    english = en.ifBlank { ar },
+                    category = cat,
+                    categoryLabel = CATEGORIES.firstOrNull { it.id == cat }?.title ?: "منوعات",
+                    logo = r.optString("logo_url").takeIf { it.isNotBlank() && it != "null" },
+                    provider = r.optString("source_provider"),
+                    quality = best.quality.ifBlank { if (combine) "مصادر متعددة" else "" },
+                    streamIds = set.map { it.row.getString("id") }
+                )
+            }
         }.sortedBy { it.name.lowercase() }
     }
 
