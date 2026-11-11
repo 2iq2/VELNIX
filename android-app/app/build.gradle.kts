@@ -10,8 +10,8 @@ android {
         applicationId = "com.velnix.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 4
+        versionName = "3.1.0"
     }
     buildFeatures { compose = true }
     compileOptions {
@@ -33,6 +33,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.5.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")

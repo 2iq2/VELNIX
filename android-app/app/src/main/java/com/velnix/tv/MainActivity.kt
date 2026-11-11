@@ -4,6 +4,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.View
+import android.app.PictureInPictureParams
+import android.util.Rational
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -53,7 +57,7 @@ import kotlinx.coroutines.delay
 
 private val Navy = Color(0xFF080D16)
 private val Panel = Color(0xFF111B29)
-private val Gold = Color(0xFFC9A96E)
+private val Gold = Color(0xFF39D5E8)
 private val Muted = Color(0xFF9BA8B8)
 
 class MainActivity : ComponentActivity() {
@@ -75,6 +79,15 @@ private fun VelnixApp(activity: ComponentActivity) {
     var signup by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
+    var codeDialog by remember { mutableStateOf(false) }
+    var codeInput by remember { mutableStateOf("") }
+    var codeBusy by remember { mutableStateOf(false) }
+    var codeMessage by remember { mutableStateOf("") }
+    var accountDialog by remember { mutableStateOf(false) }
+    var accountDetails by remember { mutableStateOf<AccountInfo?>(null) }
+    var accountName by remember { mutableStateOf("") }
+    var accountMessage by remember { mutableStateOf("") }
+    var accountBusy by remember { mutableStateOf(false) }
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
@@ -106,6 +119,14 @@ private fun VelnixApp(activity: ComponentActivity) {
         introVisible = false
         refreshCatalog()
     }
+    LaunchedEffect(session?.userId) {
+        if (session != null) {
+            try {
+                favorites = api.syncFavorites(favorites).also { api.saveFavorites(it) }
+                recent = api.syncRecent(recent).also { api.saveRecent(it) }
+            } catch (_: Exception) { /* Keep the encrypted local cache available offline. */ }
+        }
+    }
 
     MaterialTheme(colorScheme = darkColorScheme(
         primary = Gold, background = Navy, surface = Panel,
@@ -115,10 +136,21 @@ private fun VelnixApp(activity: ComponentActivity) {
             if (introVisible) {
                 IntroScreen()
             } else if (selected != null && streamUrl != null) {
-                NativePlayer(api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
+                NativePlayer(activity, api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
             } else if (session == null) {
                 AuthScreen(email, { email = it }, password, { password = it }, signup,
                     { signup = !signup; error = "" }, busy, error,
+                    onForgot = {
+                        if (email.isBlank()) error = "اكتب بريدك الإلكتروني أولاً"
+                        else scope.launch {
+                            busy = true
+                            try {
+                                api.resetPassword(email)
+                                error = "إذا كان البريد مسجلاً، سيصلك رابط إعادة تعيين كلمة المرور."
+                            } catch (e: Exception) { error = e.message ?: "تعذر إرسال رابط الاستعادة" }
+                            finally { busy = false }
+                        }
+                    },
                     onSubmit = {
                         scope.launch {
                             busy = true; error = ""
@@ -147,6 +179,17 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 Text(if (beinAccess) "beIN SPORTS مفعّل" else "beIN SPORTS غير مفعّل", color = if(beinAccess) Gold else Muted, fontSize = 10.sp)
                             }
                             Spacer(Modifier.width(12.dp))
+                            TextButton(onClick = { codeDialog = true; codeMessage = "" }) { Text("تفعيل كود", color = Gold) }
+                            TextButton(onClick = {
+                                accountDialog = true; accountMessage = ""; accountBusy = true
+                                scope.launch {
+                                    try {
+                                        accountDetails = api.accountInfo()
+                                        accountName = accountDetails?.displayName.orEmpty()
+                                    } catch (e: Exception) { accountMessage = e.message ?: "تعذر تحميل بيانات الحساب" }
+                                    finally { accountBusy = false }
+                                }
+                            }) { Text("حسابي", color = Gold) }
                             TextButton(onClick = { refreshCatalog() }) { Text("تحديث", color = Gold) }
                             TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
                         }
@@ -204,7 +247,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                             } else if (wide || tv) {
                                 LazyVerticalGrid(columns=GridCells.Adaptive(if(tv) 260.dp else 220.dp), contentPadding=PaddingValues(bottom=24.dp), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
                                     items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
+                                        ChannelTile(c, c.id in favorites, {
+                                            val updated = if(c.id in favorites) favorites-c.id else favorites+c.id
+                                            favorites = updated
+                                            api.saveFavorites(updated)
+                                            scope.launch { try { api.setFavorite(c.id, c.id in updated) } catch (_: Exception) { } }
+                                        }) {
                                             scope.launch {
                                                 busy=true
                                                 try {
@@ -213,6 +261,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                     streamUrl = source.url; streamType = source.type; selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
                                                     api.saveRecent(recent)
+                                                    try { api.recordWatch(c.id) } catch (_: Exception) { }
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
                                             }
@@ -222,7 +271,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                             } else {
                                 LazyColumn(contentPadding=PaddingValues(bottom=24.dp), verticalArrangement=Arrangement.spacedBy(9.dp)) {
                                     items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
+                                        ChannelTile(c, c.id in favorites, {
+                                            val updated = if(c.id in favorites) favorites-c.id else favorites+c.id
+                                            favorites = updated
+                                            api.saveFavorites(updated)
+                                            scope.launch { try { api.setFavorite(c.id, c.id in updated) } catch (_: Exception) { } }
+                                        }) {
                                             scope.launch {
                                                 busy=true
                                                 try {
@@ -244,6 +298,70 @@ private fun VelnixApp(activity: ComponentActivity) {
                 }
             }
         }
+        if (accountDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!accountBusy) accountDialog = false },
+                containerColor = Panel,
+                title = { Text("حساب VELNIX", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Text(session?.userEmail.orEmpty(), color = Muted, fontSize = 12.sp)
+                        if (accountBusy) CircularProgressIndicator(color = Gold, modifier = Modifier.size(24.dp))
+                        accountDetails?.let { info ->
+                            Text("الباقة: ${info.planCode}", color = Gold, fontWeight = FontWeight.Bold)
+                            Text("الحالة: ${info.status}", color = Color.White)
+                            Text("الانتهاء: ${info.expiresAt.ifBlank { "غير محدد" }}", color = Muted, fontSize = 12.sp)
+                        }
+                        OutlinedTextField(value = accountName, onValueChange = { accountName = it }, label = { Text("اسم العرض") }, singleLine = true)
+                        if (accountMessage.isNotBlank()) Text(accountMessage, color = Color(0xFFFF8A80), fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !accountBusy && accountName.isNotBlank(), onClick = {
+                        scope.launch {
+                            accountBusy = true; accountMessage = ""
+                            try {
+                                api.updateDisplayName(accountName)
+                                accountDetails = api.accountInfo()
+                                accountMessage = "تم تحديث اسم العرض"
+                            } catch (e: Exception) { accountMessage = e.message ?: "تعذر حفظ الاسم" }
+                            finally { accountBusy = false }
+                        }
+                    }) { Text("حفظ الاسم", color = Gold) }
+                },
+                dismissButton = { TextButton(onClick = { accountDialog = false }) { Text("إغلاق", color = Muted) } }
+            )
+        }
+        if (codeDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!codeBusy) codeDialog = false },
+                containerColor = Panel,
+                title = { Text("تفعيل كود الاشتراك", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("أدخل كود VELNIX المرتبط بحسابك لتفعيل صلاحية المشاهدة.", color = Muted, fontSize = 13.sp)
+                        OutlinedTextField(value = codeInput, onValueChange = { codeInput = it.uppercase() }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("VELNIX-XXXX-XXXX-XXXX") })
+                        if (codeMessage.isNotBlank()) Text(codeMessage, color = Color(0xFFFF8A80), fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !codeBusy && codeInput.isNotBlank(), onClick = {
+                        scope.launch {
+                            codeBusy = true; codeMessage = ""
+                            try {
+                                val activation = api.activateAnyCode(codeInput)
+                                beinAccess = api.checkBein()
+                                codeDialog = false; codeInput = ""
+                                status = "تم تفعيل الاشتراك: $activation"
+                                refreshCatalog()
+                            } catch (e: Exception) { codeMessage = e.message ?: "تعذر تفعيل الكود" }
+                            finally { codeBusy = false }
+                        }
+                    }) { Text(if (codeBusy) "جارٍ التفعيل…" else "تفعيل", color = Gold) }
+                },
+                dismissButton = { TextButton(enabled = !codeBusy, onClick = { codeDialog = false }) { Text("إلغاء", color = Muted) } }
+            )
+        }
     }
 }
 
@@ -260,7 +378,7 @@ private fun IntroScreen() {
             Text("V", color=Color(0xFFF0D9AD), fontSize=43.sp, fontWeight=FontWeight.Black)
         }
         Spacer(Modifier.height(28.dp))
-        Text("THE NEXT DIMENSION", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
+        Text("CINEMATIC ENTERTAINMENT", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
         Spacer(Modifier.height(8.dp))
         Text("VELNIX", color=Color(0xFFF4E6CA), fontSize=42.sp, fontWeight=FontWeight.Black, letterSpacing=8.sp)
         Spacer(Modifier.height(18.dp))
@@ -304,7 +422,7 @@ private fun IntroScreen() {
     }
 }
 
-@Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onSubmit:()->Unit) {
+@Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onForgot:()->Unit,onSubmit:()->Unit) {
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
         Text("VELNIX", color=Gold, fontSize=36.sp, fontWeight=FontWeight.Black, letterSpacing=4.sp)
         Text("PREMIUM LIVE TV", color=Muted, fontSize=11.sp, letterSpacing=3.sp, modifier=Modifier.padding(bottom=30.dp))
@@ -318,18 +436,22 @@ private fun IntroScreen() {
             Text(if(busy) "يرجى الانتظار…" else if(signup) "إنشاء الحساب" else "تسجيل الدخول")
         }
         TextButton(onClick=onSwitch) { Text(if(signup) "لدي حساب بالفعل" else "إنشاء حساب جديد",color=Gold) }
+        if (!signup) TextButton(onClick=onForgot, enabled=!busy) { Text("نسيت كلمة المرور؟", color=Muted) }
     }
 }
-@Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
+@Composable private fun NativePlayer(activity: ComponentActivity, api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
     val context=androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var epg by remember { mutableStateOf<List<EpgProgram>>(emptyList()) }
     var epgLoading by remember { mutableStateOf(false) }
     var epgVisible by remember { mutableStateOf(false) }
     var epgMessage by remember { mutableStateOf("") }
+    var playerView by remember { mutableStateOf<PlayerView?>(null) }
+    var resizeMode by remember { mutableStateOf(0) }
+    var immersive by remember { mutableStateOf(false) }
     val player= remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(45000, 120000, 5000, 15000)
+            .setBufferDurationsMs(30000, 90000, 5000, 12000)
             .build()
         val trackSelector = DefaultTrackSelector(context).apply {
             parameters = buildUponParameters()
@@ -366,7 +488,10 @@ private fun IntroScreen() {
             prepare()
         }
     }
-    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player) { onDispose {
+        activity.window.decorView.systemUiVisibility = 0
+        player.release()
+    } }
     Column(Modifier.fillMaxSize().background(Color.Black)) {
         Row(Modifier.fillMaxWidth().background(Panel).padding(12.dp), verticalAlignment=Alignment.CenterVertically) {
             TextButton(onClick=onBack) { Text("رجوع",color=Gold) }
@@ -376,7 +501,9 @@ private fun IntroScreen() {
             AndroidView(factory={ ctx ->
                 (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as android.view.LayoutInflater)
                     .inflate(R.layout.velnix_player_view, null) as PlayerView
-            }, update={ view -> view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 }, modifier=Modifier.fillMaxSize())
+            },
+                update={ view -> playerView = view; view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 },
+                modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=4.dp, vertical=5.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
@@ -393,6 +520,27 @@ private fun IntroScreen() {
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show() }) { Text("الصوت", color=Gold) }
             TextButton(onClick={ TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show() }) { Text("الترجمة", color=Gold) }
             TextButton(onClick={ player.seekToDefaultPosition(); player.prepare(); player.playWhenReady=true }) { Text("إعادة الاتصال", color=Gold) }
+            TextButton(onClick={
+                resizeMode = (resizeMode + 1) % 3
+                playerView?.resizeMode = when (resizeMode) {
+                    0 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    1 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    else -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+                }
+            }) { Text(listOf("ملاءمة", "تكبير", "تمديد")[resizeMode], color=Gold) }
+            TextButton(onClick={
+                immersive = !immersive
+                activity.window.decorView.systemUiVisibility = if (immersive)
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                else 0
+            }) { Text(if (immersive) "إظهار القوائم" else "ملء الشاشة", color=Gold) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                TextButton(onClick={
+                    activity.enterPictureInPictureMode(
+                        PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+                    )
+                }) { Text("نافذة عائمة", color=Gold) }
+            }
         }
         if (epgVisible) {
             Column(Modifier.fillMaxWidth().heightIn(max=220.dp).background(Panel).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -421,7 +569,8 @@ val CATEGORIES = listOf(
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
 data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null,val streamType:String = "hls")
-data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
+data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String,val userId:String = "")
+data class AccountInfo(val displayName:String,val planCode:String,val status:String,val expiresAt:String)
 
 fun categoryFor(group:String,name:String):String {
     val both=(group+" "+name).lowercase()
