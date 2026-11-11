@@ -176,7 +176,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                 busy=true
                                                 try {
                                                     if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    streamUrl = api.stream(c.id); selected=c
+                                                    streamUrl = api.stream(c.streamIds.firstOrNull() ?: c.id); selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
@@ -192,7 +192,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                 busy=true
                                                 try {
                                                     if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    streamUrl = api.stream(c.id); selected=c
+                                                    streamUrl = api.stream(c.streamIds.firstOrNull() ?: c.id); selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
@@ -216,7 +216,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 }
 @Composable private fun CategoryButton(c: Category, active:Boolean, onClick:()->Unit) {
-    TextButton(onClick=onClick, modifier=Modifier.fillMaxWidth().padding(vertical=2.dp), colors=ButtonDefaults.textButtonColors(contentColor=if(active) Gold else Color.White)) {
+    TextButton(onClick=onClick, modifier=Modifier.padding(vertical=2.dp), colors=ButtonDefaults.textButtonColors(contentColor=if(active) Gold else Color.White)) {
         Text(c.title, fontWeight=if(active) FontWeight.Bold else FontWeight.Normal)
     }
 }
@@ -254,9 +254,6 @@ private fun VelnixApp(activity: ComponentActivity) {
     val player= remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
-            setMediaSourceFactory(
-                androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context)
-            )
             playWhenReady=true
             prepare()
         }
@@ -279,7 +276,7 @@ private val CATEGORIES = listOf(
     Category("kids","الأطفال"), Category("documentaries","وثائقيات"), Category("music","موسيقى وراديو"),
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
-private data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="")
+private data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id))
 private data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
 
 private fun categoryFor(group:String,name:String):String {
