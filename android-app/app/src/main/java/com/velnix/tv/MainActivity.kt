@@ -349,10 +349,10 @@ private fun VelnixApp(activity: ComponentActivity) {
                         scope.launch {
                             codeBusy = true; codeMessage = ""
                             try {
-                                api.activateBeinCode(codeInput)
+                                val activation = api.activateAnyCode(codeInput)
                                 beinAccess = api.checkBein()
                                 codeDialog = false; codeInput = ""
-                                status = "تم تفعيل صلاحية beIN SPORTS بنجاح"
+                                status = "تم تفعيل الاشتراك: $activation"
                                 refreshCatalog()
                             } catch (e: Exception) { codeMessage = e.message ?: "تعذر تفعيل الكود" }
                             finally { codeBusy = false }
