@@ -488,28 +488,113 @@ body[data-theme="light"] .fixture-score{color:#172033}
 </style>
 </head>
 <body>
-<div class="clayko-intro" id="claykoIntro" role="status" aria-label="صنع بواسطة CLAYKO">
-  <div class="clayko-intro-core">
-    <span class="clayko-intro-kicker">صُنع بواسطة</span>
-    <div class="clayko-intro-name">CLAYKO</div>
-    <div class="clayko-intro-line"></div>
-    <div class="clayko-intro-brand" aria-label="VELNIX">
-      <span class="clayko-intro-brand-mark"><span>V</span></span>
-      <span class="clayko-intro-brand-name">VELNIX</span>
-    </div>
+<div class="clayko-intro clayko-particle-intro" id="claykoIntro" role="status" aria-label="صنع بواسطة CLAYKO">
+  <canvas class="clayko-particle-canvas" id="claykoParticleCanvas" aria-hidden="true"></canvas>
+  <div class="clayko-particle-credit" id="claykoParticleCredit">صُنع بواسطة</div>
+  <div class="clayko-particle-word" id="claykoParticleWord">CLAYKO</div>
+  <div class="clayko-particle-lockup" id="claykoParticleLockup" aria-label="VELNIX">
+    <span class="clayko-particle-mark">V</span>
+    <span class="clayko-particle-label">VELNIX</span>
   </div>
 </div>
+<style>
+.clayko-particle-intro{background:radial-gradient(ellipse at 50% 48%,#111c2b 0%,#080d16 48%,#05080e 100%);isolation:isolate}
+.clayko-particle-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.clayko-particle-credit{position:absolute;left:50%;top:calc(50% - 78px);transform:translate(-50%,-50%);font:500 13px "Alexandria","Tajawal",sans-serif;letter-spacing:3px;color:#aab9c9;opacity:0;animation:clayko-credit-in .8s .25s ease forwards}
+.clayko-particle-word{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 clamp(48px,11vw,82px) "DM Sans","Arial",sans-serif;letter-spacing:clamp(5px,1.6vw,12px);white-space:nowrap;color:#f4fbff;text-shadow:0 0 18px rgba(106,216,255,.45),0 0 48px rgba(125,164,255,.2);opacity:0;animation:clayko-word-in .9s .45s cubic-bezier(.2,.8,.2,1) forwards}
+.clayko-particle-lockup{position:absolute;left:50%;top:50%;display:flex;align-items:center;gap:20px;direction:ltr;transform:translate(-50%,-50%);opacity:0;visibility:hidden;white-space:nowrap}
+.clayko-particle-mark{width:62px;height:62px;display:grid;place-items:center;border:1.5px solid rgba(226,198,143,.9);border-radius:16px;transform:rotate(45deg);color:#ead5a7;font:800 29px "DM Sans",sans-serif;text-shadow:0 0 20px rgba(226,198,143,.5);box-shadow:0 0 34px rgba(226,198,143,.15)}
+.clayko-particle-mark::first-letter{transform:rotate(-45deg)}
+.clayko-particle-label{font:800 clamp(29px,6.5vw,43px) "DM Sans",sans-serif;letter-spacing:clamp(4px,1vw,7px);color:#f4f1e9;text-shadow:0 0 28px rgba(226,198,143,.22)}
+.clayko-particle-intro.is-formed .clayko-particle-lockup{visibility:visible;animation:clayko-lockup-in .9s .05s cubic-bezier(.16,1,.3,1) forwards}
+.clayko-particle-intro.is-leaving{opacity:0;visibility:hidden;transition:opacity .8s ease,visibility .8s}
+@keyframes clayko-credit-in{to{opacity:1}}
+@keyframes clayko-word-in{from{opacity:0;filter:blur(9px);letter-spacing:18px}to{opacity:1;filter:blur(0);letter-spacing:clamp(5px,1.6vw,12px)}}
+@keyframes clayko-lockup-in{0%{opacity:0;filter:blur(8px);transform:translate(-50%,-50%) scale(.88)}100%{opacity:1;filter:blur(0);transform:translate(-50%,-50%) scale(1)}}
+@media(max-width:520px){.clayko-particle-mark{width:52px;height:52px;border-radius:13px}.clayko-particle-lockup{gap:15px}}
+@media(prefers-reduced-motion:reduce){.clayko-particle-credit,.clayko-particle-word{animation:none;opacity:1}}
+</style>
 <script>
 (()=>{
  const intro=document.getElementById('claykoIntro');
- if(!intro)return;
- const name=intro.querySelector('.clayko-intro-name');
- const beginMorph=()=>{
-  if(!name)return;
-  intro.classList.add('is-morphing');
- };
- setTimeout(beginMorph,6100);
- setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),950)},9000);
+ const canvas=document.getElementById('claykoParticleCanvas');
+ const word=document.getElementById('claykoParticleWord');
+ if(!intro||!canvas||!word)return;
+ const ctx=canvas.getContext('2d');
+ const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let particles=[],width=0,height=0,dpr=1,started=false,frame=0;
+ const rand=(n)=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+ const ease=(t)=>1-Math.pow(1-t,3);
+ function samplePath(points,count){
+  const lengths=[],total=points.reduce((sum,p,i)=>{if(i===0)return 0;const a=points[i-1],d=Math.hypot(p.x-a.x,p.y-a.y);lengths.push(d);return sum+d},0);
+  return Array.from({length:count},(_,i)=>{
+   let dist=(i/count)*total,seg=0;
+   while(seg<lengths.length-1&&dist>lengths[seg]){dist-=lengths[seg];seg++}
+   const a=points[seg],b=points[seg+1],t=lengths[seg]?dist/lengths[seg]:0;
+   return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};
+  });
+ }
+ function build(){
+  width=window.innerWidth;height=window.innerHeight;dpr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const off=document.createElement('canvas'),o=off.getContext('2d');
+  const fontSize=Math.min(82,Math.max(48,width*.11));
+  off.width=Math.ceil(Math.min(width*.92,760));off.height=Math.ceil(fontSize*2.1);
+  o.clearRect(0,0,off.width,off.height);
+  o.fillStyle='#fff';o.textAlign='center';o.textBaseline='middle';
+  o.font='800 '+fontSize+'px "DM Sans",Arial,sans-serif';
+  o.letterSpacing=Math.max(5,width*.016)+'px';
+  o.fillText('CLAYKO',off.width/2,off.height/2);
+  const data=o.getImageData(0,0,off.width,off.height).data,src=[];
+  const step=3;
+  for(let y=0;y<off.height;y+=step)for(let x=0;x<off.width;x+=step){
+   if(data[(y*off.width+x)*4+3]>100)src.push({x:x-off.width/2+width/2,y:y-off.height/2+height/2});
+  }
+  const count=Math.min(src.length,1050);
+  const origins=Array.from({length:count},(_,i)=>src[Math.floor(i*src.length/count)]);
+  const cx=width/2,cy=height/2,unit=Math.min(1,width/520);
+  const path=[
+   {x:cx,y:cy-47*unit},{x:cx+47*unit,y:cy},{x:cx,y:cy+47*unit},{x:cx-47*unit,y:cy},{x:cx,y:cy-47*unit},
+   {x:cx-23*unit,y:cy-15*unit},{x:cx-5*unit,y:cy+22*unit},{x:cx+25*unit,y:cy-27*unit}
+  ];
+  const targets=samplePath(path,count);
+  particles=origins.map((p,i)=>({sx:p.x,sy:p.y,tx:targets[i].x,ty:targets[i].y,delay:rand(i)*.24,phase:rand(i+99)*Math.PI*2,size:.75+rand(i+7)*1.35,alpha:.55+rand(i+3)*.45}));
+ }
+ function draw(now){
+  if(!started)return;
+  const elapsed=(now-frame)/1000;
+  ctx.clearRect(0,0,width,height);
+  const duration=2.65;
+  for(let i=0;i<particles.length;i++){
+   const p=particles[i],t=Math.max(0,Math.min(1,(elapsed-p.delay)/duration)),e=ease(t);
+   if(t<=0)continue;
+   const drift=(1-e)*Math.sin(elapsed*5+p.phase)*12;
+   const x=p.sx+(p.tx-p.sx)*e+drift,y=p.sy+(p.ty-p.sy)*e+Math.cos(elapsed*4+p.phase)*(1-e)*9;
+   const fade=t<.08?t/.08:1;
+   ctx.globalAlpha=p.alpha*fade;
+   ctx.fillStyle=(i%7===0)?'#fff3d5':'#d7c08f';
+   ctx.shadowColor='#e7c98e';ctx.shadowBlur= t>.75?8:5;
+   ctx.beginPath();ctx.arc(x,y,p.size*(.75+.25*e),0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.shadowBlur=0;
+  if(elapsed<duration+.15)requestAnimationFrame(draw);
+  else{
+   ctx.clearRect(0,0,width,height);
+   intro.classList.add('is-formed');
+  }
+ }
+ function morph(){
+  if(started||reduced)return;
+  started=true;frame=performance.now();word.style.opacity='0';word.style.filter='blur(5px)';
+  document.getElementById('claykoParticleCredit').style.transition='opacity .5s';
+  document.getElementById('claykoParticleCredit').style.opacity='0';
+  build();requestAnimationFrame(draw);
+ }
+ if(reduced){intro.classList.add('is-formed');word.textContent='VELNIX';}
+ else{setTimeout(morph,2600);}
+ setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),850)},8500);
+ window.addEventListener('resize',()=>{if(!started)build()},{passive:true});
 })();
 </script>
 <div class="topline"></div>
