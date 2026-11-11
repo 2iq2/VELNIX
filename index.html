@@ -414,7 +414,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 <button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button>
 <button class="filter" data-cat="world" data-ar="قنوات عالمية" data-en="World">قنوات عالمية</button>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><span id="importStatus" role="status">لوحة إدارة VELNIX</span></div>
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div></div>
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button>
 </section>
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="VELNIX تجمع القنوات المباشرة والرياضة والأخبار والترفيه في تجربة مشاهدة واحدة، بتصميم سينمائي يناسب جميع أجهزتك." data-en="Live channels, sports, news and entertainment in one cinematic viewing experience, designed for every screen.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
@@ -752,6 +752,35 @@ qualitySelect.addEventListener('change',()=>{
 });
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
 $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
+let streamHealthOffset=0,streamHealthWorking=0,streamHealthFailed=0,streamHealthRunning=false;
+$('#streamHealthBtn').addEventListener('click',async()=>{
+ if(streamHealthRunning)return;
+ streamHealthRunning=true;
+ const btn=$('#streamHealthBtn'),status=$('#streamHealthStatus'),out=$('#streamHealthResults');
+ btn.disabled=true;btn.textContent='جارٍ فحص 20 قناة...';
+ status.textContent='بدأ الفحص من القناة رقم '+(streamHealthOffset+1);
+ try{
+  const result=await gateway({action:'admin_check_streams',offset:streamHealthOffset,limit:20});
+  if(!result.success)throw new Error('تعذر إكمال فحص القنوات');
+  streamHealthOffset+=result.count||0;
+  streamHealthWorking+=result.working||0;streamHealthFailed+=result.failed||0;
+  const failed=(result.results||[]).filter(x=>!x.ok);
+  const lines=failed.map(x=>'• '+(x.name_ar||x.name_en||'قناة بدون اسم')+' — '+x.detail+(x.status?' (HTTP '+x.status+')':''));
+  if(lines.length)out.textContent=(out.textContent?out.textContent+'\n':'')+lines.join('\n');
+  status.textContent='نتائج الفحص: '+streamHealthWorking+' تعمل، '+streamHealthFailed+' تحتاج مراجعة، تم فحص '+streamHealthOffset+' قناة.';
+  if(result.done||!result.count){
+   btn.disabled=true;btn.textContent='اكتمل فحص جميع القنوات';
+   showSiteToast('اكتمل فحص القنوات. راجع قائمة القنوات التي تحتاج مراجعة.','success');
+  }else{
+   btn.disabled=false;btn.textContent='فحص الدفعة التالية · 20 قناة';
+   showSiteToast('اكتملت دفعة الفحص. اضغط للانتقال إلى الدفعة التالية.','success');
+  }
+ }catch(err){
+  status.textContent='تعذر الفحص: '+(err?.message||'خطأ غير معروف');
+  btn.disabled=false;btn.textContent='إعادة محاولة الفحص';
+  showSiteToast(status.textContent,'error');
+ }finally{streamHealthRunning=false;}
+});
 $('#m3uFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';try{if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';const result=await gateway({action:'admin_import_m3u',content});status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';showSiteToast(status.textContent,'success');await loadChannels();}catch(err){status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error');}finally{e.target.value='';}});
 loadChannels();
 })().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
