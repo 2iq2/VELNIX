@@ -373,14 +373,10 @@ private fun IntroScreen() {
             Text(channel.name,color=Color.White,fontWeight=FontWeight.Bold)
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            AndroidView(factory={ ctx -> PlayerView(ctx).apply {
-                this.player=player
-                useController=true
-                setVideoTextureView(android.view.TextureView(ctx))
-                keepScreenOn=true
-                controllerShowTimeoutMs=5500
-                resizeMode=androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-            } },modifier=Modifier.fillMaxSize())
+            AndroidView(factory={ ctx ->
+                (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as android.view.LayoutInflater)
+                    .inflate(R.layout.velnix_player_view, null) as PlayerView
+            }.also { }, update={ view -> view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 }, modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
         Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=4.dp, vertical=5.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
