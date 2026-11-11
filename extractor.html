@@ -29,23 +29,34 @@ const gate=document.getElementById('privateGate'),main=document.querySelector('m
 let session=null;
 const msg=t=>status.textContent=t;
 async function request(path,body,token){const res=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body||{})});const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.msg||data.message||data.error_description||'تعذر تسجيل الدخول');return data}
-function show(s){session=s;main.hidden=!s;gate.hidden=!!s;logout.hidden=!s;if(s){gate.remove();}}
+function show(s){session=s;window.VELNIX_AUTH={getToken:()=>session?.access_token||null};main.hidden=!s;gate.hidden=!!s;logout.hidden=!s;if(s){gate.remove();}}
 async function boot(){try{const saved=JSON.parse(localStorage.getItem(STORE)||'null');if(!saved?.access_token)return;let s=saved;if(Number(s.expires_at||0)<Date.now()/1000+60&&s.refresh_token){const n=await request('token?grant_type=refresh_token',{refresh_token:s.refresh_token});s={...n,expires_at:Math.floor(Date.now()/1000)+Number(n.expires_in||3600)}}
 const u=await fetch(API+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+s.access_token}});const user=await u.json();if(!u.ok||String(user.email||'').toLowerCase()!==OWNER){localStorage.removeItem(STORE);return}localStorage.setItem(STORE,JSON.stringify(s));show(s)}catch(e){localStorage.removeItem(STORE)}}
 form.addEventListener('submit',async e=>{e.preventDefault();const email=document.getElementById('privateEmail').value.trim().toLowerCase(),password=document.getElementById('privatePassword').value; if(email!==OWNER){msg('هذا الحساب غير مخوّل للوصول.');return}msg('جارٍ التحقق...');try{const s=await request('token?grant_type=password',{email,password});const user=s.user||{};if(String(user.email||'').toLowerCase()!==OWNER)throw Error('الحساب غير مخوّل.');s.expires_at=Math.floor(Date.now()/1000)+Number(s.expires_in||3600);localStorage.setItem(STORE,JSON.stringify(s));show(s)}catch(err){msg(err.message||'فشل تسجيل الدخول. تحقق من البريد وكلمة المرور.')}});
-logout.addEventListener('click',async()=>{try{if(session?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token}})}catch(e){}localStorage.removeItem(STORE);session=null;main.hidden=true;gate.hidden=false;logout.hidden=true;msg('تم تسجيل الخروج.')});
+logout.addEventListener('click',async()=>{try{if(session?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token}})}catch(e){}localStorage.removeItem(STORE);session=null;window.VELNIX_AUTH={getToken:()=>null};main.hidden=true;gate.hidden=false;logout.hidden=true;msg('تم تسجيل الخروج.')});
 main.hidden=true;boot();
 })();
 </script></head><body><main class="wrap" hidden>
 <header class="top"><div class="brand">VELNIX <span>EXTRACTOR</span></div><div class="tag">🔒 معالجة محلية · Offline</div></header>
-<h1>مكتبة القنوات الخاصة بك</h1><p class="lead">استورد ملف M3U أو الصق محتواه، ثم ابحث بالقنوات وصنّفها وصدّر القائمة بصيغ M3U وJSON وCSV. تتم المعالجة داخل متصفحك ولا تُرفع الملفات إلى أي خادم.</p>
-<section class="panel"><h2 class="title">1 · استيراد قائمة القنوات</h2><div class="grid">
+<h1>استخراج قنوات Xtream</h1><p class="lead">اتصل بحساب Xtream المصرّح لك باستخدامه، واجلب القنوات وتصنيفاتها وروابط البث، ثم صدّرها كملف M3U أو JSON أو CSV. بيانات الدخول تُستخدم للطلب الحالي ولا تُحفظ في الأداة.</p>
+
+<section class="panel" id="xtreamPanel"><h2 class="title">1 · الاتصال بسيرفر Xtream</h2>
+<div class="grid">
+<div class="full"><label for="xtBase">رابط السيرفر</label><input id="xtBase" type="url" placeholder="http://server:port" dir="ltr"></div>
+<div><label for="xtUser">اسم المستخدم</label><input id="xtUser" autocomplete="off" placeholder="Username" dir="ltr"></div>
+<div><label for="xtPass">كلمة المرور</label><input id="xtPass" type="password" autocomplete="new-password" placeholder="Password" dir="ltr"></div>
+</div>
+<div class="actions"><button id="xtConnect">اتصال واستخراج القنوات</button><button class="alt" id="xtClear">مسح بيانات الدخول</button></div>
+<div class="status" id="xtStatus">أدخل بيانات Xtream ثم اضغط اتصال. لن يتم حفظ كلمة المرور.</div>
+<p class="note">تنبيه: روابط M3U الناتجة قد تتضمن اسم المستخدم وكلمة المرور ضمن الرابط نفسه. لا تشارك الملف أو الروابط مع أي شخص غير مخوّل.</p>
+</section>
+<section class="panel"><h2 class="title">2 · استيراد قائمة M3U موجودة</h2><div class="grid">
 <div><label for="file">اختيار ملف M3U / M3U8</label><input id="file" type="file" accept=".m3u,.m3u8,.txt,audio/x-mpegurl,application/vnd.apple.mpegurl"></div>
 <div><label for="filter">تصفية حسب الاسم أو التصنيف</label><input id="filter" placeholder="ابحث عن قناة أو تصنيف..."></div>
 <div class="full"><label for="paste">أو الصق نص القائمة هنا</label><textarea id="paste" placeholder="#EXTM3U&#10;#EXTINF:-1 group-title=&quot;News&quot;,Channel name&#10;https://example.com/channel.m3u8"></textarea></div>
 </div><div class="actions"><button id="parse">تحليل القائمة</button><button class="alt" id="clear">مسح</button></div><div class="status" id="status">لم يتم استيراد قائمة بعد.</div></section>
-<section class="panel hidden" id="results"><h2 class="title">2 · القنوات المستخرجة</h2><div class="stats"><div class="stat">إجمالي القنوات <b id="total">0</b></div><div class="stat">التصنيفات <b id="groups">0</b></div><div class="stat">المعروض <b id="shown">0</b></div></div><div class="actions"><button id="m3u">تنزيل M3U</button><button class="alt" id="json">تنزيل JSON</button><button class="alt" id="csv">تنزيل CSV</button></div><div class="tablewrap" style="margin-top:16px"><table><thead><tr><th>#</th><th>اسم القناة</th><th>التصنيف</th><th>رابط القناة</th></tr></thead><tbody id="rows"></tbody></table></div></section>
-<p class="note">الخصوصية: هذه الأداة لا تتصل بخدمة Xtream ولا تطلب بيانات الدخول. استورد ملف قائمة حصلت عليه من مزوّدك بإذن. بعض الروابط قد تكون مؤقتة أو مرتبطة بالاشتراك؛ نسخ الرابط لا يلغي صلاحية المزوّد أو مدة الاشتراك.</p><footer class="foot">VELNIX EXTRACTOR · Offline edition</footer></main>
+<section class="panel hidden" id="results"><h2 class="title">3 · القنوات المستخرجة</h2><div class="stats"><div class="stat">إجمالي القنوات <b id="total">0</b></div><div class="stat">التصنيفات <b id="groups">0</b></div><div class="stat">المعروض <b id="shown">0</b></div></div><div class="actions"><button id="m3u">تنزيل M3U</button><button class="alt" id="json">تنزيل JSON</button><button class="alt" id="csv">تنزيل CSV</button></div><div class="tablewrap" style="margin-top:16px"><table><thead><tr><th>#</th><th>اسم القناة</th><th>التصنيف</th><th>رابط القناة</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<p class="note">الخصوصية: بيانات الدخول لا تُخزّن في الصفحة ولا تُكتب في قاعدة بيانات VELNIX. تُرسل إلى خادم الاستخراج لإجراء طلبات Xtream فقط. استخدم الأداة مع اشتراك تملك صلاحية استخراج بياناته.</p><footer class="foot">VELNIX EXTRACTOR · Offline edition</footer></main>
 <script>
 (()=>{'use strict';const $=id=>document.getElementById(id);let all=[];
 const attr=(line,key)=>{const re=new RegExp('(?:^|\\s)'+key+'="([^"]*)"','i');return(line.match(re)||[])[1]||''};
@@ -56,7 +67,29 @@ function render(){const data=filtered();$('total').textContent=all.length.toLoca
 function download(name,type,content){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function makeM3U(data){return '#EXTM3U\n'+data.map(c=>'#EXTINF:-1'+(c.tvgId?' tvg-id="'+c.tvgId.replace(/"/g,'')+'"':'')+(c.logo?' tvg-logo="'+c.logo.replace(/"/g,'')+'"':'')+' group-title="'+c.group.replace(/"/g,'')+'",'+c.name.replace(/[\r\n]/g,' ')+'\n'+c.url).join('\n')}
 function makeCSV(data){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+['name,group,tvg_id,logo,url',...data.map(c=>[c.name,c.group,c.tvgId,c.logo,c.url].map(q).join(','))].join('\n')}
-$('parse').addEventListener('click',async()=>{try{let raw=$('paste').value;if(!raw&&$('file').files[0])raw=await $('file').files[0].text();if(!raw.trim())throw Error('اختر ملفاً أو الصق نص M3U أولاً.');all=parse(raw);render();$('status').textContent='تم تحليل '+all.length+' قناة بنجاح. لم يتم رفع أي بيانات.'}catch(e){all=[];$('results').classList.add('hidden');$('status').textContent=e.message}});
+
+$('xtConnect').addEventListener('click',async()=>{
+  const base=$('xtBase').value.trim(),username=$('xtUser').value.trim(),password=$('xtPass').value;
+  if(!base||!username||!password){$('xtStatus').textContent='أكمل رابط السيرفر واسم المستخدم وكلمة المرور.';return}
+  const token=window.VELNIX_AUTH?.getToken?.();
+  if(!token){$('xtStatus').textContent='انتهت جلسة الدخول. سجّل الدخول مجدداً.';return}
+  $('xtConnect').disabled=true;$('xtStatus').textContent='جارٍ الاتصال بخادم Xtream وجلب التصنيفات والقنوات...';
+  try{
+    const res=await fetch('https://shungcjflcjwubdlhyzq.supabase.co/functions/v1/xtream-gateway',{
+      method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'extract_xtream',base_url:base,username,password})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.success)throw new Error(data.error||'فشل الاتصال بخادم Xtream.');
+    all=Array.isArray(data.channels)?data.channels:[];
+    $('filter').value='';render();
+    $('xtStatus').textContent='تم الاتصال بنجاح: '+data.count+' قناة ضمن '+data.categories+' تصنيف. يمكنك الآن تنزيل M3U أو JSON أو CSV.';
+    $('paste').value='';$('file').value='';
+  }catch(e){$('xtStatus').textContent=e.message||'تعذر الاتصال. تحقق من الرابط والبيانات وحالة الاشتراك.'}
+  finally{$('xtConnect').disabled=false}
+});
+$('xtClear').addEventListener('click',()=>{$('xtBase').value='';$('xtUser').value='';$('xtPass').value='';$('xtStatus').textContent='تم مسح بيانات الدخول من الحقول.'});
+\n$('parse').addEventListener('click',async()=>{try{let raw=$('paste').value;if(!raw&&$('file').files[0])raw=await $('file').files[0].text();if(!raw.trim())throw Error('اختر ملفاً أو الصق نص M3U أولاً.');all=parse(raw);render();$('status').textContent='تم تحليل '+all.length+' قناة بنجاح. لم يتم رفع أي بيانات.'}catch(e){all=[];$('results').classList.add('hidden');$('status').textContent=e.message}});
 $('filter').addEventListener('input',render);$('clear').addEventListener('click',()=>{$('file').value='';$('paste').value='';$('filter').value='';all=[];$('results').classList.add('hidden');$('status').textContent='تم مسح القائمة.'});
 $('m3u').addEventListener('click',()=>download('velnix-channels.m3u','audio/x-mpegurl;charset=utf-8',makeM3U(filtered())));
 $('json').addEventListener('click',()=>download('velnix-channels.json','application/json;charset=utf-8',JSON.stringify(filtered(),null,2)));
