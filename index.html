@@ -953,15 +953,23 @@ async function startPlayback(row,generation,reason='initial'){
   throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
  }
  if(['file','mpegts','ts'].includes(type)){
-  const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
+  const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.2'));
   if(generation!==playbackGeneration)return;
   mpegts=mod.default||mod;
   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
   // Use the stream URL returned by the gateway. Protected beIN streams include their short-lived access token here.
+  const mediaFeatures=mpegts.getFeatureList?.()||{};
+  if(!mediaFeatures.mseLivePlayback){
+   throw new Error(lang==='ar'?'المتصفح لا يدعم تشغيل بث MPEG-TS المباشر. حدّث المتصفح أو جرّب متصفحاً حديثاً.':'This browser does not support live MPEG-TS playback.');
+  }
+  // Modern MPEG-TS engine: supports H.264/H.265 and AV1 where the browser exposes a compatible decoder.
+  // Worker-based transmuxing/MSE reduces main-thread work on supported browsers.
   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url},{
-   enableWorker:true,enableStashBuffer:true,stashInitialSize:12*1024*1024,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:120,liveBufferLatencyMinRemain:20,
-   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:120,autoCleanupMinBackwardDuration:60,
+   enableWorker:true,enableWorkerForMSE:true,
+   enableStashBuffer:true,stashInitialSize:2*1024*1024,
+   lazyLoad:false,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:12,liveBufferLatencyMinRemain:3,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:45,autoCleanupMinBackwardDuration:15,
    fixAudioTimestampGap:true,accurateSeek:false
   });
   const instance=mpegtsPlayer;
