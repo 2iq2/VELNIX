@@ -301,7 +301,7 @@ class VelnixApi(private val context: Context) {
     suspend fun recordWatch(channelId: String) {
         val userId = session()?.userId.orEmpty()
         if (userId.isBlank()) return
-        val payload = JSONArray().put(JSONObject().put("user_id", userId).put("channel_id", channelId).put("watched_at", java.time.Instant.now().toString()))
+        val payload = JSONArray().put(JSONObject().put("user_id", userId).put("channel_id", channelId).put("watched_at", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date())))
         request("watch_history", "POST", payload.toString(), rest = true)
     }
 
@@ -318,7 +318,7 @@ class VelnixApi(private val context: Context) {
     suspend fun updateDisplayName(name: String) {
         val userId = session()?.userId.orEmpty()
         if (userId.isBlank()) throw IllegalStateException("جلسة الحساب غير صالحة")
-        request("profiles?id=eq.$userId", "PATCH", JSONObject().put("display_name", name.trim()).toString(), rest = true)
+        request("profiles?on_conflict=id", "POST", JSONArray().put(JSONObject().put("id", userId).put("display_name", name.trim())).toString(), rest = true)
     }
 
     fun loadFavorites(): Set<String> = prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
