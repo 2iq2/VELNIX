@@ -528,12 +528,12 @@ async function startPlayback(row,generation,reason='initial'){
   if(Hls.isSupported()){
    hlsInstance=new Hls({
     enableWorker:true,lowLatencyMode:false,
-    backBufferLength:90,maxBufferLength:90,maxMaxBufferLength:180,maxBufferSize:120*1000*1000,
-    maxBufferHole:1,liveSyncDurationCount:8,liveMaxLatencyDurationCount:20,
-    maxLiveSyncPlaybackRate:1.08,nudgeOffset:0.25,nudgeMaxRetry:10,
-    manifestLoadingMaxRetry:10,manifestLoadingRetryDelay:1200,manifestLoadingMaxRetryTimeout:20000,
-    levelLoadingMaxRetry:10,levelLoadingRetryDelay:1200,levelLoadingMaxRetryTimeout:20000,
-    fragLoadingMaxRetry:12,fragLoadingRetryDelay:1200,fragLoadingMaxRetryTimeout:25000,
+    backBufferLength:120,maxBufferLength:120,maxMaxBufferLength:240,maxBufferSize:120*1000*1000,
+    maxBufferHole:0.5,highBufferWatchdogPeriod:2,liveSyncDurationCount:10,liveMaxLatencyDurationCount:30,
+    maxLiveSyncPlaybackRate:1.04,nudgeOffset:0.2,nudgeMaxRetry:12,
+    manifestLoadingMaxRetry:12,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:30000,
+    levelLoadingMaxRetry:12,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:30000,
+    fragLoadingMaxRetry:15,fragLoadingRetryDelay:1000,fragLoadingMaxRetryTimeout:30000,
     startFragPrefetch:true,progressive:true
    });
    const instance=hlsInstance;
@@ -560,9 +560,9 @@ async function startPlayback(row,generation,reason='initial'){
   if(!mpegts.isSupported())throw new Error(lang==='ar'?'المتصفح لا يدعم MPEG-TS.':'This browser does not support MPEG-TS.');
   const proxy=API+'/functions/v1/xtream-gateway?channel_id='+encodeURIComponent(row.id);
   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url:proxy},{
-   enableWorker:true,enableStashBuffer:true,stashInitialSize:2*1024*1024,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:45,liveBufferLatencyMinRemain:8,
-   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:90,autoCleanupMinBackwardDuration:45,
+   enableWorker:true,enableStashBuffer:true,stashInitialSize:8*1024*1024,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:90,liveBufferLatencyMinRemain:15,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:120,autoCleanupMinBackwardDuration:60,
    fixAudioTimestampGap:true,accurateSeek:false
   });
   const instance=mpegtsPlayer;
@@ -586,7 +586,7 @@ async function playChannel(row){
 function fmtTime(value){if(!Number.isFinite(value)||value<0)return '00:00';const n=Math.floor(value),h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?[h,m,s].map(x=>String(x).padStart(2,'0')).join(':'):[m,s].map(x=>String(x).padStart(2,'0')).join(':')}
 function syncCustomControls(){const duration=video.duration,current=video.currentTime||0,finite=Number.isFinite(duration)&&duration>0;$('#vcCurrent').textContent=fmtTime(current);$('#vcDuration').textContent=finite?fmtTime(duration):'LIVE';const seek=$('#vcSeek');seek.disabled=!finite;const pct=finite?Math.min(100,Math.max(0,current/duration*100)):0;seek.value=String(Math.round(pct*10));seek.style.setProperty('--progress',pct+'%');$('#vcPlay').textContent=video.paused?'▶':'Ⅱ';$('#vcMute').textContent=video.muted||video.volume===0?'◖×':'◖))';$('#vcVolume').value=String(video.muted?0:video.volume);const selected=qualitySelect.options[qualitySelect.selectedIndex];$('#vcQuality').textContent=selected?(selected.value==='-1'?'AUTO':selected.textContent):'AUTO'}
 video.addEventListener('timeupdate',syncCustomControls);video.addEventListener('durationchange',syncCustomControls);video.addEventListener('loadedmetadata',syncCustomControls);video.addEventListener('play',syncCustomControls);video.addEventListener('pause',syncCustomControls);video.addEventListener('volumechange',syncCustomControls);
-$('#vcPlay').addEventListener('click',()=>{if(video.paused)video.play().catch(()=>{});else video.pause()});$('#vcBack').addEventListener('click',()=>{if(Number.isFinite(video.duration))video.currentTime=Math.max(0,video.currentTime-10)});$('#vcForward').addEventListener('click',()=>{if(Number.isFinite(video.duration))video.currentTime=Math.min(video.duration,video.currentTime+10)});$('#vcSeek').addEventListener('input',e=>{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=video.duration*Number(e.target.value)/1000});$('#vcMute').addEventListener('click',()=>{video.muted=!video.muted;syncCustomControls()});$('#vcVolume').addEventListener('input',e=>{video.volume=Number(e.target.value);video.muted=video.volume===0;syncCustomControls()});$('#vcFullscreen').addEventListener('click',()=>{const el=$('#videoStage');if(document.fullscreenElement)document.exitFullscreen?.();else if(el.requestFullscreen)el.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen()});
+$('#vcPlay').addEventListener('click',()=>{if(video.paused){userPaused=false;video.play().catch(()=>{})}else{userPaused=true;video.pause()}});$('#vcBack').addEventListener('click',()=>{if(Number.isFinite(video.duration))video.currentTime=Math.max(0,video.currentTime-10)});$('#vcForward').addEventListener('click',()=>{if(Number.isFinite(video.duration))video.currentTime=Math.min(video.duration,video.currentTime+10)});$('#vcSeek').addEventListener('input',e=>{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=video.duration*Number(e.target.value)/1000});$('#vcMute').addEventListener('click',()=>{video.muted=!video.muted;syncCustomControls()});$('#vcVolume').addEventListener('input',e=>{video.volume=Number(e.target.value);video.muted=video.volume===0;syncCustomControls()});$('#vcFullscreen').addEventListener('click',()=>{const el=$('#videoStage');if(document.fullscreenElement)document.exitFullscreen?.();else if(el.requestFullscreen)el.requestFullscreen();else if(video.webkitEnterFullscreen)video.webkitEnterFullscreen()});
 const videoStage=$('#videoStage'),vcExit=$('#vcExit'),velnixControls=$('#velnixControls');
 function showPlayerControls(){videoStage.classList.remove('controls-hidden')}
 function togglePlayerControls(){videoStage.classList.toggle('controls-hidden')}
@@ -600,7 +600,7 @@ $('#vcQuality').addEventListener('click',()=>{qualitySelect.focus();qualitySelec
 video.addEventListener('timeupdate',()=>{
  if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
 });
-video.addEventListener('pause',()=>{if(suppressPauseTracking)return;setTimeout(()=>{if(!video.ended&&!recovering&&activeRow&&video.paused)userPaused=true},150)});
+video.addEventListener('pause',()=>{syncCustomControls()});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
 video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;$('#bufferText').textContent='التخزين المؤقت نشط • اتصال مباشر'});
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
@@ -610,8 +610,12 @@ video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&Date.now()-last
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||userPaused||video.ended||recovering)return;
  const now=Date.now();
+ let ahead=0;
+ try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i);if(video.currentTime>=start-0.35&&video.currentTime<=end+0.35){ahead=Math.max(0,end-video.currentTime);break}}}catch(e){}
+ const bufferLabel=ahead>=1?'التخزين أمامك: '+Math.floor(ahead)+' ثانية':(video.paused?'بانتظار استقرار البث...':'جارٍ تعبئة التخزين المؤقت...');
+ $('#bufferText').textContent=bufferLabel;
  if(!video.paused&&video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}}
- else if(now-lastProgressAt>16000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
+ else if(now-lastProgressAt>14000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
 },3000);
 const CATEGORY_META={
  bein:{ar:'beIN SPORTS',en:'beIN SPORTS',icon:'📡'},
