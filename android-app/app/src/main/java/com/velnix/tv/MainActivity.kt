@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.rotate
+import androidx.compose.animation.core.*
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +42,7 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private val Navy = Color(0xFF080D16)
 private val Panel = Color(0xFF111B29)
@@ -74,6 +77,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     var streamUrl by remember { mutableStateOf<String?>(null) }
     var beinAccess by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("جارٍ الاتصال بدليل القنوات…") }
+    var introVisible by remember { mutableStateOf(true) }
     val config = LocalConfiguration.current
     val wide = config.screenWidthDp >= 700
     val tv = activity.packageManager.hasSystemFeature("android.software.leanback")
@@ -89,14 +93,20 @@ private fun VelnixApp(activity: ComponentActivity) {
             busy = false
         }
     }
-    LaunchedEffect(Unit) { refreshCatalog() }
+    LaunchedEffect(Unit) {
+        delay(2400)
+        introVisible = false
+        refreshCatalog()
+    }
 
     MaterialTheme(colorScheme = darkColorScheme(
         primary = Gold, background = Navy, surface = Panel,
         onBackground = Color.White, onSurface = Color.White
     )) {
         Surface(Modifier.fillMaxSize(), color = Navy) {
-            if (selected != null && streamUrl != null) {
+            if (introVisible) {
+                IntroScreen()
+            } else if (selected != null && streamUrl != null) {
                 NativePlayer(api, selected!!, streamUrl!!, onBack = { selected = null; streamUrl = null })
             } else if (session == null) {
                 AuthScreen(email, { email = it }, password, { password = it }, signup,
@@ -216,6 +226,29 @@ private fun VelnixApp(activity: ComponentActivity) {
                 }
             }
         }
+    }
+}
+
+
+@Composable
+private fun IntroScreen() {
+    val transition = rememberInfiniteTransition(label = "intro")
+    val pulse by transition.animateFloat(initialValue = 0.92f, targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(tween(1500), repeatMode = RepeatMode.Reverse), label = "pulse")
+    Column(Modifier.fillMaxSize().background(Navy), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
+        Box(Modifier.size((86*pulse).dp), contentAlignment=Alignment.Center) {
+            Surface(Modifier.size(82.dp).rotate(45f), color=Color.Transparent, border=androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha=.85f)), shape=RoundedCornerShape(2.dp)) {}
+            Surface(Modifier.size(66.dp).rotate(45f), color=Color.Transparent, border=androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha=.25f)), shape=RoundedCornerShape(2.dp)) {}
+            Text("V", color=Color(0xFFF0D9AD), fontSize=43.sp, fontWeight=FontWeight.Black)
+        }
+        Spacer(Modifier.height(28.dp))
+        Text("THE NEXT DIMENSION", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
+        Spacer(Modifier.height(8.dp))
+        Text("VELNIX", color=Color(0xFFF4E6CA), fontSize=42.sp, fontWeight=FontWeight.Black, letterSpacing=8.sp)
+        Spacer(Modifier.height(18.dp))
+        Box(Modifier.width(180.dp).height(1.dp).background(Gold.copy(alpha=.7f)))
+        Spacer(Modifier.height(13.dp))
+        Text("ENTERTAINMENT · REDEFINED", color=Muted, fontSize=10.sp, letterSpacing=2.sp)
     }
 }
 
