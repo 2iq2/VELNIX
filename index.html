@@ -376,6 +376,61 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .bein-gate-status{display:block;min-height:22px;margin-top:12px;color:var(--muted);font-size:13px}.bein-admin{flex-basis:100%;padding:14px;margin-top:12px;border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.15)}
 .bein-admin h3{margin:0 0 12px;color:var(--gold2)}.bein-admin-form{display:flex;gap:8px;flex-wrap:wrap}.bein-admin-form input{max-width:140px;flex:1}.bein-admin-output{white-space:pre-wrap;direction:ltr;text-align:left;overflow-wrap:anywhere;background:#080c12;border:1px solid var(--line);padding:12px;border-radius:10px;margin-top:10px;font-size:13px;color:var(--gold2)}
 .bein-admin-list{display:grid;gap:7px;margin-top:12px}.bein-code-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding:9px 0;font-size:12px}.bein-code-row span{flex:1;min-width:160px}.bein-code-row button{padding:6px 10px;font-size:11px}.bein-code-row button:disabled{opacity:.4}
+
+/* VELNIX account, built-in avatars and theme preferences */
+.nav-utility{display:flex;align-items:center;gap:9px}
+.account-trigger{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#151b25;color:var(--text);border-radius:999px;padding:5px 12px 5px 6px;font-weight:700}
+.account-trigger[hidden]{display:none!important}
+.account-avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:linear-gradient(145deg,#263d60,#5b2b83);border:2px solid #a66aff;overflow:hidden}
+.account-menu{position:absolute;top:calc(100% + 9px);inset-inline-end:0;width:245px;padding:12px;background:#141b28;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 55px #0009;z-index:40}
+.nav-utility{position:relative}
+.account-menu-head{display:flex;align-items:center;gap:10px;padding:8px 7px 13px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.account-menu-head strong{display:block}.account-menu-head small{display:block;color:var(--muted);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.account-menu button{display:flex;width:100%;align-items:center;gap:10px;border:0;background:transparent;color:var(--text);padding:11px 9px;border-radius:10px;text-align:right}
+.account-menu button:hover{background:#ffffff10}
+.theme-toggle{border:1px solid var(--line);background:#151b25;color:var(--text);border-radius:999px;padding:9px 12px}
+.profile-modal{position:fixed;inset:0;background:#000c;z-index:90;display:none;place-items:center;padding:16px}
+.profile-modal.show{display:grid}
+.profile-dialog{width:min(600px,100%);max-height:min(90vh,850px);overflow:auto;background:#111925;border:1px solid rgba(166,122,255,.35);border-radius:22px;padding:22px;box-shadow:0 25px 90px #000b}
+.profile-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.profile-head h2{margin:0;font-size:23px}
+.profile-current{display:flex;align-items:center;gap:14px;padding:14px;background:#ffffff08;border:1px solid var(--line);border-radius:15px;margin:12px 0}
+.profile-current .account-avatar{width:64px;height:64px;font-size:34px}
+.profile-current strong{display:block}.profile-current small{color:var(--muted)}
+.avatar-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:12px 0 18px}
+.avatar-choice{border:2px solid transparent;background:#ffffff08;border-radius:14px;min-height:70px;display:grid;place-items:center;gap:3px;color:var(--text);font-size:27px}
+.avatar-choice small{font-size:10px;color:var(--muted)}
+.avatar-choice.selected{border-color:#a66aff;background:#8d4dff20;box-shadow:0 0 0 2px #8d4dff22}
+.profile-field{display:block;margin:12px 0 6px;font-size:13px;color:var(--muted)}
+.profile-input{width:100%;border:1px solid var(--line);background:#0b111a;color:var(--text);border-radius:11px;padding:13px;outline:none}
+.profile-input:focus{border-color:#a66aff}
+.subscription-card{margin-top:16px;border:1px solid rgba(166,122,255,.24);background:linear-gradient(135deg,#211a35,#111925);border-radius:16px;padding:15px}
+.subscription-card h3{margin:0 0 12px;font-size:16px}
+.subscription-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.subscription-item{background:#ffffff08;border-radius:11px;padding:10px}
+.subscription-item small{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+.subscription-item strong{font-size:13px;overflow-wrap:anywhere}
+.subscription-status{display:inline-flex;align-items:center;gap:6px;color:#8ee2b1;font-size:12px;margin-top:11px}
+.profile-actions{display:flex;gap:9px;margin-top:16px}
+.profile-actions button{flex:1}
+#profileStatus{min-height:20px;color:var(--muted);font-size:12px;margin-top:9px}
+[data-theme="light"]{--bg:#f4f6fa;--panel:#fff;--panel2:#eef1f6;--text:#172033;--muted:#657086;--line:rgba(22,34,54,.13)}
+body[data-theme="light"]{background:#f4f6fa;color:#172033}
+body[data-theme="light"]:before{background:radial-gradient(ellipse at 78% 4%,rgba(130,91,210,.08),transparent 32%),linear-gradient(180deg,#fff,#f4f6fa)}
+body[data-theme="light"] header{background:rgba(255,255,255,.91);border-color:#dfe4ed}
+body[data-theme="light"] .channel,body[data-theme="light"] .catalog-summary>div{background:linear-gradient(145deg,#fff,#f0f3f8);border-color:#dfe4ed;box-shadow:0 7px 20px #1b2b4510}
+body[data-theme="light"] .channel h3,body[data-theme="light"] nav a{color:#172033}
+body[data-theme="light"] .channel-logo{background:#edf1f7;border-color:#dce2ec}
+body[data-theme="light"] .filter,body[data-theme="light"] .channel-search,body[data-theme="light"] .theme-toggle,body[data-theme="light"] .account-trigger{background:#fff;color:#263247;border-color:#dce2ec}
+body[data-theme="light"] .account-menu,body[data-theme="light"] .profile-dialog,body[data-theme="light"] .dialog{background:#fff;color:#172033;border-color:#dce2ec}
+body[data-theme="light"] .account-menu button{color:#172033}
+body[data-theme="light"] .profile-current,body[data-theme="light"] .avatar-choice,body[data-theme="light"] .subscription-item{background:#f2f4f8}
+body[data-theme="light"] .profile-input,body[data-theme="light"] .field{background:#f7f8fb;color:#172033;border-color:#dce2ec}
+body[data-theme="light"] .subscription-card{background:linear-gradient(135deg,#f2edff,#f7f8fb);border-color:#ded3fb}
+body[data-theme="light"] .subscription-item strong{color:#172033}
+body[data-theme="light"] .section-head p,body[data-theme="light"] .channel-status,body[data-theme="light"] footer{color:#657086}
+@media(max-width:600px){.nav-utility{gap:6px}.account-trigger{padding:4px 8px 4px 4px;font-size:12px}.account-avatar{width:31px;height:31px}.theme-toggle{padding:8px 9px}.avatar-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.profile-dialog{padding:16px}.subscription-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
@@ -393,7 +448,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" aria-atomic="true"><span class="site-toast-icon" id="siteToastIcon">V</span><span class="site-toast-copy" id="siteToastText"></span></div>
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
-<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button></div>
+<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="theme-toggle" id="themeToggle" type="button" aria-label="تبديل الثيم">☀️</button><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="account-trigger" id="accountTrigger" type="button" hidden><span class="account-avatar" id="headerAvatar">🙂</span><span id="headerUserName">حسابي</span>⌄</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button><div class="account-menu" id="accountMenu" hidden><div class="account-menu-head"><span class="account-avatar" id="menuAvatar">🙂</span><span><strong id="menuUserName">حسابي</strong><small id="menuUserEmail"></small></span></div><button id="openProfileBtn" type="button">👤 الملف الشخصي والاشتراك</button><button id="menuThemeBtn" type="button">☼ تغيير الثيم</button><button id="menuSignOutBtn" type="button">↪ تسجيل الخروج</button></div></div>
 
 </div></header>
 <main>
@@ -442,7 +497,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
 <div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap" id="videoStage"><video id="liveVideo" playsinline preload="auto"></video><div class="velnix-watermark" id="velnixWatermark" aria-hidden="true"><span class="watermark-mark">V</span><span class="watermark-name">VELNIX</span></div><div class="vc-topbar" id="vcTopbar"><span class="vc-top-title" id="vcTopTitle">VELNIX LIVE</span><button class="vc-exit" id="vcExit" type="button" aria-label="الخروج من ملء الشاشة">↗ <span>خروج</span></button></div><div class="velnix-controls" id="velnixControls" dir="rtl"><div class="vc-progress-row"><span class="vc-time" id="vcCurrent">00:00</span><input id="vcSeek" class="vc-seek" type="range" min="0" max="1000" value="0" aria-label="تقدم البث"><span class="vc-time" id="vcDuration">LIVE</span></div><div class="vc-actions"><div class="vc-main-actions"><button class="vc-icon" id="vcPlay" type="button" aria-label="تشغيل أو إيقاف">▶</button><button class="vc-icon" id="vcBack" type="button" aria-label="رجوع 10 ثوان">↶10</button><button class="vc-icon" id="vcForward" type="button" aria-label="تقديم 10 ثوان">↷10</button><span class="vc-volume-wrap"><button class="vc-icon" id="vcMute" type="button" aria-label="كتم الصوت">◖))</button><input id="vcVolume" type="range" min="0" max="1" step="0.05" value="1" aria-label="مستوى الصوت"></span></div><div class="vc-status"><span class="vc-live-dot"></span><span>VELNIX LIVE</span></div><div class="vc-extra-actions"><button class="vc-quality" id="vcQuality" type="button">AUTO</button><button class="vc-icon" id="vcFullscreen" type="button" aria-label="ملء الشاشة">⛶</button></div></div></div></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
-<div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
+<div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle"><div class="profile-dialog"><div class="profile-head"><h2 id="profileTitle">ملفي الشخصي</h2><button class="close" id="closeProfileBtn" type="button" aria-label="إغلاق">×</button></div><div class="profile-current"><span class="account-avatar" id="profilePreviewAvatar">🙂</span><span><strong id="profilePreviewName">مستخدم VELNIX</strong><small>اختر شخصية من مكتبة VELNIX</small></span></div><label class="profile-field" for="profileNameInput">اسم العرض</label><input class="profile-input" id="profileNameInput" maxlength="40" placeholder="اكتب الاسم الذي يظهر للآخرين"><div class="profile-field">اختر صورة شخصيتك</div><div class="avatar-grid" id="avatarGrid"></div><div class="subscription-card"><h3>💎 تفاصيل الاشتراك</h3><div class="subscription-grid"><div class="subscription-item"><small>الباقة</small><strong id="subPlan">جارٍ التحميل…</strong></div><div class="subscription-item"><small>الحالة</small><strong id="subStatus">—</strong></div><div class="subscription-item"><small>تاريخ التفعيل</small><strong id="subStart">—</strong></div><div class="subscription-item"><small>تاريخ الانتهاء</small><strong id="subExpiry">—</strong></div><div class="subscription-item"><small>المدة المتبقية</small><strong id="subRemaining">—</strong></div><div class="subscription-item"><small>نوع الوصول</small><strong id="subAccessType">—</strong></div></div><div class="subscription-status" id="subStatusNote"></div></div><div id="profileStatus" role="status"></div><div class="profile-actions"><button class="primary" id="saveProfileBtn" type="button">حفظ التغييرات</button><button class="secondary" id="cancelProfileBtn" type="button">إغلاق</button></div></div></div><div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script>
 /* Keep the sign-in dialog usable even if a third-party module fails to load. */
 (()=>{
@@ -480,6 +535,7 @@ const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
 const SESSION_KEY='velnix:auth-session';
 let currentSession=null;
 let authMode='login';
+let profileData={display_name:'',avatar_url:'velnix-avatar:fox'};let selectedAvatar='fox';
 let lang='ar',channelRows=[];
 let beinAccess=false,beinExpiresAt=null;
 const $=(s,r=document)=>r.querySelector(s);
@@ -531,12 +587,13 @@ const supabase={auth:{
 async function refreshAuth(){
  const {data}=await supabase.auth.getSession();currentSession=data.session;
  const user=currentSession?.user,admin=user?.app_metadata?.role==='admin';
- $('#loginBtn').hidden=!!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;
+ $('#loginBtn').hidden=!!user;$('#accountTrigger').hidden=!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;
  if(user){
   $('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;
   try{const access=await gateway({action:'check_bein_access'});beinAccess=!!access.has_access;beinExpiresAt=access.expires_at||null;}catch(e){beinAccess=false;beinExpiresAt=null;}
+  await loadUserProfile();
  }else{
-  beinAccess=false;beinExpiresAt=null;$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;
+  beinAccess=false;beinExpiresAt=null;$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;$('#accountMenu').hidden=true;
  }
  if(channelRows.length)renderChannels();
  syncBeinGate();
@@ -579,11 +636,85 @@ $('#authForm').addEventListener('submit',async e=>{
 });
 $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();await refreshAuth();});
 supabase.auth.onAuthStateChange(()=>refreshAuth());refreshAuth();
+applyTheme(localStorage.getItem('velnix:theme')||'dark');
+$('#themeToggle').addEventListener('click',toggleTheme);$('#menuThemeBtn').addEventListener('click',toggleTheme);
+$('#accountTrigger').addEventListener('click',()=>{$('#accountMenu').hidden=!$('#accountMenu').hidden});
+$('#openProfileBtn').addEventListener('click',openProfile);
+$('#closeProfileBtn').addEventListener('click',()=>$('#profileModal').classList.remove('show'));
+$('#cancelProfileBtn').addEventListener('click',()=>$('#profileModal').classList.remove('show'));
+$('#profileModal').addEventListener('click',e=>{if(e.target===$('#profileModal'))$('#profileModal').classList.remove('show')});
+$('#saveProfileBtn').addEventListener('click',saveUserProfile);
+$('#menuSignOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();await refreshAuth();});
+$('#profileNameInput').addEventListener('input',()=>$('#profilePreviewName').textContent=$('#profileNameInput').value||'مستخدم VELNIX');
 async function rest(path){
  const response=await fetch(API+'/rest/v1/'+path,{headers:{...headers,'Accept':'application/json'}});
  if(!response.ok)throw new Error('Catalog request failed: HTTP '+response.status);
  return response.json();
 }
+async function userRest(path,options={}){
+ const session=await refreshSessionIfNeeded();if(!session?.access_token)throw new Error('سجّل الدخول أولاً');
+ const response=await fetch(API+'/rest/v1/'+path,{...options,headers:{...headers,'Authorization':'Bearer '+session.access_token,'Accept':'application/json',...(options.headers||{})}});
+ const payload=await response.json().catch(()=>[]);
+ if(!response.ok)throw new Error(payload?.message||payload?.details||'تعذر حفظ بيانات الملف الشخصي');
+ return payload;
+}
+const avatarChoices=[['fox','🦊','الثعلب'],['cat','🐱','القط'],['astronaut','👨‍🚀','رائد فضاء'],['ninja','🥷','نينجا'],['panda','🐼','الباندا'],['robot','🤖','روبوت'],['alien','👽','فضائي'],['lion','🦁','الأسد'],['owl','🦉','البومة'],['gamer','🎮','لاعب'],['unicorn','🦄','وحيد القرن'],['bear','🐻','الدب'],['girl','👩🏻','شخصية'],['boy','🧑🏻','شخصية'],['tiger','🐯','النمر'],['penguin','🐧','البطريق']];
+function avatarEmoji(id){return avatarChoices.find(x=>x[0]===id)?.[1]||'🙂'}
+function paintAvatar(id){const emoji=avatarEmoji(id);['headerAvatar','menuAvatar','profilePreviewAvatar'].forEach(key=>{const el=$('#'+key);if(el)el.textContent=emoji})}
+function applyTheme(theme){const selected=theme==='light'?'light':'dark';document.body.dataset.theme=selected;$('#themeToggle').textContent=selected==='light'?'🌙':'☀️';$('#menuThemeBtn').textContent=selected==='light'?'🌙 الثيم الليلي':'☀️ الثيم الأبيض';try{localStorage.setItem('velnix:theme',selected)}catch(e){}}
+function toggleTheme(){applyTheme(document.body.dataset.theme==='light'?'dark':'light')}
+function renderAvatarChoices(){
+ const grid=$('#avatarGrid');grid.replaceChildren();
+ avatarChoices.forEach(([id,emoji,label])=>{const b=document.createElement('button');b.type='button';b.className='avatar-choice'+(selectedAvatar===id?' selected':'');b.innerHTML='<span></span><small></small>';b.querySelector('span').textContent=emoji;b.querySelector('small').textContent=label;b.setAttribute('aria-label',label);b.addEventListener('click',()=>{selectedAvatar=id;renderAvatarChoices();$('#profilePreviewAvatar').textContent=emoji});grid.append(b)});
+}
+async function loadUserProfile(){
+ const user=currentSession?.user;if(!user)return;
+ try{
+  const rows=await userRest('profiles?select=id,display_name,avatar_url&id=eq.'+encodeURIComponent(user.id)+'&limit=1');
+  profileData=rows[0]||{display_name:user.user_metadata?.display_name||user.email.split('@')[0],avatar_url:'velnix-avatar:fox'};
+ }catch(e){profileData={display_name:user.user_metadata?.display_name||user.email.split('@')[0],avatar_url:'velnix-avatar:fox'};console.warn('Profile load:',e)}
+ const name=profileData.display_name||user.user_metadata?.display_name||user.email.split('@')[0];
+ const avatar=String(profileData.avatar_url||'velnix-avatar:fox').replace('velnix-avatar:','');
+ selectedAvatar=avatarChoices.some(x=>x[0]===avatar)?avatar:'fox';
+ $('#headerUserName').textContent=name;$('#menuUserName').textContent=name;$('#menuUserEmail').textContent=user.email;$('#profilePreviewName').textContent=name;$('#profileNameInput').value=name;paintAvatar(selectedAvatar);
+}
+function formatDate(value){if(!value)return 'غير محدد';const d=new Date(value);if(Number.isNaN(d.getTime()))return 'غير محدد';return d.toLocaleString('ar-IQ',{dateStyle:'medium',timeStyle:'short'})}
+function remainingDays(value){if(!value)return '—';const diff=new Date(value).getTime()-Date.now();if(diff<=0)return 'انتهى';return Math.ceil(diff/86400000)+' يوم';}
+async function loadSubscriptionDetails(){
+ const fields=['subPlan','subStatus','subStart','subExpiry','subRemaining','subAccessType','subStatusNote'];fields.forEach(id=>$('#'+id).textContent='—');
+ try{
+  const rows=await userRest('subscriptions?select=plan_code,status,starts_at,expires_at&order=created_at.desc&limit=1');
+  const row=rows?.[0];
+  if(row){
+   const plans={basic:'أساسية',standard:'قياسية',premium:'مميزة',gold:'ذهبية',platinum:'بلاتينية',bein:'beIN SPORTS'};
+   const active=String(row.status||'').toLowerCase()==='active'&&(!row.expires_at||new Date(row.expires_at)>new Date());
+   $('#subPlan').textContent=plans[String(row.plan_code||'').toLowerCase()]||row.plan_code||'اشتراك';
+   $('#subStatus').textContent=active?'فعال':'منتهي أو غير فعال';$('#subStart').textContent=formatDate(row.starts_at);$('#subExpiry').textContent=formatDate(row.expires_at);$('#subRemaining').textContent=remainingDays(row.expires_at);$('#subAccessType').textContent='اشتراك المنصة';$('#subStatusNote').textContent=active?'● اشتراكك فعال حالياً':'● الاشتراك غير فعال حالياً';
+   return;
+  }
+ }catch(e){console.warn('Subscription details:',e)}
+ if(beinAccess&&beinExpiresAt){
+  $('#subPlan').textContent='beIN SPORTS';$('#subStatus').textContent='فعال';$('#subStart').textContent='حسب تاريخ التفعيل';$('#subExpiry').textContent=formatDate(beinExpiresAt);$('#subRemaining').textContent=remainingDays(beinExpiresAt);$('#subAccessType').textContent='كود تفعيل';$('#subStatusNote').textContent='● صلاحية قسم beIN فعالة';
+ }else{
+  $('#subPlan').textContent='لا يوجد اشتراك';$('#subStatus').textContent='غير مشترك';$('#subStart').textContent='—';$('#subExpiry').textContent='—';$('#subRemaining').textContent='—';$('#subAccessType').textContent='وصول مجاني';$('#subStatusNote').textContent='● لا يوجد اشتراك مدفوع مرتبط بهذا الحساب';
+ }
+}
+async function openProfile(){
+ if(!currentSession?.user){$('#authModal').classList.add('show');return}
+ $('#accountMenu').hidden=true;$('#profileModal').classList.add('show');$('#profileStatus').textContent='';renderAvatarChoices();await loadUserProfile();await loadSubscriptionDetails();
+}
+async function saveUserProfile(){
+ const name=$('#profileNameInput').value.trim();if(name.length<2){$('#profileStatus').textContent='الاسم لازم يكون حرفين على الأقل.';return}
+ const user=currentSession?.user;if(!user){$('#profileStatus').textContent='سجّل الدخول أولاً.';return}
+ $('#saveProfileBtn').disabled=true;$('#profileStatus').textContent='جارٍ حفظ الملف الشخصي...';
+ try{
+  const row={id:user.id,display_name:name,avatar_url:'velnix-avatar:'+selectedAvatar,updated_at:new Date().toISOString()};
+  await userRest('profiles?on_conflict=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)});
+  profileData=row;$('#headerUserName').textContent=name;$('#menuUserName').textContent=name;$('#profilePreviewName').textContent=name;paintAvatar(selectedAvatar);$('#profileStatus').textContent='تم حفظ الملف الشخصي بنجاح.';showSiteToast('تم تحديث اسم وصورة الحساب','success');
+ }catch(e){$('#profileStatus').textContent=e.message||'تعذر حفظ الملف الشخصي';showSiteToast($('#profileStatus').textContent,'error')}
+ finally{$('#saveProfileBtn').disabled=false}
+}
+
 async function gateway(body){
  const session=await refreshSessionIfNeeded();
  const response=await fetch(API+'/functions/v1/xtream-gateway',{method:'POST',headers:{...headers,'Authorization':'Bearer '+(session?.access_token||KEY),'Content-Type':'application/json'},body:JSON.stringify(body)});
