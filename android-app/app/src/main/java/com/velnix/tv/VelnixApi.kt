@@ -147,7 +147,8 @@ class VelnixApi(private val context: Context) {
                     logo = r.optString("logo_url").takeIf { it.isNotBlank() && it != "null" },
                     provider = r.optString("source_provider"),
                     quality = best.quality.ifBlank { if (combine) "مصادر متعددة" else "" },
-                    streamIds = set.map { it.row.getString("id") }
+                    streamIds = set.map { it.row.getString("id") },
+                    externalId = r.optString("source_external_id").takeIf { it.isNotBlank() && it != "null" }
                 )
             }
         }.sortedBy { it.name.lowercase() }
@@ -182,6 +183,53 @@ class VelnixApi(private val context: Context) {
         return StreamInfo(url, result.optString("stream_type").ifBlank { "hls" })
     }
 
+    suspend fun epg(channel: Channel): List<EpgProgram> {
+        if (channel.provider == "xtream" && channel.externalId?.matches(Regex("\\d+")) == true) {
+            try {
+                val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
+                    JSONObject().put("action", "epg").put("stream_id", channel.externalId).toString()))
+                val rows = response.optJSONArray("epg_listings") ?: JSONArray()
+                val result = (0 until rows.length()).mapNotNull { index ->
+                    val row = rows.optJSONObject(index) ?: return@mapNotNull null
+                    val start = epochMillis(row.optString("start_timestamp"), row.optString("start"))
+                    val end = epochMillis(row.optString("stop_timestamp"), row.optString("end"))
+                    val title = decodeEpg(row.optString("title"))
+                    if (title.isBlank() || start <= 0L || end <= start) null
+                    else EpgProgram(title, decodeEpg(row.optString("description")), start, end)
+                }
+                if (result.isNotEmpty()) return result.sortedBy { it.startsAt }
+            } catch (_: Exception) { }
+        }
+        val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
+            JSONObject().put("action", "epg_database").put("channel_id", channel.id).toString()))
+        val rows = response.optJSONArray("programs") ?: JSONArray()
+        return (0 until rows.length()).mapNotNull { index ->
+            val row = rows.optJSONObject(index) ?: return@mapNotNull null
+            val start = parseIso(row.optString("starts_at"))
+            val end = parseIso(row.optString("ends_at"))
+            val title = row.optString("title")
+            if (title.isBlank() || start <= 0L || end <= start) null
+            else EpgProgram(title, row.optString("description"), start, end)
+        }.sortedBy { it.startsAt }
+    }
+
+    private fun decodeEpg(value: String): String = try {
+        String(android.util.Base64.decode(value, android.util.Base64.DEFAULT), Charsets.UTF_8)
+    } catch (_: Exception) { value }
+
+    private fun epochMillis(timestamp: String, fallback: String): Long {
+        val number = timestamp.toLongOrNull()
+        if (number != null) return if (number > 1_000_000_000_000L) number else number * 1000L
+        return parseIso(fallback)
+    }
+
+    private fun parseIso(value: String): Long = try {
+        val clean = value.take(19)
+        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }.parse(clean)?.time ?: 0L
+    } catch (_: Exception) { 0L }
+
     suspend fun checkBein(): Boolean {
         return try {
             JSONObject(request("functions/v1/xtream-gateway", "POST", JSONObject().put("action","check_bein_access").toString()))
@@ -202,3 +250,4 @@ class VelnixApi(private val context: Context) {
 }
 
 data class StreamInfo(val url: String, val type: String)
+data class EpgProgram(val title: String, val description: String, val startsAt: Long, val endsAt: Long)
