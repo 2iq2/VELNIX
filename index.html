@@ -550,9 +550,11 @@ async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  try{
   const all=[];
-  for(let offset=0;offset<10000;offset+=500){
-   const rows=await rest('channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset='+offset);
-   all.push(...rows);if(rows.length<500)break;
+  const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=';
+  for(let base=0;base<10000;base+=2000){
+   const pages=await Promise.all([0,500,1000,1500].map(offset=>rest(query+(base+offset))));
+   for(const rows of pages)all.push(...rows);
+   if(pages.some(rows=>rows.length<500))break;
   }
   channelRows=all;renderChannels();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
