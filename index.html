@@ -508,10 +508,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
   <button class="fixtures-refresh" id="fixturesRefresh" type="button">↻ تحديث</button>
  </div>
  <div class="fixtures-datebar" id="fixturesDates" aria-label="اختيار اليوم"></div>
- <div class="fixtures-toolbar">
-  <label class="fixtures-select-wrap"><span>البطولة</span><select id="fixturesLeague"><option value="all">كل البطولات</option></select></label>
-  <span class="fixtures-timezone">⏱ التوقيت المحلي · بغداد</span>
- </div>
+ <div class="fixtures-toolbar"><span class="fixtures-timezone">⏱ جميع البطولات · التوقيت المحلي بغداد</span></div>
  <div class="fixtures-status" id="fixturesStatus" role="status" aria-live="polite">جارٍ تحميل مواعيد المباريات...</div>
  <div class="fixtures-grid" id="fixturesGrid"></div>
  <div class="fixtures-source">بيانات المواعيد والنتائج عبر ESPN · قد تختلف التغطية حسب البطولة</div>
@@ -1228,53 +1225,39 @@ $('#m3uFile').addEventListener('change',async e=>{
  }finally{e.target.value=''}
 });
 
-/* VELNIX match schedule — public ESPN scoreboard */
+/* VELNIX match schedule — combined soccer fixtures */
 const FIXTURE_LEAGUES=[
- {id:'uefa.nations',name:'دوري الأمم الأوروبية'},
- {id:'caf.nations_qual',name:'تصفيات كأس أمم أفريقيا'},
- {id:'fifa.friendly',name:'مباريات ودية دولية'},
- {id:'concacaf.nations.league',name:'دوري أمم الكونكاكاف'},
- {id:'fifa.worldq',name:'تصفيات كأس العالم'},
- {id:'fifa.worldq.uefa',name:'تصفيات كأس العالم - أوروبا'},
- {id:'fifa.worldq.caf',name:'تصفيات كأس العالم - أفريقيا'},
- {id:'fifa.worldq.afc',name:'تصفيات كأس العالم - آسيا'},
- {id:'fifa.worldq.concacaf',name:'تصفيات كأس العالم - أمريكا الشمالية'},
- {id:'fifa.worldq.conmebol',name:'تصفيات كأس العالم - أمريكا الجنوبية'},
- {id:'fifa.worldq.ofc',name:'تصفيات كأس العالم - أوقيانوسيا'},
- {id:'uefa.euro_u21_qual',name:'تصفيات أوروبا تحت 21 سنة'},
- {id:'uefa.wchampions',name:'دوري أبطال أوروبا للسيدات'},
- {id:'uefa.champions',name:'دوري أبطال أوروبا'},
- {id:'uefa.europa',name:'الدوري الأوروبي'},
- {id:'uefa.europa.conf',name:'دوري المؤتمر الأوروبي'},
- {id:'eng.1',name:'الدوري الإنجليزي الممتاز'},
- {id:'esp.1',name:'الدوري الإسباني'},
- {id:'esp.copa_del_rey',name:'كأس ملك إسبانيا'},
- {id:'ita.1',name:'الدوري الإيطالي'},
- {id:'ger.1',name:'الدوري الألماني'},
- {id:'fra.1',name:'الدوري الفرنسي'},
- {id:'ksa.1',name:'الدوري السعودي'},
- {id:'conmebol.libertadores',name:'كوبا ليبرتادوريس'},
- {id:'afc.champions',name:'دوري أبطال آسيا'}
-];
-let fixtureDayOffset=0,fixtureEvents=[],fixtureLeague='all',fixtureLoading=false,fixtureTimer=null;
+ ['uefa.nations','دوري الأمم الأوروبية'],['fifa.friendly','مباريات ودية دولية'],['fifa.friendly.w','وديات المنتخبات النسائية'],['fifa.friendly_u21','وديات تحت 21 سنة'],['fifa.u20.friendly','وديات تحت 20 سنة'],
+ ['fifa.worldq','تصفيات كأس العالم'],['fifa.worldq.uefa','تصفيات أوروبا لكأس العالم'],['fifa.worldq.caf','تصفيات أفريقيا لكأس العالم'],['fifa.worldq.afc','تصفيات آسيا لكأس العالم'],['fifa.worldq.concacaf','تصفيات الكونكاكاف لكأس العالم'],['fifa.worldq.conmebol','تصفيات أمريكا الجنوبية لكأس العالم'],['fifa.worldq.ofc','تصفيات أوقيانوسيا لكأس العالم'],
+ ['caf.nations','كأس أمم أفريقيا'],['caf.nations_qual','تصفيات كأس أمم أفريقيا'],['caf.champions','دوري أبطال أفريقيا'],['caf.confed','كأس الكونفدرالية الأفريقية'],
+ ['concacaf.nations.league','دوري أمم الكونكاكاف'],['concacaf.gold','الكأس الذهبية'],['concacaf.champions','دوري أبطال الكونكاكاف'],
+ ['uefa.euro','كأس أمم أوروبا'],['uefa.euroq','تصفيات أمم أوروبا'],['uefa.euro_u21','بطولة أوروبا تحت 21'],['uefa.euro_u21_qual','تصفيات أوروبا تحت 21'],['uefa.euro.u19','بطولة أوروبا تحت 19'],['uefa.wchampions','دوري أبطال أوروبا للسيدات'],
+ ['uefa.champions','دوري أبطال أوروبا'],['uefa.champions_qual','تصفيات دوري الأبطال'],['uefa.europa','الدوري الأوروبي'],['uefa.europa_qual','تصفيات الدوري الأوروبي'],['uefa.europa.conf','دوري المؤتمر الأوروبي'],['uefa.europa.conf_qual','تصفيات دوري المؤتمر'],
+ ['eng.1','الدوري الإنجليزي'],['eng.2','دوري البطولة الإنجليزية'],['eng.fa','كأس الاتحاد الإنجليزي'],['eng.league_cup','كأس الرابطة الإنجليزية'],['eng.w.1','الدوري الإنجليزي للسيدات'],
+ ['esp.1','الدوري الإسباني'],['esp.2','الدرجة الثانية الإسبانية'],['esp.copa_del_rey','كأس ملك إسبانيا'],['esp.copa_de_la_reina','كأس ملكة إسبانيا'],
+ ['ita.1','الدوري الإيطالي'],['ita.2','الدرجة الثانية الإيطالية'],['ita.coppa_italia','كأس إيطاليا'],
+ ['ger.1','الدوري الألماني'],['ger.2','الدرجة الثانية الألمانية'],['ger.dfb_pokal','كأس ألمانيا'],
+ ['fra.1','الدوري الفرنسي'],['fra.2','الدرجة الثانية الفرنسية'],['fra.coupe_de_france','كأس فرنسا'],
+ ['por.1','الدوري البرتغالي'],['ned.1','الدوري الهولندي'],['bel.1','الدوري البلجيكي'],['tur.1','الدوري التركي'],
+ ['ksa.1','الدوري السعودي'],['afc.champions','دوري أبطال آسيا'],['afc.cup','دوري أبطال آسيا 2'],['afc.asian.cup','كأس آسيا'],
+ ['usa.1','الدوري الأمريكي'],['mex.1','الدوري المكسيكي'],['conmebol.libertadores','كوبا ليبرتادوريس'],['conmebol.sudamericana','كوبا سود أمريكانا'],['arg.1','الدوري الأرجنتيني'],['bra.1','الدوري البرازيلي'],['jpn.1','الدوري الياباني'],['aus.1','الدوري الأسترالي']
+].map(([id,name])=>({id,name}));
+let fixtureDayOffset=0,fixtureEvents=[],fixtureLoading=false,fixtureTimer=null;
 function baghdadDateKey(offset=0){
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
  const part=Object.fromEntries(parts.map(p=>[p.type,p.value]));
- const base=new Date(part.year+'-'+part.month+'-'+part.day+'T12:00:00Z');
- base.setUTCDate(base.getUTCDate()+offset);
- return base.toISOString().slice(0,10);
+ const base=new Date(part.year+'-'+part.month+'-'+part.day+'T12:00:00Z');base.setUTCDate(base.getUTCDate()+offset);return base.toISOString().slice(0,10);
 }
 function fixtureDateLabel(offset){
  const date=new Date(baghdadDateKey(offset)+'T12:00:00+03:00');
- if(offset===0)return 'اليوم';
- if(offset===1)return 'غداً';
+ if(offset===0)return 'اليوم';if(offset===1)return 'غداً';
  return new Intl.DateTimeFormat('ar-IQ',{weekday:'short',timeZone:'Asia/Baghdad'}).format(date);
 }
 function renderFixtureDates(){
  const host=$('#fixturesDates');host.replaceChildren();
  for(let offset=0;offset<7;offset++){
-  const date=new Date(baghdadDateKey(offset)+'T12:00:00+03:00');
-  const b=document.createElement('button');b.type='button';b.className='fixtures-day'+(offset===fixtureDayOffset?' active':'');
+  const date=new Date(baghdadDateKey(offset)+'T12:00:00+03:00'),b=document.createElement('button');
+  b.type='button';b.className='fixtures-day'+(offset===fixtureDayOffset?' active':'');
   const strong=document.createElement('strong');strong.textContent=fixtureDateLabel(offset);
   const small=document.createElement('small');small.textContent=new Intl.DateTimeFormat('ar-IQ',{day:'numeric',month:'short',timeZone:'Asia/Baghdad'}).format(date);
   b.append(strong,small);b.addEventListener('click',()=>{fixtureDayOffset=offset;renderFixtureDates();loadFixtures()});host.append(b);
@@ -1286,13 +1269,9 @@ function fixtureClock(value){
 }
 function renderFixtures(){
  const grid=$('#fixturesGrid');grid.replaceChildren();
- const rows=fixtureEvents.filter(event=>fixtureLeague==='all'||event._leagueId===fixtureLeague)
-  .sort((a,b)=>new Date(a.date)-new Date(b.date));
- if(!rows.length){
-  const empty=document.createElement('div');empty.className='fixture-empty';
-  empty.textContent=fixtureEvents.length?'ماكو مباريات ضمن البطولة المختارة بهذا اليوم.':'ماكو مباريات مسجلة بهذا اليوم ضمن البطولات المتاحة.';
-  grid.append(empty);return;
- }
+ const rows=fixtureEvents.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+ if(!rows.length){const empty=document.createElement('div');empty.className='fixture-empty';empty.textContent='لم نعثر على مباريات لهذا اليوم من مصادر الجدول. جرّب تحديث البيانات بعد قليل.';grid.append(empty);return}
+ let lastDay='';
  rows.forEach(event=>{
   const comp=event.competitions?.[0]||{},teams=comp.competitors||[];
   const home=teams.find(t=>t.homeAway==='home')||teams[0]||{},away=teams.find(t=>t.homeAway==='away')||teams[1]||{};
@@ -1301,64 +1280,70 @@ function renderFixtures(){
   const meta=document.createElement('div');meta.className='fixture-meta';
   const league=document.createElement('span');league.className='fixture-league';league.textContent=event._leagueName||event.season?.name||'مباراة';
   const stateEl=document.createElement('span');stateEl.className='fixture-state'+(state==='in'?' live':state==='post'?' done':'');
-  stateEl.textContent=state==='in'?'● مباشر':state==='post'?'انتهت':(status.type?.shortDetail||'قادمة');
-  meta.append(league,stateEl);
+  stateEl.textContent=state==='in'?'● مباشر':state==='post'?'انتهت':(status.type?.shortDetail||'قادمة');meta.append(league,stateEl);
   const teamsWrap=document.createElement('div');teamsWrap.className='fixture-teams';
   function makeTeam(team){
-   const box=document.createElement('div');box.className='fixture-team';
-   if(team.team?.logo){const img=document.createElement('img');img.src=team.team.logo;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();box.append(img)}
+   const box=document.createElement('div');box.className='fixture-team';const logo=team.team?.logo;
+   if(logo){const img=document.createElement('img');img.src=logo;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();box.append(img)}
    const name=document.createElement('span');name.className='fixture-team-name';name.textContent=team.team?.displayName||team.team?.name||'—';box.append(name);return box;
   }
-  const score=document.createElement('div');score.className='fixture-score'+(state==='pre'?' upcoming':'');
-  score.textContent=state==='pre'?'VS':(home.score??'0')+' - '+(away.score??'0');
+  const score=document.createElement('div');score.className='fixture-score'+(state==='pre'?' upcoming':'');score.textContent=state==='pre'?'VS':(home.score??'0')+' - '+(away.score??'0');
   teamsWrap.append(makeTeam(home),score,makeTeam(away));
-  const time=document.createElement('div');time.className='fixture-time';
-  time.textContent=state==='in'?(status.type?.detail||status.type?.shortDetail||'المباراة جارية'):(state==='post'?'موعد المباراة · '+fixtureClock(event.date):'موعد البداية · '+fixtureClock(event.date));
+  const time=document.createElement('div');time.className='fixture-time';time.textContent=state==='in'?(status.type?.detail||'المباراة جارية'):(state==='post'?'موعد المباراة · ':'موعد البداية · ')+fixtureClock(event.date);
   card.append(meta,teamsWrap,time);grid.append(card);
  });
 }
+function normalizeSportsDb(item){
+ const stamp=item.strTimestamp||((item.dateEvent||'')+'T'+(item.strTime||'00:00:00')+'Z');
+ const date=new Date(stamp);if(Number.isNaN(date.getTime()))return null;
+ const finished=/finished|complete|ft/i.test(item.strStatus||'');
+ const live=/live|in progress|1st half|2nd half|half time/i.test(item.strStatus||'');
+ const status={type:{state:finished?'post':live?'in':'pre',shortDetail:item.strStatus||'قادمة',detail:item.strStatus||''}};
+ const mk=(side,name,badge,score)=>({homeAway:side,team:{displayName:name||'—',logo:badge||''},score:score==null?'':String(score)});
+ return {id:item.idEvent||('sdb-'+item.strEvent),date:date.toISOString(),_leagueName:item.strLeague||'مباراة',competitions:[{competitors:[mk('home',item.strHomeTeam,item.strHomeTeamBadge,item.intHomeScore),mk('away',item.strAwayTeam,item.strAwayTeamBadge,item.intAwayScore)],status}]};
+}
+async function fetchEspnLeague(league,dateRange,targetDate){
+ const hosts=['https://site.api.espn.com','https://site.web.api.espn.com'];
+ for(const host of hosts){
+  try{
+   const url=host+'/apis/site/v2/sports/soccer/'+encodeURIComponent(league.id)+'/scoreboard?dates='+dateRange;
+   const response=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
+   if(!response.ok)continue;
+   const data=await response.json();
+   return (data.events||[]).filter(event=>{
+    const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date));
+    return localDate===targetDate;
+   }).map(event=>({...event,_leagueId:league.id,_leagueName:league.name}));
+  }catch(error){console.warn('ESPN feed failed:',league.id,host,error)}
+ }
+ return [];
+}
 async function loadFixtures(silent=false){
  if(fixtureLoading)return;fixtureLoading=true;
- const button=$('#fixturesRefresh'),status=$('#fixturesStatus');
- if(button)button.disabled=true;
- if(!silent)status.textContent='جارٍ جلب جدول المباريات...';
+ const button=$('#fixturesRefresh'),status=$('#fixturesStatus');if(button)button.disabled=true;
+ if(!silent)status.textContent='جارٍ جمع مباريات جميع البطولات...';
  try{
-  const targetDate=baghdadDateKey(fixtureDayOffset);
-  const dateStart=baghdadDateKey(fixtureDayOffset-1).replaceAll('-','');
-  const dateEnd=baghdadDateKey(fixtureDayOffset+1).replaceAll('-','');
-  const date=dateStart+'-'+dateEnd;
-  const results=await Promise.all(FIXTURE_LEAGUES.map(async league=>{
-   try{
-    const response=await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/'+encodeURIComponent(league.id)+'/scoreboard?dates='+date,{headers:{Accept:'application/json'},cache:'no-store'});
-    if(!response.ok)throw new Error('HTTP '+response.status);
-    const data=await response.json();
-    return (data.events||[]).filter(event=>{
-     const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date));
-     return localDate===targetDate;
-    }).map(event=>({...event,_leagueId:league.id,_leagueName:league.name}));
-   }catch(error){console.warn('Fixture feed unavailable:',league.id,error);return []}
-  }));
-  const unique=new Map();results.flat().forEach(event=>{if(event.id)unique.set(event.id,event)});
-  fixtureEvents=[...unique.values()];
-  const select=$('#fixturesLeague'),current=select.value||'all';
-  if(!select.dataset.ready){
-   FIXTURE_LEAGUES.forEach(league=>{const option=document.createElement('option');option.value=league.id;option.textContent=league.name;select.append(option)});
-   select.dataset.ready='1';
-  }
-  fixtureLeague=current;select.value=fixtureLeague;
+  const targetDate=baghdadDateKey(fixtureDayOffset),dateStart=baghdadDateKey(fixtureDayOffset-1).replaceAll('-',''),dateEnd=baghdadDateKey(fixtureDayOffset+1).replaceAll('-',''),dateRange=dateStart+'-'+dateEnd;
+  const espnResults=await Promise.all(FIXTURE_LEAGUES.map(league=>fetchEspnLeague(league,dateRange,targetDate)));
+  let events=espnResults.flat();
+  try{
+   const dbUrl='https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d='+encodeURIComponent(targetDate)+'&s=Soccer';
+   const dbResponse=await fetch(dbUrl,{headers:{Accept:'application/json'},cache:'no-store'});
+   if(dbResponse.ok){const dbData=await dbResponse.json();events=events.concat((dbData.events||[]).map(normalizeSportsDb).filter(Boolean).filter(event=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date))===targetDate))}
+  }catch(error){console.warn('Secondary fixtures feed unavailable',error)}
+  const unique=new Map();events.forEach(event=>{if(event.id)unique.set(String(event.id),event)});
+  fixtureEvents=[...unique.values()].sort((a,b)=>new Date(a.date)-new Date(b.date));
   renderFixtures();
-  status.textContent=fixtureEvents.length?'تم تحديث '+fixtureEvents.length.toLocaleString('ar-IQ')+' مباراة · يتم التحديث التلقائي كل دقيقة.':'لم تُسجل مباريات في هذا اليوم ضمن البطولات المتاحة.';
+  status.textContent=fixtureEvents.length?'تم العثور على '+fixtureEvents.length.toLocaleString('ar-IQ')+' مباراة من جميع البطولات · الأوقات بتوقيت بغداد · تحديث تلقائي كل دقيقة.':'تعذر جلب مباريات هذا اليوم من مصادر الجدول حالياً. اضغط تحديث أو جرّب لاحقاً.';
  }catch(error){
-  console.error('Fixtures loading failed:',error);
-  status.textContent='تعذر تحميل جدول المباريات حالياً. حاول التحديث بعد قليل.';
+  console.error('Fixtures loading failed:',error);status.textContent='تعذر الاتصال بمصادر المباريات حالياً. حاول التحديث بعد قليل.';
  }finally{fixtureLoading=false;if(button)button.disabled=false}
 }
 renderFixtureDates();
-$('#fixturesLeague').addEventListener('change',e=>{fixtureLeague=e.target.value;renderFixtures()});
 $('#fixturesRefresh').addEventListener('click',()=>loadFixtures());
 loadFixtures();
 if(fixtureTimer)clearInterval(fixtureTimer);
-fixtureTimer=setInterval(()=>{if(fixtureDayOffset===0)loadFixtures(true)},60000);
+fixtureTimer=setInterval(()=>loadFixtures(true),60000);
 loadChannels();
 })().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
 </script>
