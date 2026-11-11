@@ -433,7 +433,7 @@ private fun IntroScreen() {
             AndroidView(factory={ ctx ->
                 (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as android.view.LayoutInflater)
                     .inflate(R.layout.velnix_player_view, null) as PlayerView
-            }.also { },
+            },
                 update={ view -> playerView = view; view.player=player; view.keepScreenOn=true; view.controllerShowTimeoutMs=5500 },
                 modifier=Modifier.fillMaxSize())
             Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
