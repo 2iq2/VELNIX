@@ -279,7 +279,7 @@ val CATEGORIES = listOf(
 data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id))
 data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
 
-private fun categoryFor(group:String,name:String):String {
+fun categoryFor(group:String,name:String):String {
     val both=(group+" "+name).lowercase()
     return when {
         Regex("bein[\\s._-]*sp.{0,3}rts|بي\\s*ان\\s*سبورت|بين\\s*سبورت").containsMatchIn(both) -> "bein"
