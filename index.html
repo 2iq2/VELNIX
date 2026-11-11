@@ -493,7 +493,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
   <div class="clayko-particle-credit" id="claykoParticleCredit">صُنع بواسطة</div>
   <div class="clayko-particle-word" id="claykoParticleWord">CLAYKO</div>
   <div class="clayko-particle-lockup" id="claykoParticleLockup" aria-label="VELNIX">
-    <span class="clayko-particle-mark">V</span>
+    <span class="clayko-particle-mark"><span>V</span></span>
     <span class="clayko-particle-label">VELNIX</span>
   </div>
 </div>
@@ -504,7 +504,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 .clayko-particle-word{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 clamp(48px,11vw,82px) "DM Sans","Arial",sans-serif;letter-spacing:clamp(5px,1.6vw,12px);white-space:nowrap;color:#f4fbff;text-shadow:0 0 18px rgba(106,216,255,.45),0 0 48px rgba(125,164,255,.2);opacity:0;animation:clayko-word-in .9s .45s cubic-bezier(.2,.8,.2,1) forwards}
 .clayko-particle-lockup{position:absolute;left:50%;top:50%;display:flex;align-items:center;gap:20px;direction:ltr;transform:translate(-50%,-50%);opacity:0;visibility:hidden;white-space:nowrap}
 .clayko-particle-mark{width:62px;height:62px;display:grid;place-items:center;border:1.5px solid rgba(226,198,143,.9);border-radius:16px;transform:rotate(45deg);color:#ead5a7;font:800 29px "DM Sans",sans-serif;text-shadow:0 0 20px rgba(226,198,143,.5);box-shadow:0 0 34px rgba(226,198,143,.15)}
-.clayko-particle-mark::first-letter{transform:rotate(-45deg)}
+.clayko-particle-mark span{transform:rotate(-45deg)}
 .clayko-particle-label{font:800 clamp(29px,6.5vw,43px) "DM Sans",sans-serif;letter-spacing:clamp(4px,1vw,7px);color:#f4f1e9;text-shadow:0 0 28px rgba(226,198,143,.22)}
 .clayko-particle-intro.is-formed .clayko-particle-lockup{visibility:visible;animation:clayko-lockup-in .9s .05s cubic-bezier(.16,1,.3,1) forwards}
 .clayko-particle-intro.is-leaving{opacity:0;visibility:hidden;transition:opacity .8s ease,visibility .8s}
@@ -525,13 +525,18 @@ body[data-theme="light"] .fixture-score{color:#172033}
  let particles=[],width=0,height=0,dpr=1,started=false,frame=0;
  const rand=(n)=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
  const ease=(t)=>1-Math.pow(1-t,3);
- function samplePath(points,count){
-  const lengths=[],total=points.reduce((sum,p,i)=>{if(i===0)return 0;const a=points[i-1],d=Math.hypot(p.x-a.x,p.y-a.y);lengths.push(d);return sum+d},0);
+ function samplePaths(paths,count){
+  const segments=[];let total=0;
+  for(const points of paths)for(let i=1;i<points.length;i++){
+   const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.y-a.y);
+   segments.push({a,b,length,start:total});total+=length;
+  }
   return Array.from({length:count},(_,i)=>{
-   let dist=(i/count)*total,seg=0;
-   while(seg<lengths.length-1&&dist>lengths[seg]){dist-=lengths[seg];seg++}
-   const a=points[seg],b=points[seg+1],t=lengths[seg]?dist/lengths[seg]:0;
-   return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};
+   const dist=(i/count)*total;
+   let s=segments[segments.length-1];
+   for(const item of segments){if(dist<=item.start+item.length){s=item;break}}
+   const t=s.length?(dist-s.start)/s.length:0;
+   return{x:s.a.x+(s.b.x-s.a.x)*t,y:s.a.y+(s.b.y-s.a.y)*t};
   });
  }
  function build(){
@@ -554,11 +559,11 @@ body[data-theme="light"] .fixture-score{color:#172033}
   const count=Math.min(src.length,1050);
   const origins=Array.from({length:count},(_,i)=>src[Math.floor(i*src.length/count)]);
   const cx=width/2,cy=height/2,unit=Math.min(1,width/520);
-  const path=[
-   {x:cx,y:cy-47*unit},{x:cx+47*unit,y:cy},{x:cx,y:cy+47*unit},{x:cx-47*unit,y:cy},{x:cx,y:cy-47*unit},
-   {x:cx-23*unit,y:cy-15*unit},{x:cx-5*unit,y:cy+22*unit},{x:cx+25*unit,y:cy-27*unit}
+  const paths=[
+   [{x:cx,y:cy-47*unit},{x:cx+47*unit,y:cy},{x:cx,y:cy+47*unit},{x:cx-47*unit,y:cy},{x:cx,y:cy-47*unit}],
+   [{x:cx-23*unit,y:cy-15*unit},{x:cx-5*unit,y:cy+22*unit},{x:cx+25*unit,y:cy-27*unit}]
   ];
-  const targets=samplePath(path,count);
+  const targets=samplePaths(paths,count);
   particles=origins.map((p,i)=>({sx:p.x,sy:p.y,tx:targets[i].x,ty:targets[i].y,delay:rand(i)*.24,phase:rand(i+99)*Math.PI*2,size:.75+rand(i+7)*1.35,alpha:.55+rand(i+3)*.45}));
  }
  function draw(now){
