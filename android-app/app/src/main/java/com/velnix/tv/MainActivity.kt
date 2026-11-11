@@ -1,6 +1,8 @@
 package com.velnix.tv
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,6 +35,8 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.launch
@@ -120,7 +124,10 @@ private fun VelnixApp(activity: ComponentActivity) {
                             Text("PREMIUM LIVE TV", color = Muted, fontSize = 10.sp, letterSpacing = 2.sp)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(session?.userEmail ?: "", color = Muted, fontSize = 11.sp)
+                            Column(horizontalAlignment=Alignment.End) {
+                                Text(session?.userEmail ?: "", color = Muted, fontSize = 11.sp)
+                                Text(if (beinAccess) "beIN SPORTS مفعّل" else "beIN SPORTS غير مفعّل", color = if(beinAccess) Gold else Muted, fontSize = 10.sp)
+                            }
                             Spacer(Modifier.width(12.dp))
                             TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
                         }
@@ -258,7 +265,28 @@ private fun VelnixApp(activity: ComponentActivity) {
 @Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,onBack:()->Unit) {
     val context=androidx.compose.ui.platform.LocalContext.current
     val player= remember(url) {
-        ExoPlayer.Builder(context).build().apply {
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(30000, 90000, 4000, 12000)
+            .build()
+        ExoPlayer.Builder(context).setLoadControl(loadControl).build().apply {
+            val exo = this
+            var retryCount = 0
+            val retryHandler = Handler(Looper.getMainLooper())
+            addListener(object : Player.Listener {
+                override fun onPlayerError(error: PlaybackException) {
+                    if (retryCount >= 5) return
+                    retryCount++
+                    retryHandler.postDelayed({
+                        if (exo.playbackState == Player.STATE_IDLE) {
+                            exo.prepare()
+                            exo.playWhenReady = true
+                        }
+                    }, 3500L)
+                }
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY) retryCount = 0
+                }
+            })
             setMediaItem(MediaItem.fromUri(url))
             playWhenReady=true
             prepare()
@@ -270,8 +298,11 @@ private fun VelnixApp(activity: ComponentActivity) {
             TextButton(onClick=onBack) { Text("رجوع",color=Gold) }
             Text(channel.name,color=Color.White,fontWeight=FontWeight.Bold)
         }
-        AndroidView(factory={ ctx -> PlayerView(ctx).apply { this.player=player; useController=true } },modifier=Modifier.fillMaxWidth().weight(1f))
-        Text("إذا توقف المصدر، قد يعتمد الاستمرار على جودة المصدر واتصال الشبكة والجهاز.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(12.dp))
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            AndroidView(factory={ ctx -> PlayerView(ctx).apply { this.player=player; useController=true } },modifier=Modifier.fillMaxSize())
+            Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
+        }
+        Text("إعادة المحاولة التلقائية مفعّلة عند أخطاء التشغيل. ثبات البث يعتمد أيضاً على المصدر والشبكة والجهاز.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(12.dp))
     }
 }
 
