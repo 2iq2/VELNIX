@@ -701,7 +701,7 @@ function buildChannelGroups(){
  for(const row of channelRows){
   const sourceName=cleanChannelName(row.name_en||row.name_ar);
   const info=qualityInfo(sourceName);
-  const category=row.channel_categories?.slug||"";
+  const category=categoryFor(row);
   const key=[row.source_provider||"",category,info.base.toLocaleLowerCase()].join("|");
   if(!buckets.has(key))buckets.set(key,{base:info.base||sourceName,rows:[]});
   buckets.get(key).rows.push({...row,_quality:info.quality,_qualityRank:info.rank,_base:info.base||sourceName});
