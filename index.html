@@ -1213,7 +1213,21 @@ $('#streamHealthBtn').addEventListener('click',async()=>{
   showSiteToast(status.textContent,'error');
  }finally{streamHealthRunning=false;}
 });
-$('#m3uFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';try{if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';const result=await gateway({action:'admin_import_m3u',content});status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';showSiteToast(status.textContent,'success');await 
+$('#m3uFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';
+ try{
+  if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');
+  if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');
+  const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';
+  const result=await gateway({action:'admin_import_m3u',content});
+  status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';
+  showSiteToast(status.textContent,'success');await loadChannels();
+ }catch(err){
+  status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error');
+ }finally{e.target.value=''}
+});
+
 /* VELNIX match schedule — public ESPN scoreboard */
 const FIXTURE_LEAGUES=[
  {id:'eng.1',name:'الدوري الإنجليزي الممتاز'},
@@ -1322,8 +1336,6 @@ $('#fixturesRefresh').addEventListener('click',()=>loadFixtures());
 loadFixtures();
 if(fixtureTimer)clearInterval(fixtureTimer);
 fixtureTimer=setInterval(()=>{if(fixtureDayOffset===0)loadFixtures(true)},60000);
-
-loadChannels();}catch(err){status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error');}finally{e.target.value='';}});
 loadChannels();
 })().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
 </script>
