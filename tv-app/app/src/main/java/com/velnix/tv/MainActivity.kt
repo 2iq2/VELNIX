@@ -532,7 +532,7 @@ private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
                     retry = currentRetry + 1
                 }
                 override fun onPlaybackStateChanged(state: Int) {
-                    if (state == Player.STATE_READY) { message = ""; retry = 0 }
+                    if (state == Player.STATE_READY) { message = "" }
                     if (state == Player.STATE_ENDED) { message = "انتهى المصدر، جاري إعادة الاتصال..."; retry = currentRetry + 1 }
                 }
             })
