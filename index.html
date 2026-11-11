@@ -274,7 +274,7 @@ footer{margin-top:45px;background:#080c14;border-color:#b4d0e312;color:#8192a6}
 <div class="filters" id="filters">
 <button class="filter active" data-cat="all" data-ar="كل القنوات" data-en="All channels">كل القنوات</button>
 <button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
-<button class="filter" data-cat="bein" data-ar="قنوات beIN" data-en="beIN channels">قنوات beIN</button>
+<button class="filter" data-cat="bein" data-ar="beIN SPORTS" data-en="beIN SPORTS">beIN SPORTS</button>
 <button class="filter" data-cat="arabic" data-ar="القنوات العربية" data-en="Arabic">القنوات العربية</button>
 <button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button>
 <button class="filter" data-cat="news" data-ar="الأخبار" data-en="News">الأخبار</button>
@@ -469,7 +469,7 @@ watchdogTimer=setInterval(()=>{
  else if(now-lastProgressAt>16000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
 },3000);
 const CATEGORY_META={
- bein:{ar:'قنوات beIN',en:'beIN channels',icon:'📡'},
+ bein:{ar:'beIN SPORTS',en:'beIN SPORTS',icon:'📡'},
  sports:{ar:'الرياضة',en:'Sports',icon:'⚽'},
  arabic:{ar:'القنوات العربية',en:'Arabic channels',icon:'✦'},
  movies:{ar:'أفلام ومسلسلات',en:'Movies & series',icon:'▣'},
@@ -488,7 +488,7 @@ function categoryFor(row){
  const group=String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'').toLowerCase();
  const name=String(row.name_en||row.name_ar||'').toLowerCase();
  const both=group+' '+name;
- if(/bein|بي\s*ان|بين\s*سبورت/.test(both))return 'bein';
+ if(/bein[\s._-]*sports|بي\s*ان\s*سبورت|بين\s*سبورت/.test(both))return 'bein';
  if(/sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
  if(/news|info|actualité|actualite|inform|اخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
  if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
