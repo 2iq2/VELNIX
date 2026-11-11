@@ -357,12 +357,27 @@ private fun VelnixTvApp() {
     var categories by remember { mutableStateOf(emptyList<TvCategory>()) }
     var channels by remember { mutableStateOf(emptyList<TvChannel>()) }
     var selectedCategory by remember { mutableStateOf("all") }
+    var beinCategoryId by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
     var selectedChannel by remember { mutableStateOf<TvChannel?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var favorites by remember { mutableStateOf(loadFavorites(context)) }
+    var history by remember { mutableStateOf(loadHistory(context)) }
     var signingIn by remember { mutableStateOf(false) }
+    var beinAccess by remember { mutableStateOf(false) }
+    var beinExpiry by remember { mutableStateOf<String?>(null) }
+    var beinCode by remember { mutableStateOf("") }
+    var beinMessage by remember { mutableStateOf("") }
+    var beinBusy by remember { mutableStateOf(false) }
+    var subscription by remember { mutableStateOf<TvSubscription?>(null) }
+    var subscriptionMessage by remember { mutableStateOf("جارٍ تحميل بيانات الاشتراك...") }
+    var pinEnabled by remember { mutableStateOf(isPinEnabled(context)) }
+    var pinHash by remember { mutableStateOf(getPinHash(context)) }
+    var pinTarget by remember { mutableStateOf<TvChannel?>(null) }
+    var pinInput by remember { mutableStateOf("") }
+    var pinError by remember { mutableStateOf("") }
+    var settingsOpen by remember { mutableStateOf(false) }
 
     fun refreshCatalog() {
         scope.launch {
@@ -379,10 +394,35 @@ private fun VelnixTvApp() {
                 val result = VelnixApi.loadCatalog(context)
                 categories = result.first
                 channels = result.second
+                beinCategoryId = categories.firstOrNull { isBeinCategory(it.title) }?.id
+                try { favorites = VelnixApi.loadFavorites(context).also { saveFavorites(context, it) } }
+                catch (_: Exception) { favorites = loadFavorites(context) }
+                try {
+                    val access = VelnixApi.checkBein(context)
+                    beinAccess = access.active
+                    beinExpiry = access.expiresAt
+                } catch (_: Exception) { beinAccess = false; beinExpiry = null }
+                try {
+                    subscription = VelnixApi.loadSubscription(context)
+                    subscriptionMessage = if (subscription == null) "لا يوجد اشتراك نشط على هذا الحساب" else "اشتراكك فعال"
+                } catch (e: Exception) { subscriptionMessage = e.message ?: "تعذر تحميل الاشتراك" }
             } catch (e: Exception) {
                 error = e.message ?: "تعذر تحميل القنوات"
             } finally { loading = false }
         }
+    }
+
+    fun playChannel(channel: TvChannel) {
+        history = recordHistory(context, history, channel.id)
+        selectedChannel = channel
+    }
+
+    fun requestChannel(channel: TvChannel) {
+        if (pinEnabled && pinHash.isNotBlank()) {
+            pinTarget = channel
+            pinInput = ""
+            pinError = ""
+        } else playChannel(channel)
     }
 
     LaunchedEffect(session?.accessToken) {
@@ -402,18 +442,16 @@ private fun VelnixTvApp() {
                     onLogin = { email, password ->
                         scope.launch {
                             signingIn = true
-                            try {
-                                session = VelnixApi.signIn(context, email, password)
-                            } catch (e: Exception) { error = e.message ?: "تعذر تسجيل الدخول" }
+                            try { session = VelnixApi.signIn(context, email, password) }
+                            catch (e: Exception) { error = e.message ?: "تعذر تسجيل الدخول" }
                             finally { signingIn = false }
                         }
                     },
                     onRegister = { email, password ->
                         scope.launch {
                             signingIn = true
-                            try {
-                                session = VelnixApi.registerAndSignIn(context, email, password)
-                            } catch (e: Exception) { error = e.message ?: "تعذر إنشاء الحساب" }
+                            try { session = VelnixApi.registerAndSignIn(context, email, password) }
+                            catch (e: Exception) { error = e.message ?: "تعذر إنشاء الحساب" }
                             finally { signingIn = false }
                         }
                     },
@@ -427,26 +465,40 @@ private fun VelnixTvApp() {
                         Text("TV", color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.weight(1f))
                         Text(session?.email.orEmpty(), color = Muted, fontSize = 12.sp)
-                        Spacer(Modifier.width(20.dp))
+                        Spacer(Modifier.width(16.dp))
+                        TvAction("الإعدادات", false) { settingsOpen = true }
+                        Spacer(Modifier.width(9.dp))
                         TvAction("تحديث", loading) { refreshCatalog() }
-                        Spacer(Modifier.width(10.dp))
-                        TvAction("تسجيل الخروج", false) {
+                        Spacer(Modifier.width(9.dp))
+                        TvAction("خروج", false) {
                             scope.launch { VelnixApi.signOut(context); session = null; channels = emptyList() }
                         }
                     }
-                    Spacer(Modifier.height(22.dp))
-                    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                         Column(Modifier.width(205.dp).fillMaxHeight().clip(RoundedCornerShape(20.dp))
                             .background(Panel.copy(alpha = .94f)).padding(14.dp)) {
-                            Text("الأقسام", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("القائمة الرئيسية", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(12.dp))
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                 item { TvNavItem("كل القنوات", selectedCategory == "all") { selectedCategory = "all" } }
                                 item { TvNavItem("المفضلة", selectedCategory == "favorites") { selectedCategory = "favorites" } }
+                                item { TvNavItem("المباريات", selectedCategory == "matches") { selectedCategory = "matches" } }
+                                item { TvNavItem("آخر المشاهدات", selectedCategory == "recent") { selectedCategory = "recent" } }
+                                item { TvNavItem("حسابي واشتراكي", selectedCategory == "account") { selectedCategory = "account" } }
                                 items(categories, key = { it.id }) { category ->
-                                    TvNavItem(category.title, selectedCategory == category.id) { selectedCategory = category.id }
+                                    val lockedBein = isBeinCategory(category.title) && !beinAccess
+                                    TvNavItem(if (lockedBein) "🔒 " + category.title else category.title,
+                                        selectedCategory == category.id || (selectedCategory == "bein-gate" && category.id == beinCategoryId)) {
+                                        if (isBeinCategory(category.title) && !beinAccess) {
+                                            beinCategoryId = category.id
+                                            selectedCategory = "bein-gate"
+                                        } else selectedCategory = category.id
+                                    }
                                 }
                             }
+                            Spacer(Modifier.weight(1f))
+                            Text("VELNIX TV  •  PREMIUM", color = Gold, fontSize = 9.sp, letterSpacing = 1.5.sp)
                         }
                         Column(Modifier.weight(1f).fillMaxHeight()) {
                             Row(Modifier.fillMaxWidth().height(60.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -455,28 +507,71 @@ private fun VelnixTvApp() {
                                         when (selectedCategory) {
                                             "all" -> "اكتشف القنوات"
                                             "favorites" -> "قنواتك المفضلة"
+                                            "matches" -> "مواعيد المباريات"
+                                            "recent" -> "آخر ما شاهدت"
+                                            "account" -> "حسابك في VELNIX"
+                                            "bein-gate" -> "تفعيل beIN SPORTS"
                                             else -> categories.firstOrNull { it.id == selectedCategory }?.title ?: "القنوات"
                                         },
                                         color = TextMain, fontSize = 25.sp, fontWeight = FontWeight.Bold
                                     )
-                                    Text("${channels.size} قناة متاحة", color = Muted, fontSize = 12.sp)
-                                }
-                                OutlinedTextField(
-                                    value = search, onValueChange = { search = it },
-                                    modifier = Modifier.width(270.dp),
-                                    singleLine = true,
-                                    label = { Text("بحث عن قناة") },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Gold, focusedLabelColor = Gold,
-                                        unfocusedBorderColor = Panel2, focusedTextColor = TextMain,
-                                        unfocusedTextColor = TextMain
+                                    Text(
+                                        when (selectedCategory) {
+                                            "matches" -> "جدول كرة القدم بتوقيت بغداد"
+                                            "account" -> subscriptionMessage
+                                            else -> "\${channels.size} قناة في الدليل"
+                                        }, color = Muted, fontSize = 12.sp
                                     )
-                                )
+                                }
+                                if (selectedCategory !in listOf("matches", "recent", "account", "bein-gate")) {
+                                    OutlinedTextField(
+                                        value = search, onValueChange = { search = it },
+                                        modifier = Modifier.width(270.dp), singleLine = true,
+                                        label = { Text("بحث عن قناة") },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Gold, focusedLabelColor = Gold,
+                                            unfocusedBorderColor = Panel2, focusedTextColor = TextMain,
+                                            unfocusedTextColor = TextMain
+                                        )
+                                    )
+                                }
                             }
                             Spacer(Modifier.height(12.dp))
                             when {
-                                loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                loading && channels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(color = Gold)
+                                }
+                                selectedCategory == "matches" -> TvMatchesScreen()
+                                selectedCategory == "account" -> TvAccountScreen(subscription, subscriptionMessage, beinAccess, beinExpiry)
+                                selectedCategory == "bein-gate" -> TvBeinGate(
+                                    code = beinCode, onCode = { beinCode = it },
+                                    message = beinMessage, busy = beinBusy,
+                                    onActivate = {
+                                        scope.launch {
+                                            beinBusy = true
+                                            beinMessage = "جارٍ التحقق من كود التفعيل..."
+                                            try {
+                                                val result = VelnixApi.activateBein(context, beinCode)
+                                                beinAccess = result.active
+                                                beinExpiry = result.expiresAt
+                                                beinMessage = "تم تفعيل القسم بنجاح"
+                                                selectedCategory = beinCategoryId ?: "all"
+                                                beinCode = ""
+                                            } catch (e: Exception) { beinMessage = e.message ?: "تعذر تفعيل الكود" }
+                                            finally { beinBusy = false }
+                                        }
+                                    }
+                                )
+                                selectedCategory == "recent" -> {
+                                    val recentChannels = history.mapNotNull { id -> channels.firstOrNull { it.id == id } }
+                                    if (recentChannels.isEmpty()) TvEmpty("ما شاهدت أي قناة بعد", "عرض القنوات") { selectedCategory = "all" }
+                                    else LazyColumn(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                        items(recentChannels, key = { it.id }) { channel ->
+                                            TvChannelRow(channel, favorites.contains(channel.id),
+                                                onOpen = { requestChannel(channel) },
+                                                onFavorite = { toggleFavorite(context, scope, channel, favorites) { favorites = it } })
+                                        }
+                                    }
                                 }
                                 error != null && channels.isEmpty() -> TvEmpty(error!!, "إعادة المحاولة") { refreshCatalog() }
                                 else -> {
@@ -495,11 +590,8 @@ private fun VelnixTvApp() {
                                             TvChannelRow(
                                                 channel = channel,
                                                 favorite = favorites.contains(channel.id),
-                                                onOpen = { selectedChannel = channel },
-                                                onFavorite = {
-                                                    favorites = if (favorites.contains(channel.id)) favorites - channel.id else favorites + channel.id
-                                                    saveFavorites(context, favorites)
-                                                }
+                                                onOpen = { requestChannel(channel) },
+                                                onFavorite = { toggleFavorite(context, scope, channel, favorites) { favorites = it } }
                                             )
                                         }
                                     }
@@ -508,12 +600,241 @@ private fun VelnixTvApp() {
                         }
                     }
                 }
-                selectedChannel?.let { channel ->
-                    TvPlayerDialog(channel, onClose = { selectedChannel = null })
+                selectedChannel?.let { channel -> TvPlayerDialog(channel, onClose = { selectedChannel = null }) }
+                if (pinTarget != null) {
+                    TvPinPrompt(pinInput, pinError, onInput = { pinInput = it.filter(Char::isDigit).take(4) }, onConfirm = {
+                        if (hashPin(pinInput) == pinHash) {
+                            val target = pinTarget
+                            pinTarget = null
+                            pinInput = ""
+                            if (target != null) playChannel(target)
+                        } else pinError = "الرمز غير صحيح"
+                    }, onCancel = { pinTarget = null; pinInput = "" })
+                }
+                if (settingsOpen) {
+                    TvSettingsDialog(pinEnabled, onSave = { newPin ->
+                        pinHash = hashPin(newPin)
+                        pinEnabled = true
+                        savePin(context, pinHash, true)
+                        settingsOpen = false
+                    }, onDisable = {
+                        pinHash = ""
+                        pinEnabled = false
+                        savePin(context, "", false)
+                        settingsOpen = false
+                    }, onClose = { settingsOpen = false })
                 }
             }
         }
     }
+}
+
+private fun isBeinCategory(value: String): Boolean =
+    value.contains("bein", true) || value.contains("بي ان") || value.contains("بين سبورت")
+
+private fun toggleFavorite(
+    context: Context, scope: kotlinx.coroutines.CoroutineScope, channel: TvChannel,
+    current: Set<String>, update: (Set<String>) -> Unit
+) {
+    val next = if (current.contains(channel.id)) current - channel.id else current + channel.id
+    update(next)
+    saveFavorites(context, next)
+    scope.launch {
+        try { VelnixApi.setFavorite(context, channel.id, next.contains(channel.id)) }
+        catch (_: Exception) { /* The next successful refresh reconciles this device with the account. */ }
+    }
+}
+
+@Composable
+private fun TvBeinGate(code: String, onCode: (String) -> Unit, message: String, busy: Boolean, onActivate: () -> Unit) {
+    Column(Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp)).background(Panel).padding(34.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Text("🔒", fontSize = 42.sp)
+        Spacer(Modifier.height(12.dp))
+        Text("قسم beIN SPORTS", color = Gold, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+        Text("أدخل كود التفعيل المرتبط بحسابك لفتح القنوات الرياضية", color = Muted, fontSize = 14.sp)
+        Spacer(Modifier.height(20.dp))
+        OutlinedTextField(value = code, onValueChange = onCode, modifier = Modifier.width(390.dp),
+            singleLine = true, label = { Text("VELNIX-XXXX-XXXX-XXXX") },
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, focusedLabelColor = Gold))
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = onActivate, enabled = !busy && code.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Night)) {
+            if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = Night, strokeWidth = 2.dp)
+            else Text("تفعيل القسم", fontWeight = FontWeight.Bold)
+        }
+        if (message.isNotBlank()) Text(message, color = if (message.contains("نجاح")) Gold else Muted, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun TvAccountScreen(subscription: TvSubscription?, message: String, beinAccess: Boolean, beinExpiry: String?) {
+    Column(Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(Panel).padding(28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("ملخص الحساب", color = Gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            TvInfoCard("حالة الاشتراك", if (subscription == null) "غير مشترك" else "نشط")
+            TvInfoCard("الباقة", subscription?.plan ?: "مجاني")
+            TvInfoCard("الانتهاء", formatExpiry(subscription?.expiresAt))
+        }
+        Text(message, color = Muted, fontSize = 13.sp)
+        Spacer(Modifier.height(8.dp))
+        Text("beIN SPORTS", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+        Text(if (beinAccess) "مفعّل حتى \${formatExpiry(beinExpiry)}" else "غير مفعّل — يتطلب كود تفعيل من إدارة VELNIX",
+            color = if (beinAccess) TextMain else Muted, fontSize = 14.sp)
+    }
+}
+
+@Composable
+private fun TvInfoCard(label: String, value: String) {
+    Column(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(Panel2).padding(16.dp)) {
+        Text(label, color = Muted, fontSize = 12.sp)
+        Spacer(Modifier.height(8.dp))
+        Text(value, color = TextMain, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+private fun formatExpiry(value: String?): String {
+    if (value.isNullOrBlank()) return "—"
+    return try {
+        val date = java.time.Instant.parse(value).atZone(ZoneId.of("Asia/Baghdad"))
+        date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+    } catch (_: Exception) { value.take(10) }
+}
+
+@Composable
+private fun TvMatchesScreen() {
+    var day by remember { mutableIntStateOf(0) }
+    var fixtures by remember(day) { mutableStateOf(emptyList<TvFixture>()) }
+    var loading by remember(day) { mutableStateOf(true) }
+    var error by remember(day) { mutableStateOf("") }
+    LaunchedEffect(day) {
+        loading = true
+        error = ""
+        try { fixtures = VelnixApi.loadFixtures(day) }
+        catch (e: Exception) { error = e.message ?: "تعذر تحميل المباريات" }
+        finally { loading = false }
+    }
+    Column(Modifier.fillMaxSize()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (0..6).forEach { offset ->
+                val date = LocalDate.now(ZoneId.of("Asia/Baghdad")).plusDays(offset.toLong())
+                TvDayButton(if (offset == 0) "اليوم" else if (offset == 1) "غداً" else date.format(DateTimeFormatter.ofPattern("dd/MM")),
+                    day == offset) { day = offset }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        when {
+            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Gold) }
+            error.isNotBlank() -> TvEmpty(error, "إعادة المحاولة") { day = day }
+            fixtures.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("لا توجد مباريات منشورة لهذا اليوم", color = Muted, fontSize = 17.sp)
+            }
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                items(fixtures, key = { it.id }) { TvFixtureCard(it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvDayButton(title: String, active: Boolean, onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    Box(Modifier.clip(RoundedCornerShape(10.dp)).background(if (active || focused) Color(0xFF403622) else Panel)
+        .onFocusChanged { focused = it.isFocused }.clickable(onClick = onClick).focusable()
+        .padding(horizontal = 16.dp, vertical = 11.dp)) {
+        Text(title, color = if (active || focused) Gold else TextMain, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun TvFixtureCard(fixture: TvFixture) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Panel).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(fixture.league, color = Gold, fontSize = 11.sp, maxLines = 1)
+            Spacer(Modifier.height(7.dp))
+            Text(fixture.home, color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(fixture.away, color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(if (fixture.state == "in" || fixture.state == "post") "\${fixture.homeScore} - \${fixture.awayScore}" else "VS",
+                color = TextMain, fontSize = 19.sp, fontWeight = FontWeight.Black)
+            Text(if (fixture.state == "in") "● مباشر" else fixture.status, color = if (fixture.state == "in") Gold else Muted, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+private fun TvPinPrompt(value: String, error: String, onInput: (String) -> Unit, onConfirm: () -> Unit, onCancel: () -> Unit) {
+    AlertDialog(onDismissRequest = onCancel, title = { Text("الرقابة الأبوية") },
+        text = {
+            Column {
+                Text("أدخل رمز PIN المكوّن من 4 أرقام لمتابعة المشاهدة", color = Muted)
+                OutlinedTextField(value = value, onValueChange = onInput, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text("رمز PIN") })
+                if (error.isNotBlank()) Text(error, color = Color(0xFFFF9A91), fontSize = 12.sp)
+            }
+        },
+        confirmButton = { TextButton(onClick = onConfirm, enabled = value.length == 4) { Text("فتح") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text("إلغاء") } },
+        containerColor = Panel, titleContentColor = TextMain, textContentColor = Muted)
+}
+
+@Composable
+private fun TvSettingsDialog(enabled: Boolean, onSave: (String) -> Unit, onDisable: () -> Unit, onClose: () -> Unit) {
+    var pin by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    AlertDialog(onDismissRequest = onClose, title = { Text("إعدادات المشاهدة") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("الرقابة الأبوية", color = Gold, fontWeight = FontWeight.Bold)
+                Text(if (enabled) "الرقابة الأبوية مفعّلة. سيُطلب الرمز قبل فتح أي قناة." else "أنشئ رمزاً من 4 أرقام لحماية فتح القنوات على هذا الجهاز.", color = Muted)
+                OutlinedTextField(value = pin, onValueChange = { pin = it.filter(Char::isDigit).take(4) },
+                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), label = { Text("رمز PIN جديد") })
+                if (message.isNotBlank()) Text(message, color = Color(0xFFFF9A91), fontSize = 12.sp)
+            }
+        },
+        confirmButton = { TextButton(onClick = { if (pin.length == 4) onSave(pin) else message = "أدخل 4 أرقام بالضبط" }) { Text("حفظ الرمز") } },
+        dismissButton = {
+            Row {
+                if (enabled) TextButton(onClick = onDisable) { Text("إيقاف الحماية") }
+                TextButton(onClick = onClose) { Text("إغلاق") }
+            }
+        },
+        containerColor = Panel, titleContentColor = TextMain, textContentColor = Muted)
+}
+
+private fun hashPin(value: String): String =
+    MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }
+
+private fun savePin(context: Context, hash: String, enabled: Boolean) {
+    context.getSharedPreferences("velnix_tv_security", Context.MODE_PRIVATE).edit()
+        .putString("pin_hash", hash).putBoolean("pin_enabled", enabled).apply()
+}
+
+private fun getPinHash(context: Context): String =
+    context.getSharedPreferences("velnix_tv_security", Context.MODE_PRIVATE).getString("pin_hash", "").orEmpty()
+
+private fun isPinEnabled(context: Context): Boolean =
+    context.getSharedPreferences("velnix_tv_security", Context.MODE_PRIVATE).getBoolean("pin_enabled", false)
+
+private fun loadHistory(context: Context): List<String> {
+    val raw = context.getSharedPreferences("velnix_tv", Context.MODE_PRIVATE).getString("history", "[]") ?: "[]"
+    return try {
+        val array = JSONArray(raw)
+        (0 until array.length()).map { array.getString(it) }
+    } catch (_: Exception) { emptyList() }
+}
+
+private fun recordHistory(context: Context, current: List<String>, id: String): List<String> {
+    val next = (listOf(id) + current.filterNot { it == id }).take(30)
+    context.getSharedPreferences("velnix_tv", Context.MODE_PRIVATE).edit()
+        .putString("history", JSONArray(next).toString()).apply()
+    return next
 }
 
 @Composable
