@@ -231,6 +231,19 @@ class VelnixApi(private val context: Context) {
         }.parse(clean)?.time ?: 0L
     } catch (_: Exception) { 0L }
 
+    suspend fun activateBeinCode(code: String): String {
+        val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
+            JSONObject().put("action", "activate_bein_code").put("code", code.trim().uppercase()).toString()))
+        if (!response.optBoolean("success", false)) throw IllegalStateException("تعذر تفعيل الكود")
+        return response.optString("expires_at")
+    }
+
+    suspend fun beinAccessExpiry(): String? {
+        val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
+            JSONObject().put("action", "check_bein_access").toString()))
+        return response.optString("expires_at").takeIf { it.isNotBlank() && it != "null" }
+    }
+
     suspend fun checkBein(): Boolean {
         return try {
             JSONObject(request("functions/v1/xtream-gateway", "POST", JSONObject().put("action","check_bein_access").toString()))
