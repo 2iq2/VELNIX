@@ -10,8 +10,8 @@ android {
         applicationId = "com.velnix.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "3.0.0"
+        versionCode = 4
+        versionName = "3.1.0"
     }
     buildFeatures { compose = true }
     compileOptions {
