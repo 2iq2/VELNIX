@@ -53,6 +53,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
+import java.security.MessageDigest
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -523,7 +524,7 @@ private fun VelnixTvApp() {
                                         when (selectedCategory) {
                                             "matches" -> "جدول كرة القدم بتوقيت بغداد"
                                             "account" -> subscriptionMessage
-                                            else -> "\${channels.size} قناة في الدليل"
+                                            else -> "${channels.size} قناة في الدليل"
                                         }, color = Muted, fontSize = 12.sp
                                     )
                                 }
@@ -684,7 +685,7 @@ private fun TvAccountScreen(subscription: TvSubscription?, message: String, bein
         Text(message, color = Muted, fontSize = 13.sp)
         Spacer(Modifier.height(8.dp))
         Text("beIN SPORTS", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
-        Text(if (beinAccess) "مفعّل حتى \${formatExpiry(beinExpiry)}" else "غير مفعّل — يتطلب كود تفعيل من إدارة VELNIX",
+        Text(if (beinAccess) "مفعّل حتى ${formatExpiry(beinExpiry)}" else "غير مفعّل — يتطلب كود تفعيل من إدارة VELNIX",
             color = if (beinAccess) TextMain else Muted, fontSize = 14.sp)
     }
 }
@@ -763,7 +764,7 @@ private fun TvFixtureCard(fixture: TvFixture) {
             Text(fixture.away, color = TextMain, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(if (fixture.state == "in" || fixture.state == "post") "\${fixture.homeScore} - \${fixture.awayScore}" else "VS",
+            Text(if (fixture.state == "in" || fixture.state == "post") "${fixture.homeScore} - ${fixture.awayScore}" else "VS",
                 color = TextMain, fontSize = 19.sp, fontWeight = FontWeight.Black)
             Text(if (fixture.state == "in") "● مباشر" else fixture.status, color = if (fixture.state == "in") Gold else Muted, fontSize = 11.sp)
         }
