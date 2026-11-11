@@ -2,6 +2,9 @@ package com.velnix.tv
 
 import android.content.Context
 import android.os.Bundle
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -210,10 +213,17 @@ private object VelnixApi {
             "$api/rest/v1/channel_categories?select=id,name_ar,name_en,sort_order&is_active=eq.true&order=sort_order.asc",
             token = null
         ))
-        val channelsJson = JSONArray(request(
-            "$api/rest/v1/channels?select=id,category_id,name_ar,name_en,logo_url,stream_type&is_active=eq.true&order=name_en.asc&limit=5000",
-            token = null
-        ))
+        val channelsJson = JSONArray()
+        var offset = 0
+        while (true) {
+            val page = JSONArray(request(
+                "$api/rest/v1/channels?select=id,category_id,name_ar,name_en,logo_url,stream_type&is_active=eq.true&order=name_en.asc&limit=1000&offset=$offset",
+                token = null
+            ))
+            for (i in 0 until page.length()) channelsJson.put(page.getJSONObject(i))
+            if (page.length() < 1000) break
+            offset += 1000
+        }
         val categories = buildList {
             for (i in 0 until categoriesJson.length()) {
                 val item = categoriesJson.getJSONObject(i)
@@ -946,67 +956,150 @@ private fun TvEmpty(message: String, action: String, onAction: () -> Unit) {
 @Composable
 private fun TvPlayerDialog(channel: TvChannel, onClose: () -> Unit) {
     val context = LocalContext.current
-    var player by remember(channel.id) { mutableStateOf<ExoPlayer?>(null) }
+    var streamUrl by remember(channel.id) { mutableStateOf<String?>(null) }
+    var streamType by remember(channel.id) { mutableStateOf("file") }
     var message by remember(channel.id) { mutableStateOf("جارٍ تجهيز البث...") }
     var retry by remember(channel.id) { mutableIntStateOf(0) }
     val currentRetry by rememberUpdatedState(retry)
 
     LaunchedEffect(channel.id, retry) {
         try {
-            delay(if (retry == 0) 0 else (1000L shl (retry - 1).coerceAtMost(5)).coerceAtMost(30_000L))
+            if (retry > 0) delay((1500L * (1 shl (retry - 1).coerceAtMost(4))).coerceAtMost(24_000L))
+            message = if (retry == 0) "جارٍ تجهيز البث..." else "انقطع الاتصال؛ جارٍ إعادة المحاولة..."
             val stream = VelnixApi.stream(context, channel.id)
-            player?.release()
-            val dataSource = DefaultHttpDataSource.Factory().setUserAgent("VELNIX-TV/1.0")
-                .setConnectTimeoutMs(20_000).setReadTimeoutMs(60_000).setAllowCrossProtocolRedirects(true)
-            val loadControl = DefaultLoadControl.Builder().setBufferDurationsMs(30_000, 90_000, 5_000, 15_000).setBackBuffer(0, false).build()
-            val newPlayer = ExoPlayer.Builder(context).setLoadControl(loadControl).setMediaSourceFactory(
-                androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSource)
-            ).build()
-            player = newPlayer
-            val item = MediaItem.Builder().setUri(stream.url).apply {
-                if (stream.type.contains("hls") || stream.type.contains("m3u8")) setMimeType(MimeTypes.APPLICATION_M3U8)
-                else if (stream.type.contains("dash") || stream.type.contains("mpd")) setMimeType(MimeTypes.APPLICATION_MPD)
-            }.build()
-            newPlayer.setMediaItem(item)
-            newPlayer.addListener(object : Player.Listener {
-                override fun onPlayerError(error: PlaybackException) {
-                    message = "تعذر استمرار البث، جاري إعادة الاتصال..."
-                    retry = currentRetry + 1
-                }
-                override fun onPlaybackStateChanged(state: Int) {
-                    if (state == Player.STATE_READY) { message = "" }
-                    if (state == Player.STATE_ENDED) { message = "انتهى المصدر، جاري إعادة الاتصال..."; retry = currentRetry + 1 }
-                }
-            })
-            newPlayer.prepare()
-            newPlayer.playWhenReady = true
+            streamUrl = stream.url
+            streamType = stream.type
             message = ""
         } catch (e: Exception) {
             message = e.message ?: "تعذر تشغيل القناة"
             val detail = message
             val requiresUserAction = detail.contains("سجّل الدخول") || detail.contains("القسم مقفول") ||
-                detail.contains("غير متاح") || detail.contains("غير مربوط") || detail.contains("403") || detail.contains("401") || detail.contains("404")
+                detail.contains("غير متاح") || detail.contains("غير مربوط") || detail.contains("403") ||
+                detail.contains("401") || detail.contains("404")
             if (!requiresUserAction) retry = currentRetry + 1
         }
     }
 
-    DisposableEffect(player) { onDispose { player?.release() } }
     BackHandler { onClose() }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
-            val activePlayer = player
-            if (activePlayer != null) AndroidView(
-                factory = { PlayerView(it).apply { player = activePlayer; useController = true; keepScreenOn = true } },
-                update = { it.player = activePlayer },
-                modifier = Modifier.fillMaxSize()
-            )
-            Column(Modifier.align(Alignment.TopStart).padding(26.dp)) {
-                Text(channel.name, color = TextMain, fontSize = 19.sp, fontWeight = FontWeight.Bold)
-                if (message.isNotBlank()) Text(message, color = Gold, fontSize = 13.sp)
+            val url = streamUrl
+            if (url != null) {
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            setBackgroundColor(android.graphics.Color.BLACK)
+                            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+                            isFocusable = true
+                            isFocusableInTouchMode = true
+                            settings.javaScriptEnabled = true
+                            settings.domStorageEnabled = true
+                            settings.mediaPlaybackRequiresUserGesture = false
+                            settings.loadsImagesAutomatically = true
+                            settings.allowFileAccess = false
+                            settings.allowContentAccess = false
+                            settings.javaScriptCanOpenWindowsAutomatically = false
+                            webChromeClient = WebChromeClient()
+                            webViewClient = WebViewClient()
+                            tag = url
+                            loadDataWithBaseURL("https://velnix-player.local/", tvPlayerHtml(url, streamType, channel.name), "text/html", "UTF-8", null)
+                            requestFocus()
+                        }
+                    },
+                    update = { view ->
+                        if (view.tag != url) {
+                            view.tag = url
+                            view.loadDataWithBaseURL("https://velnix-player.local/", tvPlayerHtml(url, streamType, channel.name), "text/html", "UTF-8", null)
+                        }
+                    },
+                    onRelease = { view ->
+                        view.stopLoading()
+                        view.loadUrl("about:blank")
+                        view.destroy()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
-            Text("رجوع للإغلاق", color = TextMain, fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp))
+            if (message.isNotBlank()) {
+                Text(message, color = Gold, fontSize = 16.sp,
+                    modifier = Modifier.align(Alignment.Center).padding(32.dp))
+            }
+            Text("رجوع للإغلاق", color = TextMain, fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp))
         }
     }
+}
+
+private fun tvPlayerHtml(url: String, type: String, channelName: String): String {
+    val config = JSONObject().put("url", url).put("type", type.lowercase())
+        .put("name", channelName).toString()
+    return """
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,sans-serif}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#head{position:absolute;z-index:5;top:0;left:0;right:0;padding:22px 28px;background:linear-gradient(#000b,transparent);font-size:22px;font-weight:700;pointer-events:none}
+#status{position:absolute;z-index:6;bottom:36px;left:24px;right:24px;text-align:center;color:#e8d4a8;font-size:16px;text-shadow:0 2px 8px #000;pointer-events:none}
+#close{position:absolute;z-index:7;top:18px;left:20px;border:1px solid #ffffff66;border-radius:10px;background:#111b;color:white;padding:10px 18px;font-size:16px}
+#close:focus{outline:3px solid #e8d4a8}
+</style>
+</head>
+<body>
+<div id="head"></div><button id="close" type="button">إغلاق</button>
+<video id="video" controls autoplay playsinline></video><div id="status">جارٍ الاتصال بمصدر البث...</div>
+<script type="module">
+const cfg=${config};
+const video=document.getElementById('video');
+const status=document.getElementById('status');
+document.getElementById('head').textContent=cfg.name;
+let engine=null, retryTimer=null, retryCount=0, stopped=false;
+const say=(s)=>{status.textContent=s||''};
+function destroy(){try{engine?.destroy?.()}catch(e){}try{engine?.unload?.()}catch(e){}engine=null}
+function retry(){if(stopped||retryTimer)return;retryCount++;say('انقطع البث؛ إعادة الاتصال ('+retryCount+')...');retryTimer=setTimeout(()=>{retryTimer=null;start()},Math.min(30000,1500*Math.pow(1.6,Math.min(retryCount-1,8))))}
+async function start(){
+ if(stopped)return;
+ destroy();video.pause();video.removeAttribute('src');video.load();
+ try{
+  const kind=(cfg.type||'file').toLowerCase();
+  if(kind==='hls'||kind==='m3u8'){
+   const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
+   const Hls=mod.default||mod;
+   if(Hls.isSupported()){
+    engine=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:120,maxBufferLength:120,maxMaxBufferLength:240,maxBufferSize:120000000,maxBufferHole:.5,highBufferWatchdogPeriod:2,liveSyncDurationCount:10,liveMaxLatencyDurationCount:30,manifestLoadingMaxRetry:12,levelLoadingMaxRetry:12,fragLoadingMaxRetry:15});
+    engine.on(Hls.Events.MANIFEST_PARSED,()=>{retryCount=0;say('البث متصل');video.play().catch(()=>say('اضغط تشغيل لبدء المشاهدة'))});
+    engine.on(Hls.Events.ERROR,(_e,d)=>{if(d.fatal){if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{engine.recoverMediaError();return}catch(e){}}retry()}});
+    engine.loadSource(cfg.url);engine.attachMedia(video);return;
+   }
+   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=cfg.url;await video.play().catch(()=>say('اضغط تشغيل لبدء المشاهدة'));return}
+   throw new Error('مشغل HLS غير متاح على هذا التلفزيون');
+  }
+  if(['file','mpegts','ts'].includes(kind)){
+   const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.0'));
+   const lib=mod.default||mod;
+   if(!lib.isSupported())throw new Error('هذا التلفزيون لا يدعم MPEG-TS داخل WebView');
+   engine=lib.createPlayer({type:'mpegts',isLive:true,url:cfg.url},{enableWorker:true,enableStashBuffer:true,stashInitialSize:8388608,liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:90,liveBufferLatencyMinRemain:15,autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:120,autoCleanupMinBackwardDuration:60,fixAudioTimestampGap:true,accurateSeek:false});
+   engine.on(lib.Events.ERROR,()=>retry());
+   engine.attachMediaElement(video);engine.load();
+   await engine.play().catch(()=>say('اضغط تشغيل لبدء المشاهدة'));
+   say('متصل بالبث؛ يتم تخزين البث مؤقتاً لتقليل التقطّع');
+   return;
+  }
+  video.src=cfg.url;await video.play().catch(()=>say('اضغط تشغيل لبدء المشاهدة'));
+ }catch(e){say((e&&e.message)||'تعذر تشغيل القناة؛ ستتم إعادة المحاولة');retry()}
+}
+document.getElementById('close').addEventListener('click',()=>{stopped=true;destroy();say('')});
+video.addEventListener('error',()=>retry());
+video.addEventListener('playing',()=>{retryCount=0;say('')});
+video.addEventListener('waiting',()=>say('جارٍ تحميل بيانات البث...'));
+window.addEventListener('beforeunload',()=>{stopped=true;destroy();if(retryTimer)clearTimeout(retryTimer)});
+start();
+</script>
+</body></html>
+""".trimIndent()
 }
 
 private fun loadFavorites(context: Context): Set<String> =
