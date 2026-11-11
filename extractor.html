@@ -2,7 +2,41 @@
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090d18"><title>VELNIX EXTRACTOR</title>
 <style>
 :root{color-scheme:dark;--bg:#080c16;--panel:#111827;--line:#29374c;--muted:#9aa8bc;--cyan:#42d7e8;--text:#edf4ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#162943,transparent 42%),radial-gradient(ellipse at 95% 10%,#24183c,transparent 35%),var(--bg);color:var(--text);font-family:system-ui,sans-serif}.wrap{max-width:1050px;margin:auto;padding:28px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:30px}.brand{font-size:22px;font-weight:900;letter-spacing:2px}.brand span{color:var(--cyan)}.tag{border:1px solid #29505a;background:#10242c;color:#9debf2;border-radius:30px;padding:7px 12px;font-size:12px}h1{font-size:clamp(27px,5vw,42px);margin:0 0 8px}.lead{color:var(--muted);line-height:1.8;margin:0 0 22px}.panel{background:linear-gradient(145deg,#131d2ef2,#0c121ff5);border:1px solid var(--line);border-radius:20px;padding:21px;margin:16px 0;box-shadow:0 18px 60px #0003}.title{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}label{display:block;color:#b8c6d9;font-size:13px;margin-bottom:7px}input,textarea{width:100%;border:1px solid #34445c;background:#0b1220;color:var(--text);padding:13px;border-radius:12px;font:inherit}textarea{min-height:150px;direction:ltr;text-align:left;resize:vertical}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:12px;padding:12px 17px;font:inherit;font-weight:750;cursor:pointer;background:linear-gradient(110deg,var(--cyan),#8c91ff);color:#07101a}button.alt{background:#202d43;color:#e5efff;border:1px solid #34445c}.status{font-size:13px;color:var(--muted);margin-top:13px;line-height:1.7;min-height:22px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.stat{padding:10px 14px;background:#0b1422;border:1px solid var(--line);border-radius:12px;color:#b9c8dc;font-size:13px}.stat b{color:var(--cyan);margin-right:5px}.tablewrap{overflow:auto;max-height:440px;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:11px;border-bottom:1px solid #263247;text-align:right}th{position:sticky;top:0;background:#111b2c;color:#a9bbd1}td.url{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:#91dce8}.hidden{display:none}.note{font-size:12px;color:#91a1b7;line-height:1.9;margin-top:16px}.foot{text-align:center;color:#718098;font-size:11px;margin-top:28px}@media(max-width:650px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.panel{padding:16px}.wrap{padding:20px 13px}}
-</style></head><body><main class="wrap">
+</style><style>
+#privateGate{max-width:460px;margin:12vh auto;padding:24px;background:#111827;border:1px solid #29374c;border-radius:20px;box-shadow:0 18px 60px #0006}
+#privateGate h1{font-size:25px;margin:0 0 10px}#privateGate p{color:#9aa8bc;line-height:1.8}
+#privateGate input{width:100%;margin:7px 0 12px;border:1px solid #34445c;background:#0b1220;color:#edf4ff;padding:13px;border-radius:12px}
+#privateGate button{width:100%;margin-top:8px}#privateStatus{font-size:13px;min-height:24px;color:#9debf2;margin-top:12px}
+#privateLogout{position:fixed;left:12px;top:12px;z-index:10;width:auto;padding:9px 12px}
+</style>
+<section id="privateGate" dir="rtl">
+<div class="brand">VELNIX <span style="color:#42d7e8">PRIVATE</span></div>
+<h1>أداة استخراج خاصة</h1>
+<p>هذه الأداة مخصصة لحساب المالك فقط. سجّل الدخول بالبريد المصرّح به.</p>
+<form id="privateLogin">
+<label for="privateEmail">البريد الإلكتروني</label><input id="privateEmail" type="email" autocomplete="username" required>
+<label for="privatePassword">كلمة المرور</label><input id="privatePassword" type="password" autocomplete="current-password" required>
+<button type="submit">تسجيل الدخول</button>
+</form><div id="privateStatus" role="status"></div>
+</section>
+<button id="privateLogout" class="alt" hidden>تسجيل الخروج</button>
+<script type="module">
+(()=>{
+const API='https://shungcjflcjwubdlhyzq.supabase.co';
+const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
+const OWNER='2i3qqi@gmail.com',STORE='velnix-extractor-private-session';
+const gate=document.getElementById('privateGate'),main=document.querySelector('main.wrap'),form=document.getElementById('privateLogin'),status=document.getElementById('privateStatus'),logout=document.getElementById('privateLogout');
+let session=null;
+const msg=t=>status.textContent=t;
+async function request(path,body,token){const res=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body||{})});const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.msg||data.message||data.error_description||'تعذر تسجيل الدخول');return data}
+function show(s){session=s;main.hidden=!s;gate.hidden=!!s;logout.hidden=!s;if(s){gate.remove();}}
+async function boot(){try{const saved=JSON.parse(localStorage.getItem(STORE)||'null');if(!saved?.access_token)return;let s=saved;if(Number(s.expires_at||0)<Date.now()/1000+60&&s.refresh_token){const n=await request('token?grant_type=refresh_token',{refresh_token:s.refresh_token});s={...n,expires_at:Math.floor(Date.now()/1000)+Number(n.expires_in||3600)}}
+const u=await fetch(API+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+s.access_token}});const user=await u.json();if(!u.ok||String(user.email||'').toLowerCase()!==OWNER){localStorage.removeItem(STORE);return}localStorage.setItem(STORE,JSON.stringify(s));show(s)}catch(e){localStorage.removeItem(STORE)}}
+form.addEventListener('submit',async e=>{e.preventDefault();const email=document.getElementById('privateEmail').value.trim().toLowerCase(),password=document.getElementById('privatePassword').value; if(email!==OWNER){msg('هذا الحساب غير مخوّل للوصول.');return}msg('جارٍ التحقق...');try{const s=await request('token?grant_type=password',{email,password});const user=s.user||{};if(String(user.email||'').toLowerCase()!==OWNER)throw Error('الحساب غير مخوّل.');s.expires_at=Math.floor(Date.now()/1000)+Number(s.expires_in||3600);localStorage.setItem(STORE,JSON.stringify(s));show(s)}catch(err){msg(err.message||'فشل تسجيل الدخول. تحقق من البريد وكلمة المرور.')}});
+logout.addEventListener('click',async()=>{try{if(session?.access_token)await fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+session.access_token}})}catch(e){}localStorage.removeItem(STORE);session=null;main.hidden=true;gate.hidden=false;logout.hidden=true;msg('تم تسجيل الخروج.')});
+main.hidden=true;boot();
+})();
+</script></head><body><main class="wrap" hidden>
 <header class="top"><div class="brand">VELNIX <span>EXTRACTOR</span></div><div class="tag">🔒 معالجة محلية · Offline</div></header>
 <h1>مكتبة القنوات الخاصة بك</h1><p class="lead">استورد ملف M3U أو الصق محتواه، ثم ابحث بالقنوات وصنّفها وصدّر القائمة بصيغ M3U وJSON وCSV. تتم المعالجة داخل متصفحك ولا تُرفع الملفات إلى أي خادم.</p>
 <section class="panel"><h2 class="title">1 · استيراد قائمة القنوات</h2><div class="grid">
