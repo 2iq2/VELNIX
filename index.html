@@ -497,6 +497,7 @@ async function refreshAuth(){
  }else{
   beinAccess=false;beinExpiresAt=null;$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;
  }
+ if(channelRows.length)renderChannels();
  syncBeinGate();
  if(admin&&$('#beinCodesList'))loadBeinCodes();
 }
