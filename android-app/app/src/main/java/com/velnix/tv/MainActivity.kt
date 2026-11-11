@@ -29,6 +29,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -223,7 +225,11 @@ private fun VelnixApp(activity: ComponentActivity) {
 @Composable private fun ChannelTile(c:Channel, favorite:Boolean, onFavorite:()->Unit, onClick:()->Unit) {
     Row(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(15.dp)).clickable(onClick=onClick).padding(13.dp), verticalAlignment=Alignment.CenterVertically) {
         Box(Modifier.size(48.dp).background(Navy, RoundedCornerShape(12.dp)), contentAlignment=Alignment.Center) {
-            Text(c.name.take(2).uppercase(), color=Gold, fontWeight=FontWeight.Bold)
+            if (c.logo != null) {
+                AsyncImage(model=c.logo, contentDescription=c.name, modifier=Modifier.fillMaxSize().padding(5.dp), contentScale=ContentScale.Fit)
+            } else {
+                Text(c.name.take(2).uppercase(), color=Gold, fontWeight=FontWeight.Bold)
+            }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
