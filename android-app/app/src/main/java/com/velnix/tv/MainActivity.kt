@@ -254,7 +254,7 @@ private fun IntroScreen() {
 
 @Composable private fun LazyRowCategories(selected: String, onSelect:(String)->Unit) {
     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-        items(CATEGORIES) { c -> CategoryButton(c, selected==c.id, onSelect) }
+        items(CATEGORIES) { c -> CategoryButton(c, selected==c.id) { onSelect(c.id) } }
     }
 }
 @Composable private fun CategoryButton(c: Category, active:Boolean, onClick:()->Unit) {
