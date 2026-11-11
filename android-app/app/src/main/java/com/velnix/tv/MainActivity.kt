@@ -269,15 +269,15 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 }
 
-private data class Category(val id:String,val title:String)
-private val CATEGORIES = listOf(
+data class Category(val id:String,val title:String)
+val CATEGORIES = listOf(
     Category("all","كل القنوات"), Category("sports","الرياضة"), Category("bein","beIN SPORTS"),
     Category("arabic","القنوات العربية"), Category("movies","أفلام ومسلسلات"), Category("news","الأخبار"),
     Category("kids","الأطفال"), Category("documentaries","وثائقيات"), Category("music","موسيقى وراديو"),
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
-private data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id))
-private data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
+data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id))
+data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
 
 private fun categoryFor(group:String,name:String):String {
     val both=(group+" "+name).lowercase()
