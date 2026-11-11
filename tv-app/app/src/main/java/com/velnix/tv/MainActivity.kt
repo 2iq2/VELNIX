@@ -687,7 +687,7 @@ private fun TvAccountScreen(subscription: TvSubscription?, message: String, bein
 
 @Composable
 private fun TvInfoCard(label: String, value: String) {
-    Column(Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(Panel2).padding(16.dp)) {
+    Column(Modifier.width(180.dp).clip(RoundedCornerShape(14.dp)).background(Panel2).padding(16.dp)) {
         Text(label, color = Muted, fontSize = 12.sp)
         Spacer(Modifier.height(8.dp))
         Text(value, color = TextMain, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -708,7 +708,8 @@ private fun TvMatchesScreen() {
     var fixtures by remember(day) { mutableStateOf(emptyList<TvFixture>()) }
     var loading by remember(day) { mutableStateOf(true) }
     var error by remember(day) { mutableStateOf("") }
-    LaunchedEffect(day) {
+    var reload by remember { mutableIntStateOf(0) }
+    LaunchedEffect(day, reload) {
         loading = true
         error = ""
         try { fixtures = VelnixApi.loadFixtures(day) }
@@ -726,7 +727,7 @@ private fun TvMatchesScreen() {
         Spacer(Modifier.height(14.dp))
         when {
             loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Gold) }
-            error.isNotBlank() -> TvEmpty(error, "إعادة المحاولة") { day = day }
+            error.isNotBlank() -> TvEmpty(error, "إعادة المحاولة") { reload++ }
             fixtures.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("لا توجد مباريات منشورة لهذا اليوم", color = Muted, fontSize = 17.sp)
             }
