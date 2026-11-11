@@ -1302,39 +1302,44 @@ function normalizeSportsDb(item){
  const mk=(side,name,badge,score)=>({homeAway:side,team:{displayName:name||'—',logo:badge||''},score:score==null?'':String(score)});
  return {id:item.idEvent||('sdb-'+item.strEvent),date:date.toISOString(),_leagueName:item.strLeague||'مباراة',competitions:[{competitors:[mk('home',item.strHomeTeam,item.strHomeTeamBadge,item.intHomeScore),mk('away',item.strAwayTeam,item.strAwayTeamBadge,item.intAwayScore)],status}]};
 }
-async function fetchEspnLeague(league,dateRange,targetDate){
+async function fetchEspnAll(targetDate){
+ const dateKey=targetDate.replaceAll('-','');
  const hosts=['https://site.api.espn.com','https://site.web.api.espn.com'];
+ let lastError=null;
  for(const host of hosts){
   try{
-   const url=host+'/apis/site/v2/sports/soccer/'+encodeURIComponent(league.id)+'/scoreboard?dates='+dateRange;
+   const url=host+'/apis/site/v2/sports/soccer/all/scoreboard?dates='+dateKey;
    const response=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
-   if(!response.ok)continue;
+   if(!response.ok){lastError=new Error('ESPN HTTP '+response.status);continue}
    const data=await response.json();
-   return (data.events||[]).filter(event=>{
+   const events=(data.events||[]).filter(event=>{
     const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date));
     return localDate===targetDate;
-   }).map(event=>({...event,_leagueId:league.id,_leagueName:league.name}));
-  }catch(error){console.warn('ESPN feed failed:',league.id,host,error)}
+   }).map(event=>({...event,_leagueName:event.league?.name||event.competitions?.[0]?.series?.name||event.season?.name||'كرة القدم'}));
+   if(events.length)return {events,ok:true};
+   lastError=new Error('ESPN returned no events for '+dateKey);
+  }catch(error){lastError=error;console.warn('ESPN all-soccer feed failed:',host,error)}
  }
- return [];
+ return {events:[],ok:false,error:lastError};
 }
 async function loadFixtures(silent=false){
  if(fixtureLoading)return;fixtureLoading=true;
  const button=$('#fixturesRefresh'),status=$('#fixturesStatus');if(button)button.disabled=true;
  if(!silent)status.textContent='جارٍ جمع مباريات جميع البطولات...';
  try{
-  const targetDate=baghdadDateKey(fixtureDayOffset),dateStart=baghdadDateKey(fixtureDayOffset-1).replaceAll('-',''),dateEnd=baghdadDateKey(fixtureDayOffset+1).replaceAll('-',''),dateRange=dateStart+'-'+dateEnd;
-  const espnResults=await Promise.all(FIXTURE_LEAGUES.map(league=>fetchEspnLeague(league,dateRange,targetDate)));
-  let events=espnResults.flat();
+  const targetDate=baghdadDateKey(fixtureDayOffset);
+  const primary=await fetchEspnAll(targetDate);
+  let events=primary.events.slice(),secondaryOk=false;
   try{
    const dbUrl='https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d='+encodeURIComponent(targetDate)+'&s=Soccer';
    const dbResponse=await fetch(dbUrl,{headers:{Accept:'application/json'},cache:'no-store'});
-   if(dbResponse.ok){const dbData=await dbResponse.json();events=events.concat((dbData.events||[]).map(normalizeSportsDb).filter(Boolean).filter(event=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date))===targetDate))}
+   if(dbResponse.ok){const dbData=await dbResponse.json();secondaryOk=true;events=events.concat((dbData.events||[]).map(normalizeSportsDb).filter(Boolean).filter(event=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date))===targetDate))}
+   else console.warn('TheSportsDB HTTP status:',dbResponse.status);
   }catch(error){console.warn('Secondary fixtures feed unavailable',error)}
   const unique=new Map();events.forEach(event=>{if(event.id)unique.set(String(event.id),event)});
   fixtureEvents=[...unique.values()].sort((a,b)=>new Date(a.date)-new Date(b.date));
   renderFixtures();
-  status.textContent=fixtureEvents.length?'تم العثور على '+fixtureEvents.length.toLocaleString('ar-IQ')+' مباراة من جميع البطولات · الأوقات بتوقيت بغداد · تحديث تلقائي كل دقيقة.':'تعذر جلب مباريات هذا اليوم من مصادر الجدول حالياً. اضغط تحديث أو جرّب لاحقاً.';
+  status.textContent=fixtureEvents.length?'تم العثور على '+fixtureEvents.length.toLocaleString('ar-IQ')+' مباراة · كل المسابقات التي يوفرها المصدر · التوقيت بتوقيت بغداد · تحديث كل دقيقة.':(!primary.ok&&!secondaryOk?'تعذر الاتصال بمصادر المباريات. افحص الاتصال وحاول مجدداً.':'لا توجد بيانات مباريات منشورة لهذا اليوم في المصادر المتاحة حالياً.');
  }catch(error){
   console.error('Fixtures loading failed:',error);status.textContent='تعذر الاتصال بمصادر المباريات حالياً. حاول التحديث بعد قليل.';
  }finally{fixtureLoading=false;if(button)button.disabled=false}
