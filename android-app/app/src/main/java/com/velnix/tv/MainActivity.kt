@@ -376,7 +376,7 @@ private fun IntroScreen() {
             AndroidView(factory={ ctx -> PlayerView(ctx).apply {
                 this.player=player
                 useController=true
-                useTextureView=true
+                setVideoTextureView(android.view.TextureView(ctx))
                 keepScreenOn=true
                 controllerShowTimeoutMs=5500
                 resizeMode=androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
@@ -424,7 +424,7 @@ val CATEGORIES = listOf(
     Category("kids","الأطفال"), Category("documentaries","وثائقيات"), Category("music","موسيقى وراديو"),
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
-data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id))
+data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null)
 data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
 
 fun categoryFor(group:String,name:String):String {
