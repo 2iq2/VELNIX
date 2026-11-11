@@ -174,11 +174,12 @@ class VelnixApi(private val context: Context) {
         return Triple(value.substring(0, match.range.first).trimEnd(' ','.','_','-'), label, rank)
     }
 
-    suspend fun stream(channelId: String): String {
+    suspend fun stream(channelId: String): StreamInfo {
         val payload = JSONObject().put("action", "stream").put("channel_id", channelId).toString()
         val result = JSONObject(request("functions/v1/xtream-gateway", "POST", payload))
-        return result.optString("stream_url").takeIf { it.isNotBlank() && it != "null" }
+        val url = result.optString("stream_url").takeIf { it.isNotBlank() && it != "null" }
             ?: throw IllegalStateException("مصدر البث غير مربوط لهذه القناة")
+        return StreamInfo(url, result.optString("stream_type").ifBlank { "hls" })
     }
 
     suspend fun checkBein(): Boolean {
@@ -191,4 +192,13 @@ class VelnixApi(private val context: Context) {
     fun loadFavorites(): Set<String> = prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
 
     fun saveFavorites(ids: Set<String>) { prefs.edit().putString("favorites", ids.joinToString(",")).apply() }
+
+    fun loadRecent(): List<String> = prefs.getString("recent_channels", "").orEmpty()
+        .split(",").filter { it.isNotBlank() }.distinct().take(30)
+
+    fun saveRecent(ids: List<String>) {
+        prefs.edit().putString("recent_channels", ids.distinct().take(30).joinToString(",")).apply()
+    }
 }
+
+data class StreamInfo(val url: String, val type: String)
