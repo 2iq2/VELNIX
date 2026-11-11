@@ -830,7 +830,7 @@ function renderChannels(){
   const name=(r._searchText+' '+String(r.name_ar||'')+' '+String(r.name_en||'')+' '+String(r.channel_categories?.name_en||'')).toLocaleLowerCase();
   const searchOk=!q||name.includes(q);
   const modeOk=catalogMode==='all'||(catalogMode==='favorites'?(favorites.has(r.id)||r.variants.some(v=>favorites.has(v.id))):(r.variants.some(v=>recentChannels.includes(v.id))));
-  return catOk&&searchOk&&modeOk;
+  return catOk&&searchOk&&modeOk&&(beinAccess||currentSession?.user?.app_metadata?.role==='admin'||category!=='bein');
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
  if(catalogMode==='recent')rows.sort((a,b)=>Math.min(...a.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n}))-Math.min(...b.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n})));
