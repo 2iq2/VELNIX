@@ -351,7 +351,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 @media(max-width:600px){.vc-topbar{padding:10px 11px}.vc-exit{padding:8px 11px;font-size:11px}.video-wrap:fullscreen .velnix-controls{padding:38px 12px 14px}.video-wrap:fullscreen .vc-topbar{padding:13px 12px}}
 
 /* CLAYKO opening signature */
-.clayko-intro{position:fixed;inset:0;z-index:2147482500;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,rgba(30,50,70,.62) 0%,rgba(8,12,20,.98) 56%,#05070c 100%);opacity:1;visibility:visible;transition:opacity .85s ease,visibility .85s ease}
+.clayko-intro{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#101a29 0%,#05080f 58%,#020308 100%);opacity:1;visibility:visible;isolation:isolate;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:opacity .85s ease,visibility .85s ease}
 .clayko-intro:before,.clayko-intro:after{content:"";position:absolute;left:50%;top:50%;width:min(82vw,620px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
 .clayko-intro:before{background:conic-gradient(from 0deg,transparent 0 8%,rgba(92,220,255,.0) 12%,rgba(92,220,255,.18) 14%,transparent 17% 33%,rgba(194,151,255,.15) 35%,transparent 38% 60%,rgba(95,224,255,.15) 62%,transparent 65% 100%);filter:blur(18px);animation:clayko-rays 8s linear infinite}
 .clayko-intro:after{width:min(54vw,390px);box-shadow:0 0 65px rgba(74,205,255,.13),inset 0 0 55px rgba(171,130,255,.07);border:1px solid rgba(149,218,255,.13);animation:clayko-pulse 2.5s ease-in-out infinite}
