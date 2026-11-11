@@ -182,6 +182,8 @@ class VelnixApi(private val context: Context) {
         } catch (_: Exception) { false }
     }
 
+    fun loadFavorites(): Set<String> = prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
+
     fun saveFavorites(ids: Set<String>) { prefs.edit().putString("favorites", ids.joinToString(",")).apply() }
 
     private fun String.toMediaTypeOrNull() = okhttp3.MediaType.parse(this)
