@@ -79,6 +79,11 @@ class VelnixApi(private val context: Context) {
         return signIn(email, password)
     }
 
+    suspend fun resetPassword(email: String) {
+        val payload = JSONObject().put("email", email.trim()).toString()
+        request("auth/v1/recover", "POST", payload, token = KEY)
+    }
+
     fun signOut() {
         val token = session()?.accessToken
         if (token != null) {
