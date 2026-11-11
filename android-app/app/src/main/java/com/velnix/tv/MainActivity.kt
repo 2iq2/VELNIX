@@ -83,6 +83,11 @@ private fun VelnixApp(activity: ComponentActivity) {
     var codeInput by remember { mutableStateOf("") }
     var codeBusy by remember { mutableStateOf(false) }
     var codeMessage by remember { mutableStateOf("") }
+    var accountDialog by remember { mutableStateOf(false) }
+    var accountDetails by remember { mutableStateOf<AccountInfo?>(null) }
+    var accountName by remember { mutableStateOf("") }
+    var accountMessage by remember { mutableStateOf("") }
+    var accountBusy by remember { mutableStateOf(false) }
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
@@ -113,6 +118,14 @@ private fun VelnixApp(activity: ComponentActivity) {
         delay(2400)
         introVisible = false
         refreshCatalog()
+    }
+    LaunchedEffect(session?.userId) {
+        if (session != null) {
+            try {
+                favorites = api.syncFavorites(favorites).also { api.saveFavorites(it) }
+                recent = api.syncRecent(recent).also { api.saveRecent(it) }
+            } catch (_: Exception) { /* Keep the encrypted local cache available offline. */ }
+        }
     }
 
     MaterialTheme(colorScheme = darkColorScheme(
@@ -167,6 +180,16 @@ private fun VelnixApp(activity: ComponentActivity) {
                             }
                             Spacer(Modifier.width(12.dp))
                             TextButton(onClick = { codeDialog = true; codeMessage = "" }) { Text("تفعيل كود", color = Gold) }
+                            TextButton(onClick = {
+                                accountDialog = true; accountMessage = ""; accountBusy = true
+                                scope.launch {
+                                    try {
+                                        accountDetails = api.accountInfo()
+                                        accountName = accountDetails?.displayName.orEmpty()
+                                    } catch (e: Exception) { accountMessage = e.message ?: "تعذر تحميل بيانات الحساب" }
+                                    finally { accountBusy = false }
+                                }
+                            }) { Text("حسابي", color = Gold) }
                             TextButton(onClick = { refreshCatalog() }) { Text("تحديث", color = Gold) }
                             TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
                         }
@@ -224,7 +247,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                             } else if (wide || tv) {
                                 LazyVerticalGrid(columns=GridCells.Adaptive(if(tv) 260.dp else 220.dp), contentPadding=PaddingValues(bottom=24.dp), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
                                     items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
+                                        ChannelTile(c, c.id in favorites, {
+                                            val updated = if(c.id in favorites) favorites-c.id else favorites+c.id
+                                            favorites = updated
+                                            api.saveFavorites(updated)
+                                            scope.launch { try { api.setFavorite(c.id, c.id in updated) } catch (_: Exception) { } }
+                                        }) {
                                             scope.launch {
                                                 busy=true
                                                 try {
@@ -233,6 +261,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                                     streamUrl = source.url; streamType = source.type; selected=c
                                                     recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
                                                     api.saveRecent(recent)
+                                                    try { api.recordWatch(c.id) } catch (_: Exception) { }
                                                 } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
                                                 busy=false
                                             }
@@ -242,7 +271,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                             } else {
                                 LazyColumn(contentPadding=PaddingValues(bottom=24.dp), verticalArrangement=Arrangement.spacedBy(9.dp)) {
                                     items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
+                                        ChannelTile(c, c.id in favorites, {
+                                            val updated = if(c.id in favorites) favorites-c.id else favorites+c.id
+                                            favorites = updated
+                                            api.saveFavorites(updated)
+                                            scope.launch { try { api.setFavorite(c.id, c.id in updated) } catch (_: Exception) { } }
+                                        }) {
                                             scope.launch {
                                                 busy=true
                                                 try {
@@ -263,6 +297,40 @@ private fun VelnixApp(activity: ComponentActivity) {
                     }
                 }
             }
+        }
+        if (accountDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!accountBusy) accountDialog = false },
+                containerColor = Panel,
+                title = { Text("حساب VELNIX", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Text(session?.userEmail.orEmpty(), color = Muted, fontSize = 12.sp)
+                        if (accountBusy) CircularProgressIndicator(color = Gold, modifier = Modifier.size(24.dp))
+                        accountDetails?.let { info ->
+                            Text("الباقة: ${info.planCode}", color = Gold, fontWeight = FontWeight.Bold)
+                            Text("الحالة: ${info.status}", color = Color.White)
+                            Text("الانتهاء: ${info.expiresAt.ifBlank { "غير محدد" }}", color = Muted, fontSize = 12.sp)
+                        }
+                        OutlinedTextField(value = accountName, onValueChange = { accountName = it }, label = { Text("اسم العرض") }, singleLine = true)
+                        if (accountMessage.isNotBlank()) Text(accountMessage, color = Color(0xFFFF8A80), fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !accountBusy && accountName.isNotBlank(), onClick = {
+                        scope.launch {
+                            accountBusy = true; accountMessage = ""
+                            try {
+                                api.updateDisplayName(accountName)
+                                accountDetails = api.accountInfo()
+                                accountMessage = "تم تحديث اسم العرض"
+                            } catch (e: Exception) { accountMessage = e.message ?: "تعذر حفظ الاسم" }
+                            finally { accountBusy = false }
+                        }
+                    }) { Text("حفظ الاسم", color = Gold) }
+                },
+                dismissButton = { TextButton(onClick = { accountDialog = false }) { Text("إغلاق", color = Muted) } }
+            )
         }
         if (codeDialog) {
             AlertDialog(
@@ -501,7 +569,8 @@ val CATEGORIES = listOf(
     Category("variety","منوعات"), Category("world","قنوات عالمية")
 )
 data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null,val streamType:String = "hls")
-data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
+data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String,val userId:String = "")
+data class AccountInfo(val displayName:String,val planCode:String,val status:String,val expiresAt:String)
 
 fun categoryFor(group:String,name:String):String {
     val both=(group+" "+name).lowercase()
