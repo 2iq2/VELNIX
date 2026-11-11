@@ -1218,7 +1218,14 @@ function renderChannels(){
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
  if(catalogMode==='recent')rows.sort((a,b)=>Math.min(...a.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n}))-Math.min(...b.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n})));
- else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
+ else rows.sort((a,b)=>{
+  if(active==='bein'){
+   const aTarget=a.id==='6eba528f-44bf-45ce-82b2-a0d96b8c4226'||a.variants?.some(v=>v.id==='6eba528f-44bf-45ce-82b2-a0d96b8c4226');
+   const bTarget=b.id==='6eba528f-44bf-45ce-82b2-a0d96b8c4226'||b.variants?.some(v=>v.id==='6eba528f-44bf-45ce-82b2-a0d96b8c4226');
+   if(aTarget!==bTarget)return aTarget?1:-1;
+  }
+  return collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar));
+ });
  rows.slice(0,visibleLimit).forEach(row=>{
   const card=document.createElement('article');card.className='channel';card.tabIndex=0;card.setAttribute('role','button');
   const name=displayName(row),cat=categoryFor(row),meta=CATEGORY_META[cat];
