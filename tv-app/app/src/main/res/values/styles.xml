@@ -1,7 +1,7 @@
 <resources>
     <style name="Theme.VelnixTV" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#57D9C6</item>
+        <item name="android:colorAccent">#D6B77B</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowBackground">#090D16</item>
         <item name="android:navigationBarColor">#090D16</item>
