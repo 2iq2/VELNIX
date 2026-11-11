@@ -53,6 +53,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 private val Night = Color(0xFF07090E)
 private val Panel = Color(0xFF111722)
@@ -86,6 +89,13 @@ data class TvChannel(
     val streamType: String
 )
 data class TvStream(val url: String, val type: String)
+data class BeinStatus(val active: Boolean, val expiresAt: String?)
+data class TvSubscription(val plan: String, val expiresAt: String?)
+data class TvFixture(
+    val id: String, val league: String, val home: String, val away: String,
+    val homeLogo: String?, val awayLogo: String?, val homeScore: String,
+    val awayScore: String, val state: String, val status: String, val date: String
+)
 
 private object VelnixApi {
     private val http = OkHttpClient.Builder()
@@ -223,6 +233,110 @@ private object VelnixApi {
             }
         }
         categories to channels
+    }
+
+
+    suspend fun checkBein(context: Context): BeinStatus = withContext(Dispatchers.IO) {
+        val session = validSession(context) ?: error("سجّل الدخول أولاً")
+        val result = JSONObject(request(BuildConfig.GATEWAY_URL, "POST", JSONObject().put("action", "check_bein_access"), session.accessToken))
+        BeinStatus(result.optBoolean("has_access"), result.optString("expires_at").takeIf { it.isNotBlank() && it != "null" })
+    }
+
+    suspend fun activateBein(context: Context, code: String): BeinStatus = withContext(Dispatchers.IO) {
+        val session = validSession(context) ?: error("سجّل الدخول أولاً")
+        val result = JSONObject(request(BuildConfig.GATEWAY_URL, "POST",
+            JSONObject().put("action", "activate_bein_code").put("code", code.trim().uppercase()), session.accessToken))
+        BeinStatus(true, result.optString("expires_at").takeIf { it.isNotBlank() && it != "null" })
+    }
+
+    suspend fun loadFavorites(context: Context): Set<String> = withContext(Dispatchers.IO) {
+        val session = validSession(context) ?: return@withContext emptySet()
+        val userId = sessionUserId(context, session)
+        val url = api + "/rest/v1/favorites?select=channel_id&user_id=eq." + userId
+        val request = Request.Builder().url(url).header("apikey", key)
+            .header("Authorization", "Bearer " + session.accessToken).get().build()
+        http.newCall(request).execute().use { response ->
+            val payload = response.body?.string().orEmpty()
+            if (!response.isSuccessful) error("تعذر تحميل المفضلة")
+            val array = JSONArray(payload)
+            buildSet { for (i in 0 until array.length()) add(array.getJSONObject(i).optString("channel_id")) }
+        }
+    }
+
+    private suspend fun sessionUserId(context: Context, session: TvSession): String = withContext(Dispatchers.IO) {
+        val result = JSONObject(request(api + "/auth/v1/user", token = session.accessToken))
+        result.optString("id").takeIf { it.isNotBlank() } ?: error("تعذر التحقق من الحساب")
+    }
+
+    suspend fun setFavorite(context: Context, channelId: String, favorite: Boolean) = withContext(Dispatchers.IO) {
+        val session = validSession(context) ?: error("سجّل الدخول أولاً")
+        val userId = sessionUserId(context, session)
+        val url = api + "/rest/v1/favorites?user_id=eq." + userId + "&channel_id=eq." + channelId
+        val builder = Request.Builder().url(url).header("apikey", key)
+            .header("Authorization", "Bearer " + session.accessToken)
+        val request = if (favorite) builder.header("Prefer", "resolution=ignore-duplicates,return=minimal")
+            .post(JSONObject().put("user_id", userId).put("channel_id", channelId).toString().toRequestBody(jsonType)).build()
+        else builder.delete().build()
+        http.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("تعذر تحديث المفضلة")
+        }
+    }
+
+    suspend fun loadSubscription(context: Context): TvSubscription? = withContext(Dispatchers.IO) {
+        val session = validSession(context) ?: return@withContext null
+        val userId = sessionUserId(context, session)
+        val url = api + "/rest/v1/subscriptions?select=plan_code,expires_at,status&user_id=eq." + userId + "&status=eq.active&order=created_at.desc&limit=1"
+        val request = Request.Builder().url(url).header("apikey", key)
+            .header("Authorization", "Bearer " + session.accessToken).get().build()
+        http.newCall(request).execute().use { response ->
+            val payload = response.body?.string().orEmpty()
+            if (!response.isSuccessful) error("تعذر تحميل بيانات الاشتراك")
+            val array = JSONArray(payload)
+            if (array.length() == 0) null else {
+                val row = array.getJSONObject(0)
+                TvSubscription(row.optString("plan_code"), row.optString("expires_at").takeIf { it.isNotBlank() && it != "null" })
+            }
+        }
+    }
+
+    suspend fun loadFixtures(offset: Int): List<TvFixture> = withContext(Dispatchers.IO) {
+        val date = LocalDate.now(ZoneId.of("Asia/Baghdad")).plusDays(offset.toLong())
+        val keyDate = date.format(DateTimeFormatter.BASIC_ISO_DATE)
+        val url = "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=" + keyDate
+        val request = Request.Builder().url(url).header("Accept", "application/json").get().build()
+        http.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("تعذر تحميل جدول المباريات")
+            val events = JSONObject(response.body?.string().orEmpty()).optJSONArray("events") ?: JSONArray()
+            buildList {
+                for (i in 0 until events.length()) {
+                    val event = events.optJSONObject(i) ?: continue
+                    val competition = event.optJSONArray("competitions")?.optJSONObject(0) ?: JSONObject()
+                    val teams = competition.optJSONArray("competitors") ?: JSONArray()
+                    var home: JSONObject? = null
+                    var away: JSONObject? = null
+                    for (j in 0 until teams.length()) {
+                        val team = teams.optJSONObject(j) ?: continue
+                        if (team.optString("homeAway") == "home") home = team else if (team.optString("homeAway") == "away") away = team
+                    }
+                    val homeTeam = home?.optJSONObject("team") ?: JSONObject()
+                    val awayTeam = away?.optJSONObject("team") ?: JSONObject()
+                    val status = competition.optJSONObject("status")?.optJSONObject("type") ?: JSONObject()
+                    add(TvFixture(
+                        id = event.optString("id"),
+                        league = event.optJSONObject("league")?.optString("name").orEmpty().ifBlank { "كرة القدم" },
+                        home = homeTeam.optString("displayName").ifBlank { "الفريق الأول" },
+                        away = awayTeam.optString("displayName").ifBlank { "الفريق الثاني" },
+                        homeLogo = homeTeam.optString("logo").takeIf { it.startsWith("http") },
+                        awayLogo = awayTeam.optString("logo").takeIf { it.startsWith("http") },
+                        homeScore = home?.optString("score").orEmpty(),
+                        awayScore = away?.optString("score").orEmpty(),
+                        state = status.optString("state", "pre"),
+                        status = status.optString("shortDetail").ifBlank { "قادمة" },
+                        date = event.optString("date")
+                    ))
+                }
+            }.sortedBy { it.date }
+        }
     }
 
     suspend fun stream(context: Context, channelId: String): TvStream = withContext(Dispatchers.IO) {
