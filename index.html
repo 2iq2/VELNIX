@@ -577,7 +577,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="bein-gate-form" id="beinGateForm"><input id="beinActivationCode" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود تفعيل beIN"><button id="activateBeinBtn" type="button">تفعيل الكود</button></div>
 <span class="bein-gate-status" id="beinGateStatus" role="status"></span>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" multiple hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
 <div class="admin-dashboard" id="adminDashboard">
  <div class="admin-dashboard-head"><h3>لوحة تحكم VELNIX</h3><button class="filter" id="adminRefresh" type="button">تحديث الإحصائيات</button></div>
  <div class="admin-stats" id="adminStats"><div>جارٍ تحميل الإحصائيات…</div></div>
@@ -1346,17 +1346,26 @@ $('#streamHealthBtn').addEventListener('click',async()=>{
  }finally{streamHealthRunning=false;}
 });
 $('#m3uFile').addEventListener('change',async e=>{
- const file=e.target.files?.[0];if(!file)return;
- const status=$('#importStatus');status.textContent='جارٍ قراءة ملف M3U...';
+ const files=Array.from(e.target.files||[]);if(!files.length)return;
+ const status=$('#importStatus');let totalChannels=0,completed=0;
  try{
   if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');
-  if(file.size>2000000)throw new Error('حجم الملف يتجاوز الحد المسموح.');
-  const content=await file.text();status.textContent='جارٍ استيراد القنوات بشكل آمن...';
-  const result=await gateway({action:'admin_import_m3u',content});
-  status.textContent='تم استيراد '+result.channels+' قناة ضمن '+result.categories+' تصنيف.';
+  for(let i=0;i<files.length;i++){
+   const file=files[i];
+   if(file.size>2000000)throw new Error('الملف '+file.name+' يتجاوز الحد المسموح لكل جزء (2 ميغابايت).');
+   const content=await file.text();
+   if(!/^\\s*#EXTM3U/m.test(content))throw new Error('الملف '+file.name+' ليس بصيغة M3U صحيحة.');
+   status.textContent='جارٍ استيراد الجزء '+(i+1)+' من '+files.length+'...';
+   const result=await gateway({action:'admin_import_m3u',content});
+   if(!result.success)throw new Error(result.error||'تعذر استيراد '+file.name);
+   totalChannels+=Number(result.channels||0);completed++;
+  }
+  status.textContent='تم استيراد '+totalChannels.toLocaleString('ar-IQ')+' قناة بنجاح ضمن '+completed+' أجزاء.';
   showSiteToast(status.textContent,'success');await loadChannels();
  }catch(err){
-  status.textContent='فشل الاستيراد: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error');
+  const prefix=completed?'تم استيراد '+totalChannels.toLocaleString('ar-IQ')+' قناة قبل توقف العملية. ':'';
+  status.textContent=prefix+'فشل الاستيراد: '+(err?.message||'خطأ غير معروف')+' يمكنك إعادة اختيار الأجزاء؛ الاستيراد لا يكرر القنوات نفسها.';
+  showSiteToast(status.textContent,'error');
  }finally{e.target.value=''}
 });
 
