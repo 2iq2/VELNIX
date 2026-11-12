@@ -726,8 +726,13 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
  <div class="admin-card"><h4>إضافة برنامج إلى دليل EPG</h4><div class="admin-form-row"><select id="adminEpgChannel"><option value="">اختر القناة</option></select><input id="adminEpgTitle" maxlength="240" placeholder="اسم البرنامج"></div><div class="admin-form-row"><label>من <input id="adminEpgStart" type="datetime-local"></label><label>إلى <input id="adminEpgEnd" type="datetime-local"></label></div><textarea id="adminEpgDescription" maxlength="2000" placeholder="وصف البرنامج (اختياري)"></textarea><button class="filter" id="adminSaveEpg" type="button">حفظ البرنامج</button><span id="adminEpgStatus" class="admin-inline-status"></span></div>
 </div>
 <div class="bein-admin" id="beinAdminTools">
-<h3>إدارة أكواد beIN SPORTS</h3>
-<div class="bein-admin-form"><input id="beinCodeCount" type="number" min="1" max="50" value="5" aria-label="عدد الأكواد"><input id="beinCodeDays" type="number" min="1" max="3650" value="30" aria-label="مدة الصلاحية بالأيام"><button id="generateBeinCodes" type="button">إنشاء أكواد التفعيل</button><button id="refreshBeinCodes" type="button">تحديث القائمة</button></div>
+<h3>إدارة أكواد اشتراكات VELNIX</h3>
+<div class="bein-admin-form">
+<select id="beinCodePlan" aria-label="نوع الباقة"><option value="basic">Basic · أساسية</option><option value="standard">Standard · قياسية</option><option value="premium" selected>Premium · مميزة</option><option value="gold">Gold · ذهبية</option><option value="platinum">Platinum · بلاتينية</option></select>
+<input id="beinCodeCount" type="number" min="1" max="100" value="5" aria-label="عدد الأكواد">
+<input id="beinCodeDays" type="number" min="1" max="3650" value="30" aria-label="مدة الاشتراك بالأيام">
+<button id="generateBeinCodes" type="button">إنشاء أكواد الباقة</button><button id="refreshBeinCodes" type="button">تحديث القائمة</button>
+</div>
 <div class="bein-admin-output" id="beinGeneratedCodes" hidden></div><button id="copyBeinCodes" type="button" hidden style="margin-top:8px">نسخ الأكواد</button>
 <div class="bein-admin-list" id="beinCodesList"></div>
 </div>
@@ -1176,19 +1181,21 @@ function syncBeinGate(){
 }
 
 async function loadBeinCodes(){
- const list=$('#beinCodesList');if(!list)return;list.textContent='جارٍ تحميل الأكواد...';
+ const list=$('#beinCodesList');if(!list)return;list.textContent='جارٍ تحميل أكواد الباقات...';
  try{
-  const result=await gateway({action:'admin_list_bein_codes'});list.replaceChildren();
+  const result=await gateway({action:'admin_list_subscription_codes'});list.replaceChildren();
   (result.codes||[]).forEach(code=>{
    const row=document.createElement('div');row.className='bein-code-row';
-   const status=code.revoked_at?'ملغي':code.used_by?(new Date(code.access_expires_at)<new Date()?'منتهي':'مستخدم'):'متاح';
-   const span=document.createElement('span');span.textContent=code.code_hint+' · '+status+' · '+code.valid_days+' يوم'+(code.used_by?' · حساب: '+code.used_by.slice(0,8):'');
+   const planNames={basic:'Basic',standard:'Standard',premium:'Premium',gold:'Gold',platinum:'Platinum'};
+   const expired=code.access_expires_at&&new Date(code.access_expires_at)<new Date();
+   const status=code.revoked_at?'ملغي':code.used_by?(expired?'منتهي':'مستخدم'):'متاح';
+   const span=document.createElement('span');span.textContent=(planNames[code.plan_code]||code.plan_code)+' · '+code.code_hint+' · '+status+' · '+code.valid_days+' يوم'+(code.used_by?' · حساب: '+code.used_by.slice(0,8):'');
    row.append(span);
-   if(!code.revoked_at){const btn=document.createElement('button');btn.textContent=code.used_by?'إلغاء الصلاحية':'إلغاء الكود';btn.addEventListener('click',async()=>{btn.disabled=true;try{await gateway({action:'admin_revoke_bein_code',code_id:code.id});loadBeinCodes()}catch(e){showSiteToast(e.message,'error');btn.disabled=false}});row.append(btn)}
+   if(!code.revoked_at&&!code.used_by){const btn=document.createElement('button');btn.textContent='إلغاء الكود';btn.addEventListener('click',async()=>{btn.disabled=true;try{await gateway({action:'admin_revoke_subscription_code',code_id:code.id});loadBeinCodes()}catch(e){showSiteToast(e.message,'error');btn.disabled=false}});row.append(btn)}
    list.append(row);
   });
-  if(!(result.codes||[]).length)list.textContent='لا توجد أكواد منشأة بعد.';
- }catch(e){list.textContent=e.message||'تعذر تحميل الأكواد'}
+  if(!(result.codes||[]).length)list.textContent='لا توجد أكواد باقات منشأة بعد.';
+ }catch(e){list.textContent=e.message||'تعذر تحميل أكواد الباقات'}
 }
 $('#subscriptionLoginBtn').addEventListener('click',()=>$('#loginBtn').click());
 $('#activateSubscriptionBtn').addEventListener('click',async()=>{
@@ -1223,11 +1230,12 @@ $('#activateBeinBtn').addEventListener('click',async()=>{
 $('#generateBeinCodes').addEventListener('click',async()=>{
  const button=$('#generateBeinCodes');button.disabled=true;
  try{
-  const count=Math.max(1,Math.min(50,Number($('#beinCodeCount').value)||1));
+  const count=Math.max(1,Math.min(100,Number($('#beinCodeCount').value)||1));
   const valid_days=Math.max(1,Math.min(3650,Number($('#beinCodeDays').value)||30));
-  const result=await gateway({action:'admin_generate_bein_codes',count,valid_days});
+  const plan_code=$('#beinCodePlan').value;
+  const result=await gateway({action:'admin_generate_subscription_codes',count,valid_days,plan_code});
   const out=$('#beinGeneratedCodes');out.hidden=false;out.textContent=result.codes.join('\n');$('#copyBeinCodes').hidden=false;
-  showSiteToast('تم إنشاء '+result.count+' كود تفعيل','success');loadBeinCodes();
+  showSiteToast('تم إنشاء '+result.count+' كود باقة '+plan_code.toUpperCase(),'success');loadBeinCodes();
  }catch(e){showSiteToast(e.message||'تعذر إنشاء الأكواد','error')}
  finally{button.disabled=false}
 });
