@@ -142,7 +142,7 @@ footer{border-color:#ffffff12;background:#08090d}
 .dialog{border:1px solid #ffffff1a;background:#15161d;border-radius:12px}
 .field{background:#0d0e13}
 .auth-links button{color:#ff6269}
-#loginBtn,#heroLogin{display:none!important}
+#heroLogin{display:none!important} #loginBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important}
 @media(max-width:850px){
  .hero{min-height:540px;padding:78px 28px 65px}
  .hero:before{background:linear-gradient(90deg,rgba(8,9,13,.96),rgba(8,9,13,.65)),linear-gradient(0deg,#08090d 0%,transparent 50%),radial-gradient(ellipse at 78% 48%,rgba(63,130,166,.22),transparent 42%) center/cover}
@@ -177,7 +177,7 @@ nav a{color:#9eafc4;padding:10px 15px;border-radius:10px;font-size:13px;font-wei
 nav a:hover{background:#ffffff0b;color:#eafffc}
 .actions{gap:9px}
 .lang{border:1px solid var(--line);background:#121c2b;color:#d9e5ef;border-radius:10px;padding:10px 14px}
-.login{display:none!important}
+.login{display:inline-flex!important;align-items:center;justify-content:center}
 .hero{width:100%;max-width:none;min-height:540px;padding:85px max(6vw,calc((100vw - 1220px)/2)) 75px;display:flex;align-items:center;position:relative;isolation:isolate;overflow:hidden}
 .hero:before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,#090d16 0%,rgba(9,13,22,.94) 31%,rgba(9,13,22,.58) 65%,rgba(9,13,22,.35) 100%),linear-gradient(0deg,#090d16 0%,transparent 45%),radial-gradient(ellipse at 78% 48%,rgba(63,130,166,.22),transparent 42%) center 42%/cover}
 .hero>div:first-child{position:relative;z-index:2;max-width:620px}
@@ -677,7 +677,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
  document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
 })();
 </script>
-<script type="module">
+<script>
 (async()=>{
 window.__VELNIX_AUTH_READY__=true;
 window.__VELNIX_AUTH_LOAD_ERROR__="";
@@ -1374,8 +1374,8 @@ function renderChannels(){
 }
 function renderStreamingHome(){
  const grouped=buildChannelGroups();
- const movieRows=grouped.filter(r=>categoryFor(r)==='movies');
- const seriesRows=grouped.filter(r=>categoryFor(r)==='series');
+ const movieRows=grouped.filter(r=>categoryFor(r)==='movies'||/movies|movie|films?|cinema|cinéma|peliculas|filmovi|primevideo|netflix|أفلام|افلام/i.test(String(r.source_group_title||'')));
+ const seriesRows=grouped.filter(r=>categoryFor(r)==='series'||/series|مسلسل|مسلسلات|drama|primevideo series/i.test(String(r.source_group_title||'')));
  const poster=(row,kind)=>{
   const card=document.createElement('button');card.type='button';card.className='stream-poster';
   const art=document.createElement('span');art.className='stream-poster-art';
@@ -1412,7 +1412,7 @@ async function loadChannels(){
    for(const rows of pages)all.push(...rows);
    if(pages.some(rows=>rows.length<500))break;
   }
-  channelRows=all;renderStreamingHome();renderChannels();populateAdminEpgChannels();
+  channelRows=all;try{renderStreamingHome()}catch(homeError){console.error('VELNIX home render failed:',homeError);$('#moviePosters').textContent='تعذر تجهيز قسم الأفلام: '+(homeError?.message||'خطأ غير معروف');$('#seriesPosters').textContent='تعذر تجهيز قسم المسلسلات.';}renderChannels();populateAdminEpgChannels();
   status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
  }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.';showSiteToast(status.textContent,'error')}
 }
