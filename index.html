@@ -579,7 +579,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="bein-gate-form" id="beinGateForm"><input id="beinActivationCode" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود تفعيل beIN"><button id="activateBeinBtn" type="button">تفعيل الكود</button></div>
 <span class="bein-gate-status" id="beinGateStatus" role="status"></span>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">رفع ملف M3U كامل</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="resumeM3uImport" type="button" hidden>استكمال آخر استيراد</button><button class="filter" id="curateChannelsBtn" type="button">ترتيب القنوات وإضافة الشعارات</button><span id="curateChannelsStatus" role="status"></span><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">ارفع ملف القنوات من هنا؛ تتم معالجته على دفعات تلقائياً.</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">رفع ملف M3U كامل</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="resumeM3uImport" type="button" hidden>استكمال آخر استيراد</button><button class="filter" id="curateChannelsBtn" type="button">ترتيب القنوات وإضافة الشعارات</button><span id="curateChannelsStatus" role="status"></span><button class="filter" id="enrichLogosBtn" type="button">إكمال الشعارات من قاعدة موثوقة</button><span id="enrichLogosStatus" role="status"></span><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">ارفع ملف القنوات من هنا؛ تتم معالجته على دفعات تلقائياً.</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
 <div class="admin-dashboard" id="adminDashboard">
  <div class="admin-dashboard-head"><h3>لوحة تحكم VELNIX</h3><button class="filter" id="adminRefresh" type="button">تحديث الإحصائيات</button></div>
  <div class="admin-stats" id="adminStats"><div>جارٍ تحميل الإحصائيات…</div></div>
@@ -1376,6 +1376,22 @@ qualitySelect.addEventListener('change',async()=>{
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
 $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
 let streamHealthOffset=0,streamHealthWorking=0,streamHealthFailed=0,streamHealthRunning=false;
+$('#enrichLogosBtn').addEventListener('click',async()=>{
+ const btn=$('#enrichLogosBtn'),status=$('#enrichLogosStatus');
+ if(!currentSession||currentSession.user?.app_metadata?.role!=='admin'){showSiteToast('هذه الميزة متاحة للإدارة فقط.','error');return}
+ if(!confirm('راح نبحث عن شعارات القنوات الناقصة حسب الاسم والبلد من قاعدة iptv-org المفتوحة. الشعارات الموجودة وروابط البث ما راح تتغير. متابعة؟'))return;
+ btn.disabled=true;status.textContent='جارٍ جلب قاعدة الشعارات ومطابقة أسماء القنوات والبلدان… قد يستغرق الأمر قليلاً.';
+ try{
+  const result=await gateway({action:'admin_enrich_catalog'});
+  if(!result.success)throw new Error(result.error||'تعذر إكمال الشعارات');
+  status.textContent='اكتملت المطابقة: '+Number(result.updated||0).toLocaleString('ar-IQ')+' قناة تم تحديثها بشعار أو بيانات بلد. مطابقات غير مؤكدة تم تجاوزها: '+Number(result.ambiguous||0).toLocaleString('ar-IQ')+'. لم يتم تغيير الشعارات الموجودة.';
+  showSiteToast('اكتملت إضافة الشعارات المطابقة من المصدر الموثوق.','success');
+  await loadChannels();
+ }catch(err){
+  status.textContent='تعذر إكمال الشعارات: '+(err?.message||'خطأ غير معروف')+'. أعد المحاولة لاحقاً؛ الشعارات الموجودة وروابط البث لم تتغير.';
+  showSiteToast(status.textContent,'error');
+ }finally{btn.disabled=false}
+});
 $('#streamHealthBtn').addEventListener('click',async()=>{
  if(streamHealthRunning)return;
  streamHealthRunning=true;
