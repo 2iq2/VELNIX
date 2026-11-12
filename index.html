@@ -562,7 +562,9 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
 <button class="filter" data-cat="bein" data-ar="قنوات beIN" data-en="beIN channels">قنوات beIN</button>
 <button class="filter" data-cat="arabic" data-ar="القنوات العربية" data-en="Arabic">القنوات العربية</button>
-<button class="filter" data-cat="movies" data-ar="أفلام ومسلسلات" data-en="Movies & Series">أفلام ومسلسلات</button>
+<button class="filter" data-cat="movies" data-ar="الأفلام" data-en="Movies">الأفلام</button>
+<button class="filter" data-cat="series" data-ar="المسلسلات" data-en="Series">المسلسلات</button>
+<button class="filter" data-cat="religion" data-ar="القرآن والدين" data-en="Religion">القرآن والدين</button>
 <button class="filter" data-cat="news" data-ar="الأخبار" data-en="News">الأخبار</button>
 <button class="filter" data-cat="kids" data-ar="الأطفال" data-en="Kids">الأطفال</button>
 <button class="filter" data-cat="documentaries" data-ar="وثائقيات" data-en="Documentaries">وثائقيات</button>
@@ -577,7 +579,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="bein-gate-form" id="beinGateForm"><input id="beinActivationCode" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود تفعيل beIN"><button id="activateBeinBtn" type="button">تفعيل الكود</button></div>
 <span class="bein-gate-status" id="beinGateStatus" role="status"></span>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">رفع ملف M3U كامل</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="resumeM3uImport" type="button" hidden>استكمال آخر استيراد</button><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">ارفع ملف القنوات من هنا؛ تتم معالجته على دفعات تلقائياً.</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">رفع ملف M3U كامل</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="resumeM3uImport" type="button" hidden>استكمال آخر استيراد</button><button class="filter" id="curateChannelsBtn" type="button">ترتيب القنوات وإضافة الشعارات</button><span id="curateChannelsStatus" role="status"></span><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">ارفع ملف القنوات من هنا؛ تتم معالجته على دفعات تلقائياً.</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
 <div class="admin-dashboard" id="adminDashboard">
  <div class="admin-dashboard-head"><h3>لوحة تحكم VELNIX</h3><button class="filter" id="adminRefresh" type="button">تحديث الإحصائيات</button></div>
  <div class="admin-stats" id="adminStats"><div>جارٍ تحميل الإحصائيات…</div></div>
@@ -872,9 +874,9 @@ function qualities(){
  qualitySelect.disabled=false;
  if(activeRow?.variants?.length>1){
   const group=document.createElement('optgroup');group.label='نسخ القناة';
-  activeRow.variants.forEach(variant=>{
+  activeRow.variants.forEach((variant,index)=>{
    const o=document.createElement('option');o.value='variant:'+variant.id;
-   o.textContent=variant._quality||'نسخة إضافية';
+   o.textContent=(variant._quality||'نسخة '+(index+1))+' · '+(variant.source_provider==='xtream'?'Xtream':variant.source_provider==='m3u'?'M3U':'مصدر');
    group.append(o);
   });
   qualitySelect.append(group);
@@ -1136,7 +1138,9 @@ const CATEGORY_META={
  bein:{ar:'قنوات beIN',en:'beIN channels',icon:'📡'},
  sports:{ar:'الرياضة',en:'Sports',icon:'⚽'},
  arabic:{ar:'القنوات العربية',en:'Arabic channels',icon:'✦'},
- movies:{ar:'أفلام ومسلسلات',en:'Movies & series',icon:'▣'},
+ movies:{ar:'الأفلام',en:'Movies',icon:'▣'},
+ series:{ar:'المسلسلات والترفيه',en:'Series & Entertainment',icon:'▤'},
+ religion:{ar:'القرآن والقنوات الدينية',en:'Religion',icon:'☪'},
  news:{ar:'الأخبار',en:'News',icon:'◉'},
  kids:{ar:'الأطفال',en:'Kids',icon:'★'},
  documentaries:{ar:'وثائقيات',en:'Documentaries',icon:'◇'},
@@ -1154,10 +1158,12 @@ function categoryFor(row){
  const both=group+' '+name;
  if(/bein|بي\s*ان|بين\s*ان/.test(both))return 'bein';
  if(/sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
- if(/news|info|actualité|actualite|inform|اخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
+ if(/quran|koran|islam|relig|prayer|قرآن|قران|ديني|اسلام|إسلام/.test(both))return 'religion';
+ if(/news|info|actualité|actualite|inform|اخبار|أخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
  if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
  if(/doc|document|nature|science|wissensch|natuur/.test(group)||/documentary|discovery|nat geo|national geographic|history channel|animal planet|bbc earth/.test(name))return 'documentaries';
- if(/cinema|movie|film|series|cine|prime video/.test(group)||/movies|cinema|ciné|film|series|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
+ if(/series|drama|drame|fiction|مسلسل|مسلسلات/.test(both))return 'series';
+ if(/cinema|movie|film|cine|prime video/.test(group)||/movies|cinema|ciné|film|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
  if(/radio|music|musique|musica|music/.test(group)||/radio|music|mtv|mezzo|trace urban|vh1|rotana music|موسيقى/.test(name))return 'music';
  if(/arabic|middle east|moyen orient|maghreb|maroc|quran|islamic|arab|mbc group|bein movies/.test(group)||/iraq|iraqia|mbc|osn|shahid|rotana|al arabiya|al jazeera|quran|alkass|abudhabi|abu dhabi|oman|kuwait|saudi|syria|lebanon|egypt|morocco|tunisia|jordan|palestine|arab/.test(name))return 'arabic';
  if(/arab|middle east|maghreb|maroc/.test(group))return 'arabic';
@@ -1187,7 +1193,7 @@ function buildChannelGroups(){
   const sourceName=cleanChannelName(row.name_en||row.name_ar);
   const info=qualityInfo(sourceName);
   const category=categoryFor(row);
-  const key=[row.source_provider||"",category,info.base.toLocaleLowerCase()].join("|");
+  const key=[category,info.base.toLocaleLowerCase()].join("|");
   if(!buckets.has(key))buckets.set(key,{base:info.base||sourceName,rows:[]});
   buckets.get(key).rows.push({...row,_quality:info.quality,_qualityRank:info.rank,_base:info.base||sourceName});
  }
@@ -1195,7 +1201,7 @@ function buildChannelGroups(){
  for(const bucket of buckets.values()){
   const variants=bucket.rows;
   const distinctQualities=new Set(variants.map(v=>v._quality||'SOURCE'));
-  const isGroup=variants.length>1&&distinctQualities.size>1;
+  const isGroup=variants.length>1;
   variants.sort((a,b)=>b._qualityRank-a._qualityRank);
   const representative=variants[0];
   const baseAr=qualityInfo(representative.name_ar||representative.name_en).base||bucket.base;
@@ -1251,7 +1257,7 @@ function renderChannels(){
   const copy=document.createElement('div');copy.className='channel-copy';
   const title=document.createElement('h3');title.textContent=name;
   const desc=document.createElement('p');const channelDescription=String(row.description||'').trim();desc.textContent=(/^m3u$/i.test(channelDescription)?'':channelDescription)||meta[lang]||meta.en;
-  const tag=document.createElement('span');tag.className='tag';tag.textContent=row._variantGroup?(lang==='ar'?'نسخ متعددة · '+row.variants.length+' دقات':'MULTIPLE QUALITIES · '+row.variants.length):(lang==='ar'?'ضمن دليل القنوات':'CHANNEL GUIDE');
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=row._variantGroup?(lang==='ar'?'نسخ متعددة · '+row.variants.length+' مصادر':'MULTIPLE SOURCES · '+row.variants.length):(lang==='ar'?'ضمن دليل القنوات':'CHANNEL GUIDE');
   copy.append(title,desc,tag);card.append(fav,logo,copy);
   card.addEventListener('click',()=>playChannel(row));
   card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playChannel(row)}});
@@ -1355,6 +1361,7 @@ async function runM3uImportJob(jobId){
   total=Number(initial.job.imported_channels||0);
   if(initial.job.status==='completed'){
    status.textContent='الاستيراد مكتمل مسبقاً: '+total.toLocaleString('ar-IQ')+' قناة.';
+   localStorage.setItem('velnix:m3u-last-completed-job',jobId);
    localStorage.removeItem('velnix:m3u-import-job');resume.hidden=true;await loadChannels();return;
   }
   if(initial.job.status==='failed')throw new Error(initial.job.error_message||'مهمة الاستيراد متوقفة.');
@@ -1369,6 +1376,7 @@ async function runM3uImportJob(jobId){
   }
   if(!done)throw new Error('الملف كبير جداً لمهمة واحدة. اضغط استكمال آخر استيراد لمتابعة العمل.');
   status.textContent='اكتمل الاستيراد بنجاح: '+total.toLocaleString('ar-IQ')+' قناة. يمكنك الآن ترتيب القنوات من الإدارة.';
+  localStorage.setItem('velnix:m3u-last-completed-job',jobId);
   showSiteToast(status.textContent,'success');localStorage.removeItem('velnix:m3u-import-job');resume.hidden=true;
   await loadChannels();if(typeof loadAdminDashboard==='function')await loadAdminDashboard();
  }catch(err){
@@ -1376,6 +1384,22 @@ async function runM3uImportJob(jobId){
   showSiteToast(status.textContent,'error');resume.hidden=false;
  }finally{resume.disabled=false;}
 }
+$('#curateChannelsBtn').addEventListener('click',async()=>{
+ const btn=$('#curateChannelsBtn'),status=$('#curateChannelsStatus');
+ const jobId=localStorage.getItem('velnix:m3u-last-completed-job')||'d40201f1-c91a-4f1b-9342-9ec2673d3dc0';
+ if(!currentSession||currentSession.user.app_metadata?.role!=='admin'){showSiteToast('سجّل الدخول بحساب الإدارة أولاً.','error');return;}
+ if(!confirm('سيتم إعادة ترتيب جميع القنوات وجلب الشعارات من ملف M3U. لن يتم حذف أي قناة أو رابط بث. متابعة؟'))return;
+ btn.disabled=true;status.textContent='جارٍ قراءة ملف القنوات وتجميع الأقسام وإضافة الشعارات…';
+ try{
+  const result=await gateway({action:'admin_curate_channels',job_id:jobId});
+  if(!result.success)throw new Error(result.error||'تعذر إكمال تنظيم القنوات.');
+  const stats=result.stats||{};
+  status.textContent='اكتمل التنظيم: '+Number(stats.grouped||0).toLocaleString('ar-IQ')+' قناة · '+Number(stats.logos_added||0).toLocaleString('ar-IQ')+' شعار من الملف.';
+  showSiteToast(status.textContent,'success');
+  await loadChannels();
+ }catch(err){status.textContent='تعذر التنظيم: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error')}
+ finally{btn.disabled=false;}
+});
 $('#resumeM3uImport').addEventListener('click',async()=>{
  const jobId=localStorage.getItem('velnix:m3u-import-job');
  if(!jobId){showSiteToast('لا توجد مهمة استيراد محفوظة للاستكمال.','info');return;}
