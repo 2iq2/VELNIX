@@ -1373,6 +1373,7 @@ async function loadChannels(){
  }
 }
 
+$('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({behavior:'smooth'}));
 $('#adminBtn').addEventListener('click',()=>{const panel=$('#adminTools');panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});});
  $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;selectedGroupKey=null;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels();syncBeinGate()});
 $('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
