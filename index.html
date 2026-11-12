@@ -1249,8 +1249,16 @@ async function playChannel(row){
  if(!currentSession){showSiteToast('لازم تسجّل دخول حتى تشاهد القنوات.','error');$('#loginBtn').click();return;}
  if(categoryFor(row)==='bein'&&!beinAccess&&currentSession?.user?.app_metadata?.role!=='admin'){showSiteToast('قسم beIN SPORTS مقفول. فعّل حسابك أولاً.','error');syncBeinGate();return;}
  stopPlayback();
- const variants=(row.variants?.length?row.variants:[row]).slice().sort((a,b)=>(b._qualityRank||0)-(a._qualityRank||0));
- const preferred=variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
+ const variants=(row.variants?.length?row.variants:[row]).slice();
+ const identity=failoverIdentity(row);
+ if(identity){
+  const known=new Set(variants.map(v=>v.id));
+  const sameName=channelRows.filter(candidate=>candidate.id!==row.id&&categoryFor(candidate)===categoryFor(row)&&failoverIdentity(candidate)===identity&&!known.has(candidate.id));
+  sameName.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||qualityInfo(a.name_en||a.name_ar).rank)-(a._qualityRank||qualityInfo(b.name_en||b.name_ar).rank));
+  for(const candidate of sameName){variants.push({...candidate,_qualityRank:candidate._qualityRank??qualityInfo(candidate.name_en||candidate.name_ar).rank,_quality:qualityInfo(candidate.name_en||candidate.name_ar).quality});known.add(candidate.id)}
+ }
+ variants.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||0)-(a._qualityRank||0));
+ const preferred=variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===4)||variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===3)||variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
  activeRow={...row,variants,selectedVariantId:preferred.id};
  failoverVisited=new Set([preferred.id]);
  const generation=playbackGeneration;
@@ -1470,6 +1478,23 @@ function qualityInfo(value){
  const rank=/^(8K|4K|UHD|ULTRAHD|2160P)$/.test(token)?5:/^(FHD|1080P|1080I|1440P|FULLHD)$/.test(token)?4:/^(HD|720P)$/.test(token)?3:/^(SD|576P|480P)$/.test(token)?2:1;
  const quality=/^(4K|8K|2160P|1440P)$/.test(token)?token:/^(UHD|ULTRAHD)$/.test(token)?"UHD":/^(FHD|1080P|1080I)$/.test(token)?"FHD":/^(HD|720P)$/.test(token)?"HD":/^(SD|576P|480P)$/.test(token)?"SD":token;
  return {base:raw.slice(0,match.index).replace(/[\s._-]+$/,"").trim(),quality,rank};
+}
+function failoverIdentity(row){
+ const original=String(row?.name_en||row?.name_ar||'');
+ let value=cleanChannelName(original).replace(/\[[^\]]*\]|\([^)]*\)/g,' ').trim();
+ value=value.replace(/\b(8K|4K|UHD|FHD|FULL\s*HD|HD|SD|2160P|1440P|1080P|1080I|720P|576P|480P)\b/gi,' ');
+ let words=value.toLocaleLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).filter(Boolean);
+ const localeSuffixes=new Set(['ar','ara','arabic','en','eng','english','fr','fra','french','tr','tur','turkish','de','ger','german','es','spa','spanish','it','ita','italian','nl','dutch','pl','polish','pt','por','ru','russian','th','thai','ph','au','uk','us','usa','ksa','sa','ca','br','lat','latin','vip','backup','yedek']);
+ while(words.length>1&&localeSuffixes.has(words[words.length-1]))words.pop();
+ while(words.length>1&&['vip','backup','yedek'].includes(words[0]))words.shift();
+ return words.join(' ');
+}
+function failoverLanguageRank(row){
+ const raw=(String(row?.name_ar||'')+' '+String(row?.name_en||'')).toLowerCase();
+ if(/(^|[^a-z])(ar|ara|arabic)([^a-z]|$)|عربي|عربية/.test(raw))return 0;
+ if(/(^|[^a-z])(en|eng|english)([^a-z]|$)/.test(raw))return 2;
+ if(/(^|[^a-z])(fr|fra|french|tr|tur|turkish|de|ger|es|spa|it|ita|th|thai)([^a-z]|$)/.test(raw))return 4;
+ return 1;
 }
 function buildChannelGroups(){
  const buckets=new Map();
