@@ -30,7 +30,7 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var
 .subscription-gate-form button{border:0;border-radius:12px;padding:12px 18px;background:#e50914;color:white;font-weight:800;white-space:nowrap}.subscription-gate-form button:disabled{opacity:.55;cursor:wait}
 .subscription-login-link{margin-top:13px;border:1px solid #ffffff24;background:#ffffff08;color:#fff;border-radius:11px;padding:10px 18px}
 .subscription-gate-status{display:block;min-height:22px;margin-top:13px;color:#ffb4b7;font-size:12px;line-height:1.7}
-body.subscription-locked #catalogSummary,body.subscription-locked #channelToolbar,body.subscription-locked #filters,body.subscription-locked #channelsGrid,body.subscription-locked #channelGroupNav,body.subscription-locked #channelStatus,body.subscription-locked #loadMoreChannels,body.subscription-locked #beinGate,body.subscription-locked #adminTools{display:none!important}
+body.subscription-locked .catalog-summary,body.subscription-locked .channel-toolbar,body.subscription-locked #filters,body.subscription-locked #channelsGrid,body.subscription-locked #channelGroupNav,body.subscription-locked #channelStatus,body.subscription-locked #loadMoreChannels,body.subscription-locked #beinGate,body.subscription-locked #adminTools{display:none!important}
 @media(max-width:520px){.subscription-gate{margin:25px auto;padding:25px 17px}.subscription-gate-form{flex-direction:column}.subscription-gate-form button{width:100%}}
 [hidden]{display:none!important}
 /* VELNIX glass notifications */
@@ -1199,6 +1199,7 @@ $('#activateSubscriptionBtn').addEventListener('click',async()=>{
  button.disabled=true;status.textContent='جارٍ التحقق من كود الاشتراك...';
  try{
   const result=await gateway({action:'activate_subscription_code',code});
+  if(!result.success)throw new Error(result.error||'الكود غير صالح أو مستخدم مسبقاً');
   subscriptionAccess=true;subscriptionExpiresAt=result.expires_at||null;beinAccess=true;beinExpiresAt=subscriptionExpiresAt;
   $('#subscriptionCodeInput').value='';
   status.textContent='تم تفعيل الاشتراك بنجاح'+(subscriptionExpiresAt?' · ينتهي في '+new Date(subscriptionExpiresAt).toLocaleDateString('ar-IQ'):'')+'.';
