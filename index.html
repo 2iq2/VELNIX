@@ -1254,8 +1254,8 @@ async function playChannel(row){
  if(identity){
   const known=new Set(variants.map(v=>v.id));
   const sameName=channelRows.filter(candidate=>candidate.id!==row.id&&categoryFor(candidate)===categoryFor(row)&&failoverIdentity(candidate)===identity&&!known.has(candidate.id));
-  sameName.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||qualityInfo(a.name_en||a.name_ar).rank)-(a._qualityRank||qualityInfo(b.name_en||b.name_ar).rank));
-  for(const candidate of sameName){variants.push({...candidate,_qualityRank:candidate._qualityRank??qualityInfo(candidate.name_en||candidate.name_ar).rank,_quality:qualityInfo(candidate.name_en||candidate.name_ar).quality});known.add(candidate.id)}
+  sameName.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||failoverQualityRank(b)-failoverQualityRank(a));
+  for(const candidate of sameName){const q=qualityInfo(String(candidate.name_en||candidate.name_ar||'').replace(/\\b(ar|ara|arabic|en|eng|english|fr|fra|french|tr|tur|turkish|de|ger|es|spa|it|ita|th|thai|ph|au|uk|us|usa|ksa|sa|ca|br|lat|latin)\\b/gi,' '));variants.push({...candidate,_qualityRank:failoverQualityRank(candidate),_quality:q.quality});known.add(candidate.id)}
  }
  variants.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||0)-(a._qualityRank||0));
  const preferred=variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===4)||variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===3)||variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
@@ -1495,6 +1495,11 @@ function failoverLanguageRank(row){
  if(/(^|[^a-z])(en|eng|english)([^a-z]|$)/.test(raw))return 2;
  if(/(^|[^a-z])(fr|fra|french|tr|tur|turkish|de|ger|es|spa|it|ita|th|thai)([^a-z]|$)/.test(raw))return 4;
  return 1;
+}
+function failoverQualityRank(row){
+ const value=cleanChannelName(String(row?.name_en||row?.name_ar||'')).replace(/\\[[^\\]]*\\]|\\([^)]*\\)/g,' ')
+  .replace(/\\b(ar|ara|arabic|en|eng|english|fr|fra|french|tr|tur|turkish|de|ger|es|spa|it|ita|th|thai|ph|au|uk|us|usa|ksa|sa|ca|br|lat|latin)\\b/gi,' ').trim();
+ return qualityInfo(value).rank;
 }
 function buildChannelGroups(){
  const buckets=new Map();
