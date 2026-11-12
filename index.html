@@ -523,30 +523,6 @@ body[data-theme="light"] .fixture-score{color:#172033}
 @keyframes vx-flare-in{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}35%{opacity:.95;transform:translate(-50%,-50%) scale(1.5)}100%{opacity:.12;transform:translate(-50%,-50%) scale(24)}}
 @media(prefers-reduced-motion:reduce){.velnix-cinematic *{animation-duration:.01ms!important;animation-iteration-count:1!important}.velnix-cinematic{transition:none}}
 
-/* VELNIX streaming home */
-.stream-nav{gap:25px}.stream-nav a{font-weight:700}.stream-nav a.active,.stream-nav a:hover{color:#fff}
-.stream-home{padding:24px 0 8px}.stream-hero{position:relative;isolation:isolate;min-height:440px;display:flex;align-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:22px;background:#101117;box-shadow:0 24px 70px #0008}
-.stream-hero-backdrop{position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at 75% 42%,rgba(229,9,20,.28),transparent 40%),linear-gradient(110deg,#08090d,#19151a 65%,#090a0e)}
-.stream-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(7,8,12,.9),transparent 55%),linear-gradient(90deg,rgba(7,8,12,.9),transparent 100%)}
-.stream-hero-copy{width:65%;padding:56px 58px;position:relative;z-index:2}.stream-kicker{display:block;color:#e65a61;font:700 10px "DM Sans",sans-serif;letter-spacing:2.3px;margin-bottom:11px}
-.stream-feature-label{color:#e7e7e9;font-size:13px}.stream-hero h1{font-size:clamp(35px,5vw,62px);line-height:1.12;margin:16px 0 12px;max-width:600px}
-.stream-hero-copy p{color:#c4c5ca;font-size:15px;line-height:1.9;max-width:470px}.stream-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
-.stream-hero-art{position:absolute;inset-inline-end:7%;top:50%;transform:translateY(-50%);width:230px;height:300px;border-radius:15px;background:linear-gradient(145deg,#2c2530,#10131b);border:1px solid #ffffff2a;box-shadow:0 28px 75px #000b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden}
-.stream-hero-art img{width:100%;height:100%;object-fit:contain;padding:20px;background:#10131b}.stream-hero-art>span{font:700 9px "DM Sans",sans-serif;letter-spacing:2px;color:#e4d4d5}
-.stream-art-mark{font:800 100px "DM Sans",sans-serif;color:#e50914;text-shadow:0 0 40px #e5091455}.stream-hero-dots{position:absolute;bottom:18px;inset-inline-start:58px;color:#b9bac0;font-size:11px}
-.stream-shelves{padding-top:32px}.stream-shelf{padding:24px 0 18px;scroll-margin-top:100px}.stream-shelf-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}
-.stream-shelf-head h2{font-size:27px;margin:0 0 4px}.stream-shelf-head p{margin:0;color:var(--muted);font-size:12px}.shelf-more{border:0;background:transparent;color:#e5a3a6;font:700 12px "Tajawal",sans-serif;white-space:nowrap}
-.poster-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}.stream-poster{display:block;min-width:0;padding:0;text-align:right;background:transparent;border:0;color:var(--text);cursor:pointer}
-.stream-poster-art{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:2/2.8;border:1px solid #ffffff13;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 30%,#4b2029,#17121a 58%,#0b0d12);box-shadow:0 10px 24px #0004;transition:transform .25s,border-color .25s}
-.stream-poster-art img{width:100%;height:100%;object-fit:contain;padding:14px;background:#10131b}.stream-poster-art b{font:800 14px "DM Sans",sans-serif;letter-spacing:2px;color:#ffffffa8}
-.stream-poster-shade{position:absolute;inset:35% 0 0;background:linear-gradient(transparent,#090a0e99)}.stream-poster-info{display:block;padding:10px 2px}
-.stream-poster-info strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stream-poster-info small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
-.stream-poster:hover .stream-poster-art{transform:translateY(-5px);border-color:#e5091477}.shelf-loading{color:var(--muted);font-size:13px;padding:20px 0}
-.live-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.live-shortcuts button{padding:18px 12px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,#171a23,#101219);color:#eee;font:600 13px "Tajawal",sans-serif}
-.live-shortcuts button:hover{border-color:#e5091480;background:#24171c}
-@media(max-width:850px){.stream-hero{min-height:390px}.stream-hero-copy{width:72%;padding:42px 32px}.stream-hero-art{width:180px;height:245px;inset-inline-end:4%}.poster-row{grid-template-columns:repeat(4,minmax(0,1fr))}.live-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:600px){.stream-nav{gap:14px;overflow:auto;max-width:58vw}.stream-nav a{font-size:12px;white-space:nowrap}.stream-home{padding-top:12px}.stream-hero{min-height:470px;align-items:flex-end;border-radius:15px}.stream-hero:after{background:linear-gradient(0deg,#08090df5 0%,#08090dba 52%,#08090d22 100%)}.stream-hero-copy{width:100%;padding:28px 20px 56px}.stream-hero h1{font-size:38px;margin:10px 0}.stream-hero-copy p{font-size:13px}.stream-hero-art{width:112px;height:145px;top:22px;transform:none;inset-inline-end:18px;border-radius:10px}.stream-art-mark{font-size:55px}.stream-hero-dots{bottom:17px;inset-inline-start:20px;font-size:10px}.stream-shelves{padding-top:18px}.stream-shelf{padding:20px 0 10px}.stream-shelf-head h2{font-size:23px}.stream-shelf-head p{font-size:11px}.poster-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stream-poster-info{padding:8px 1px}.stream-poster-info strong{font-size:12px}.live-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.live-shortcuts button{padding:14px 8px;font-size:12px}}
-
 </style>
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
@@ -573,26 +549,22 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" aria-atomic="true"><span class="site-toast-icon" id="siteToastIcon">V</span><span class="site-toast-copy" id="siteToastText"></span></div>
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
-<nav class="stream-nav"><a href="#streamingHome" class="active">الأفلام</a><a href="#seriesShelf">المسلسلات</a><a href="#liveShelf">TV مباشر</a><a href="#fixtures">المباريات</a></nav><div class="nav-utility"><button class="theme-toggle" id="themeToggle" type="button" aria-label="تبديل الثيم">☀️</button><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="account-trigger" id="accountTrigger" type="button" hidden><span class="account-avatar" id="headerAvatar">🙂</span><span id="headerUserName">حسابي</span>⌄</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button><div class="account-menu" id="accountMenu" hidden><div class="account-menu-head"><span class="account-avatar" id="menuAvatar">🙂</span><span><strong id="menuUserName">حسابي</strong><small id="menuUserEmail"></small></span></div><button id="openProfileBtn" type="button">👤 الملف الشخصي والاشتراك</button><button id="menuThemeBtn" type="button">☼ تغيير الثيم</button><button id="menuSignOutBtn" type="button">↪ تسجيل الخروج</button></div></div>
+<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#fixtures" data-ar="مواعيد المباريات" data-en="Fixtures">المباريات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="theme-toggle" id="themeToggle" type="button" aria-label="تبديل الثيم">☀️</button><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="account-trigger" id="accountTrigger" type="button" hidden><span class="account-avatar" id="headerAvatar">🙂</span><span id="headerUserName">حسابي</span>⌄</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button><div class="account-menu" id="accountMenu" hidden><div class="account-menu-head"><span class="account-avatar" id="menuAvatar">🙂</span><span><strong id="menuUserName">حسابي</strong><small id="menuUserEmail"></small></span></div><button id="openProfileBtn" type="button">👤 الملف الشخصي والاشتراك</button><button id="menuThemeBtn" type="button">☼ تغيير الثيم</button><button id="menuSignOutBtn" type="button">↪ تسجيل الخروج</button></div></div>
 
 </div></header>
 <main>
-<section class="stream-home" id="streamingHome">
- <div class="stream-hero wrap">
-  <div class="stream-hero-backdrop" id="streamHeroBackdrop"></div>
-  <div class="stream-hero-copy"><span class="stream-kicker">VELNIX ORIGINAL EXPERIENCE</span><span class="stream-feature-label">اختيار مميز من مكتبة الأفلام</span><h1 id="streamHeroTitle">اكتشف عالم الأفلام</h1><p id="streamHeroDescription">ليلتك تبدأ من هنا. تصفّح قنوات الأفلام واختر ما يناسبك.</p><div class="stream-hero-actions"><button class="primary" id="streamHeroPlay">▶ ابدأ المشاهدة</button><button class="secondary" id="streamHeroBrowse">تصفح الأفلام</button></div></div>
-  <div class="stream-hero-art" id="streamHeroArt"><div class="stream-art-mark">V</div><span>VELNIX CINEMA</span></div><div class="stream-hero-dots" id="streamHeroDots"></div>
- </div>
- <div class="wrap stream-shelves">
-  <section class="stream-shelf" id="moviesShelf"><div class="stream-shelf-head"><div><span class="stream-kicker">CURATED FOR YOU</span><h2>أفلام</h2><p>قنوات ومجموعات الأفلام المتاحة في ملفك</p></div><button class="shelf-more" data-target="movies">عرض الكل ←</button></div><div class="poster-row" id="moviePosters"><div class="shelf-loading">جارٍ تجهيز مكتبة الأفلام…</div></div></section>
-  <section class="stream-shelf" id="seriesShelf"><div class="stream-shelf-head"><div><span class="stream-kicker">BINGE YOUR NEXT</span><h2>مسلسلات</h2><p>مجموعات المسلسلات والدراما المتاحة</p></div><button class="shelf-more" data-target="series">عرض الكل ←</button></div><div class="poster-row" id="seriesPosters"><div class="shelf-loading">جارٍ تجهيز المسلسلات…</div></div></section>
-  <section class="stream-shelf" id="liveShelf"><div class="stream-shelf-head"><div><span class="stream-kicker">LIVE, RIGHT NOW</span><h2>التلفزيون المباشر</h2><p>قنوات مباشرة متنوعة من مصادرك</p></div><button class="shelf-more" data-target="live">دليل القنوات ←</button></div><div class="live-shortcuts"><button data-cat="sports">⚽ الرياضة</button><button data-cat="arabic">🌙 القنوات العربية</button><button data-cat="news">📰 الأخبار</button><button data-cat="kids">🧸 الأطفال</button><button data-cat="all">كل القنوات</button></div></section>
- </div>
+<section class="wrap hero" id="home">
+<div>
+<div class="eyebrow" data-ar="قنواتك المفضلة، بتجربة أرقى" data-en="Your channels, elevated">قنواتك المفضلة، بتجربة أرقى</div>
+<h1 data-ar="كل ما تحب مشاهدته،<br><span class='gold'>في مكان واحد.</span>" data-en="Everything you love,<br><span class='gold'>in one place.</span>">كل ما تحب مشاهدته،<br><span class="gold">في مكان واحد.</span></h1>
+<p class="intro" data-ar="قنوات رياضية، إخبارية وترفيهية في مكان واحد. تصفّح بسهولة، أضف قنواتك للمفضلة، وابدأ المشاهدة بضغطة واحدة." data-en="Discover live channels and a world of entertainment in a refined viewing experience, designed to feel seamless across your devices.">اكتشف عالماً من القنوات المباشرة والمحتوى المتنوع، بتجربة مشاهدة أنيقة صُممت لتكون بسيطة وسلسة على جميع أجهزتك.</p>
+<div class="hero-ctas"><button class="primary" id="exploreBtn" data-ar="استكشف القنوات ←" data-en="Explore channels →">استكشف القنوات ←</button><button class="secondary" id="heroLogin" data-ar="إنشاء حساب" data-en="Create account">إنشاء حساب</button></div>
+</div>
 </section>
 
 
 <section class="wrap section" id="categories">
-<div class="section-head"><div><span class="stream-kicker">LIVE TV DIRECTORY</span><h2>دليل التلفزيون المباشر</h2><p>كل قنواتك المباشرة مرتبة حتى توصل للمحتوى بسرعة.</p></div></div>
+<div class="section-head"><div><h2 data-ar="دليل القنوات" data-en="Channel guide">دليل القنوات</h2><p data-ar="كل قنواتك مرتبة حتى توصل للمحتوى بسرعة." data-en="Browse your channels by category.">كل قنواتك مرتبة حتى توصل للمحتوى بسرعة.</p>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
 <div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
@@ -1379,36 +1351,6 @@ function renderChannels(){
  const more=$('#loadMoreChannels');more.hidden=rows.length<=visibleLimit;more.textContent=lang==='ar'?'عرض المزيد · '+Math.min(90,rows.length-visibleLimit).toLocaleString('ar-IQ')+' قناة':'Load more · '+Math.min(90,rows.length-visibleLimit)+' channels';
  const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة.':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels.';
 }
-function renderStreamingHome(){
- const grouped=buildChannelGroups();
- const movieRows=grouped.filter(r=>categoryFor(r)==='movies'||/movies|movie|films?|cinema|cinéma|peliculas|filmovi|primevideo|netflix|أفلام|افلام/i.test(String(r.source_group_title||'')));
- const seriesRows=grouped.filter(r=>categoryFor(r)==='series'||/series|مسلسل|مسلسلات|drama|primevideo series/i.test(String(r.source_group_title||'')));
- const poster=(row,kind)=>{
-  const card=document.createElement('button');card.type='button';card.className='stream-poster';
-  const art=document.createElement('span');art.className='stream-poster-art';
-  if(row.logo_url){const img=document.createElement('img');img.src=row.logo_url;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();art.append(img)}
-  else{const mark=document.createElement('b');mark.textContent=kind==='series'?'SERIES':'CINEMA';art.append(mark)}
-  const shade=document.createElement('span');shade.className='stream-poster-shade';art.append(shade);
-  const info=document.createElement('span');info.className='stream-poster-info';
-  const title=document.createElement('strong');title.textContent=displayName(row);
-  const sub=document.createElement('small');sub.textContent=kind==='series'?'مسلسلات ودراما':'قناة أفلام';
-  info.append(title,sub);card.append(art,info);card.addEventListener('click',()=>playChannel(row));return card;
- };
- const movieHost=$('#moviePosters'),seriesHost=$('#seriesPosters');movieHost.replaceChildren();seriesHost.replaceChildren();
- movieRows.slice(0,18).forEach(r=>movieHost.append(poster(r,'movies')));
- seriesRows.slice(0,18).forEach(r=>seriesHost.append(poster(r,'series')));
- if(!movieRows.length){const e=document.createElement('div');e.className='shelf-loading';e.textContent='لا توجد مجموعات أفلام مصنفة حالياً في الملف.';movieHost.append(e)}
- if(!seriesRows.length){const e=document.createElement('div');e.className='shelf-loading';e.textContent='لا توجد مجموعات مسلسلات مصنفة حالياً في الملف.';seriesHost.append(e)}
- const feature=movieRows[0]||seriesRows[0],title=$('#streamHeroTitle'),desc=$('#streamHeroDescription'),art=$('#streamHeroArt'),play=$('#streamHeroPlay');
- if(feature){
-  title.textContent=displayName(feature);desc.textContent='من مجموعة '+String(feature.source_group_title||'الأفلام')+' · اضغط ابدأ المشاهدة لفتح البث المتاح.';
-  art.replaceChildren();
-  if(feature.logo_url){const img=document.createElement('img');img.src=feature.logo_url;img.alt=displayName(feature);img.referrerPolicy='no-referrer';art.append(img)}
-  const stamp=document.createElement('span');stamp.textContent='VELNIX FEATURED';art.append(stamp);
-  play.disabled=false;play.onclick=()=>playChannel(feature);
- }else{title.textContent='عالم VELNIX بانتظارك';desc.textContent='سيظهر المحتوى هنا بعد تحميل ملف القنوات.';play.disabled=true}
- $('#streamHeroDots').textContent=movieRows.length.toLocaleString('ar-IQ')+' مجموعة أفلام · '+seriesRows.length.toLocaleString('ar-IQ')+' مجموعة مسلسلات';
-}
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  const all=[];
@@ -1418,7 +1360,6 @@ async function loadChannels(){
    const pages=await Promise.all([0,1000,2000,3000].map(offset=>rest(query+(base+offset))));
    for(const rows of pages)all.push(...rows);
    channelRows=all;
-   try{renderStreamingHome()}catch(homeError){console.error('VELNIX home render failed:',homeError);$('#moviePosters').textContent='تعذر تجهيز قسم الأفلام: '+(homeError?.message||'خطأ غير معروف');$('#seriesPosters').textContent='تعذر تجهيز قسم المسلسلات.';}
    status.textContent=lang==='ar'?'جارٍ تحميل الدليل… '+all.length.toLocaleString('ar-IQ')+' قناة':'Loading directory… '+all.length.toLocaleString('en-US')+' channels';
    if(pages.some(rows=>rows.length<1000))break;
   }
@@ -1428,24 +1369,10 @@ async function loadChannels(){
   console.error('VELNIX channel catalog load failed:',e);
   const message='تعذر تحميل الدليل: '+(e?.message||'تحقق من الاتصال ثم أعد المحاولة');
   status.textContent=message;
-  if(!$('#moviePosters').querySelector('.stream-poster'))$('#moviePosters').textContent=message;
-  if(!$('#seriesPosters').querySelector('.stream-poster'))$('#seriesPosters').textContent=message;
   showSiteToast(message,'error');
  }
 }
 
-$('#streamHeroBrowse').addEventListener('click',()=>$('#moviesShelf').scrollIntoView({behavior:'smooth',block:'start'}));
-document.querySelectorAll('.shelf-more').forEach(btn=>btn.addEventListener('click',()=>{
- const target=btn.dataset.target,category=target==='movies'?'movies':target==='series'?'series':'all';
- selectedGroupKey=null;catalogMode='all';visibleLimit=90;
- const filter=document.querySelector('#filters [data-cat="'+category+'"]');
- if(filter){document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===filter));renderChannels();$('#categories').scrollIntoView({behavior:'smooth'});}
-}));
-document.querySelectorAll('.live-shortcuts [data-cat]').forEach(btn=>btn.addEventListener('click',()=>{
- const cat=btn.dataset.cat;selectedGroupKey=null;catalogMode='all';visibleLimit=90;
- const filter=document.querySelector('#filters [data-cat="'+cat+'"]');
- if(filter){document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===filter));renderChannels();$('#categories').scrollIntoView({behavior:'smooth'});}
-}));
 $('#adminBtn').addEventListener('click',()=>{const panel=$('#adminTools');panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});});
  $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;selectedGroupKey=null;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels();syncBeinGate()});
 $('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
