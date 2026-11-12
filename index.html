@@ -1232,7 +1232,7 @@ function groupTitleFor(row){
  const title=String(row.source_group_title||'').trim();
  return title||String(CATEGORY_META[categoryFor(row)]?.en||'Other');
 }
-function groupKeyFor(row){return categoryFor(row)+'|'+groupTitleFor(row).toLocaleLowerCase()}
+function groupKeyFor(row){return groupTitleFor(row).trim().replace(/\\s+/g,' ').toLocaleLowerCase()}
 function displayGroupTitle(value){
  const names={
   'iraq':'العراق','egypt':'مصر','saudi arabia':'السعودية','united arab emirates':'الإمارات','uae':'الإمارات',
