@@ -704,10 +704,18 @@ function saveSession(session){
  try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY)}catch(e){}
 }
 async function authRequest(path,payload,token){
- const response=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(payload||{})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||'تعذر الاتصال بخدمة تسجيل الدخول');
- return data;
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),18000);
+ try{
+  const response=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(payload||{}),signal:controller.signal,cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||('تعذر تسجيل الدخول (HTTP '+response.status+')'));
+  return data;
+ }catch(error){
+  if(error?.name==='AbortError')throw new Error('انتهت مهلة الاتصال بخدمة تسجيل الدخول بعد 18 ثانية. تحقق من الشبكة ثم حاول مجدداً.');
+  if(error instanceof TypeError)throw new Error('تعذر الوصول إلى خادم تسجيل الدخول. افحص اتصال الإنترنت أو جرّب شبكة أخرى.');
+  throw error;
+ }finally{clearTimeout(timeout)}
 }
 async function refreshSessionIfNeeded(){
  let session=currentSession||readSavedSession();
