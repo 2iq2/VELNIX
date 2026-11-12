@@ -577,7 +577,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="bein-gate-form" id="beinGateForm"><input id="beinActivationCode" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود تفعيل beIN"><button id="activateBeinBtn" type="button">تفعيل الكود</button></div>
 <span class="bein-gate-status" id="beinGateStatus" role="status"></span>
 </div>
-<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">استيراد ملف M3U الخاص</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" multiple hidden><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">لوحة إدارة VELNIX</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
+<div class="admin-tools" id="adminTools" hidden><label class="filter" for="m3uFile">رفع ملف M3U كامل</label><input id="m3uFile" type="file" accept=".m3u,.m3u8" hidden><button class="filter" id="resumeM3uImport" type="button" hidden>استكمال آخر استيراد</button><button class="filter" id="streamHealthBtn" type="button">فحص القنوات · 20 قناة</button><span id="importStatus" role="status">ارفع ملف القنوات من هنا؛ تتم معالجته على دفعات تلقائياً.</span><span id="streamHealthStatus" role="status">لم يبدأ الفحص بعد</span><div id="streamHealthResults" style="flex-basis:100%;font-size:12px;line-height:1.9;color:var(--muted)"></div>
 <div class="admin-dashboard" id="adminDashboard">
  <div class="admin-dashboard-head"><h3>لوحة تحكم VELNIX</h3><button class="filter" id="adminRefresh" type="button">تحديث الإحصائيات</button></div>
  <div class="admin-stats" id="adminStats"><div>جارٍ تحميل الإحصائيات…</div></div>
@@ -1345,28 +1345,73 @@ $('#streamHealthBtn').addEventListener('click',async()=>{
   showSiteToast(status.textContent,'error');
  }finally{streamHealthRunning=false;}
 });
+async function runM3uImportJob(jobId){
+ const status=$('#importStatus'),resume=$('#resumeM3uImport');
+ resume.hidden=false;resume.disabled=true;
+ let total=0,done=false;
+ try{
+  const initial=await gateway({action:'admin_get_m3u_import',job_id:jobId});
+  if(!initial.success)throw new Error(initial.error||'تعذر قراءة مهمة الاستيراد');
+  total=Number(initial.job.imported_channels||0);
+  if(initial.job.status==='completed'){
+   status.textContent='الاستيراد مكتمل مسبقاً: '+total.toLocaleString('ar-IQ')+' قناة.';
+   localStorage.removeItem('velnix:m3u-import-job');resume.hidden=true;await loadChannels();return;
+  }
+  if(initial.job.status==='failed')throw new Error(initial.job.error_message||'مهمة الاستيراد متوقفة.');
+  for(let step=0;step<250;step++){
+   status.textContent='جارٍ حفظ القنوات… '+total.toLocaleString('ar-IQ')+' قناة حتى الآن. لا تغلق الصفحة.';
+   const result=await gateway({action:'admin_process_m3u_import',job_id:jobId});
+   if(!result.success)throw new Error(result.error||'توقفت دفعة الاستيراد');
+   total=Number(result.channels||total);
+   const lineProgress=result.total_lines?Math.min(100,Math.round(Number(result.next_line||0)/Number(result.total_lines)*100)):0;
+   status.textContent='تمت معالجة '+lineProgress+'% · '+total.toLocaleString('ar-IQ')+' قناة محفوظة';
+   if(result.done){done=true;break;}
+  }
+  if(!done)throw new Error('الملف كبير جداً لمهمة واحدة. اضغط استكمال آخر استيراد لمتابعة العمل.');
+  status.textContent='اكتمل الاستيراد بنجاح: '+total.toLocaleString('ar-IQ')+' قناة. يمكنك الآن ترتيب القنوات من الإدارة.';
+  showSiteToast(status.textContent,'success');localStorage.removeItem('velnix:m3u-import-job');resume.hidden=true;
+  await loadChannels();if(typeof loadAdminDashboard==='function')await loadAdminDashboard();
+ }catch(err){
+  status.textContent='توقف الاستيراد بعد حفظ '+total.toLocaleString('ar-IQ')+' قناة: '+(err?.message||'خطأ غير معروف')+' — اضغط «استكمال آخر استيراد».';
+  showSiteToast(status.textContent,'error');resume.hidden=false;
+ }finally{resume.disabled=false;}
+}
+$('#resumeM3uImport').addEventListener('click',async()=>{
+ const jobId=localStorage.getItem('velnix:m3u-import-job');
+ if(!jobId){showSiteToast('لا توجد مهمة استيراد محفوظة للاستكمال.','info');return;}
+ await runM3uImportJob(jobId);
+});
 $('#m3uFile').addEventListener('change',async e=>{
- const files=Array.from(e.target.files||[]);if(!files.length)return;
- const status=$('#importStatus');let totalChannels=0,completed=0;
+ const file=e.target.files?.[0];if(!file)return;
+ const status=$('#importStatus'),resume=$('#resumeM3uImport');
  try{
   if(!currentSession||currentSession.user.app_metadata?.role!=='admin')throw new Error('سجّل الدخول بحساب الإدارة أولاً.');
-  for(let i=0;i<files.length;i++){
-   const file=files[i];
-   if(file.size>2000000)throw new Error('الملف '+file.name+' يتجاوز الحد المسموح لكل جزء (2 ميغابايت).');
-   const content=await file.text();
-   if(!/^\\s*#EXTM3U/m.test(content))throw new Error('الملف '+file.name+' ليس بصيغة M3U صحيحة.');
-   status.textContent='جارٍ استيراد الجزء '+(i+1)+' من '+files.length+'...';
-   const result=await gateway({action:'admin_import_m3u',content});
-   if(!result.success)throw new Error(result.error||'تعذر استيراد '+file.name);
-   totalChannels+=Number(result.channels||0);completed++;
-  }
-  status.textContent='تم استيراد '+totalChannels.toLocaleString('ar-IQ')+' قناة بنجاح ضمن '+completed+' أجزاء.';
-  showSiteToast(status.textContent,'success');await loadChannels();
+  if(file.size>50*1024*1024)throw new Error('الحد الأعلى الحالي للملف 50 ميغابايت وفق حدود التخزين المجاني.');
+  if(!/\.m3u8?$/i.test(file.name))throw new Error('اختر ملف M3U أو M3U8.');
+  const head=(await file.slice(0,4096).text()).replace(/^\uFEFF/,'');
+  if(!/^\s*#EXTM3U/m.test(head))throw new Error('الملف ليس بصيغة M3U صحيحة.');
+  const session=await refreshSessionIfNeeded();
+  if(!session?.access_token)throw new Error('انتهت جلسة الإدارة. سجّل الدخول مجدداً.');
+  const path=session.user.id+'/'+crypto.randomUUID()+'-'+file.name.replace(/[^\w.-]/g,'_');
+  const encodedPath=path.split('/').map(encodeURIComponent).join('/');
+  status.textContent='جارٍ رفع الملف الكامل إلى التخزين الخاص…';
+  const upload=await fetch(API+'/storage/v1/object/m3u-imports/'+encodedPath,{
+   method:'POST',
+   headers:{'apikey':KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':file.type||'application/octet-stream','x-upsert':'false'},
+   body:file
+  });
+  const uploadData=await upload.json().catch(()=>({}));
+  if(!upload.ok)throw new Error(uploadData.message||uploadData.error||'فشل رفع الملف إلى التخزين الخاص (HTTP '+upload.status+').');
+  status.textContent='تم رفع الملف. جارٍ إنشاء مهمة الاستيراد…';
+  const started=await gateway({action:'admin_start_m3u_import',file_path:path,file_name:file.name});
+  if(!started.success||!started.job?.id)throw new Error(started.error||'تعذر بدء الاستيراد.');
+  localStorage.setItem('velnix:m3u-import-job',started.job.id);
+  resume.hidden=false;
+  await runM3uImportJob(started.job.id);
  }catch(err){
-  const prefix=completed?'تم استيراد '+totalChannels.toLocaleString('ar-IQ')+' قناة قبل توقف العملية. ':'';
-  status.textContent=prefix+'فشل الاستيراد: '+(err?.message||'خطأ غير معروف')+' يمكنك إعادة اختيار الأجزاء؛ الاستيراد لا يكرر القنوات نفسها.';
+  status.textContent='تعذر رفع/بدء الملف: '+(err?.message||'خطأ غير معروف');
   showSiteToast(status.textContent,'error');
- }finally{e.target.value=''}
+ }finally{e.target.value='';}
 });
 
 /* VELNIX match schedule — combined soccer fixtures */
