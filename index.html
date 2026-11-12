@@ -1096,7 +1096,11 @@ function scheduleRecovery(reason,generation=playbackGeneration){
  recovering=true;retryCount++;
  const currentId=activeRow.selectedVariantId;
  if(currentId)failoverVisited.add(currentId);
- const nextServer=(activeRow.variants||[]).find(v=>v.id&& !failoverVisited.has(v.id));
+ let nextServer=(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
+ if(!nextServer&&(activeRow.variants||[]).length>1){
+  failoverVisited=new Set(currentId?[currentId]:[]);
+  nextServer=(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
+ }
  if(nextServer)activeRow.selectedVariantId=nextServer.id;
  const delay=nextServer?900:Math.min(30000,2500*Math.pow(1.5,Math.min(retryCount-1,8)));
  const message=nextServer
