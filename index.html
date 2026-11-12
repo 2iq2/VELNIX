@@ -999,7 +999,7 @@ async function gateway(body){
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
 }
-let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set();let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 async function loadPersonalLists(){
  const user=currentSession?.user;if(!user)return;
  try{
@@ -1094,8 +1094,15 @@ function qualities(){
 function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
  recovering=true;retryCount++;
- const delay=Math.min(30000,2500*Math.pow(1.5,Math.min(retryCount-1,8)));
- state(lang==='ar'?'تم رصد توقف البث؛ إعادة الاتصال تلقائياً (المحاولة '+retryCount+')...':'Stream interruption detected; reconnecting (attempt '+retryCount+')...');
+ const currentId=activeRow.selectedVariantId;
+ if(currentId)failoverVisited.add(currentId);
+ const nextServer=(activeRow.variants||[]).find(v=>v.id&& !failoverVisited.has(v.id));
+ if(nextServer)activeRow.selectedVariantId=nextServer.id;
+ const delay=nextServer?900:Math.min(30000,2500*Math.pow(1.5,Math.min(retryCount-1,8)));
+ const message=nextServer
+  ?(lang==='ar'?'توقف البث؛ جارٍ التحويل إلى سيرفر بديل للقناة…':'Stream interrupted; switching to a backup server…')
+  :(lang==='ar'?'لم يتوفر سيرفر بديل؛ جارٍ إعادة المحاولة تلقائياً ('+retryCount+')…':'No backup server available; retrying automatically ('+retryCount+')…');
+ state(message);
  if(retryTimer)clearTimeout(retryTimer);
  retryTimer=setTimeout(async()=>{
   retryTimer=null;
@@ -1111,6 +1118,15 @@ async function startPlayback(row,generation,reason='initial'){
  const sourceRow=row.variants?.find(v=>v.id===row.selectedVariantId)||row;
  const stream=await gateway({action:'stream',channel_id:sourceRow.id});
  if(generation!==playbackGeneration)return;
+ if(Array.isArray(stream.alternates)&&stream.alternates.length){
+  const known=new Set((row.variants||[]).map(v=>v.id));
+  stream.alternates.forEach(v=>{
+   if(v.channel_id&&!known.has(v.channel_id)){
+    row.variants.push({id:v.channel_id,name_ar:v.name_ar,name_en:v.name_en,source_provider:v.source_provider,stream_type:v.stream_type||'file'});
+    known.add(v.channel_id);
+   }
+  });
+ }
  const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
@@ -1232,6 +1248,7 @@ async function playChannel(row){
  const variants=(row.variants?.length?row.variants:[row]).slice().sort((a,b)=>(b._qualityRank||0)-(a._qualityRank||0));
  const preferred=variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
  activeRow={...row,variants,selectedVariantId:preferred.id};
+ failoverVisited=new Set([preferred.id]);
  const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
  qualities();
