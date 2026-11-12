@@ -702,7 +702,6 @@ function readSavedSession(){
 function saveSession(session){
  currentSession=session;
  try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY)}catch(e){}
- authListeners.forEach(fn=>{try{fn('SIGNED_IN',session)}catch(err){}});
 }
 async function authRequest(path,payload,token){
  const response=await fetch(API+'/auth/v1/'+path,{method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(payload||{})});
@@ -786,7 +785,7 @@ $('#authForm').addEventListener('submit',async e=>{
  }finally{button.disabled=false}
 });
 $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();await refreshAuth();});
-supabase.auth.onAuthStateChange(()=>refreshAuth());refreshAuth();
+refreshAuth().catch(error=>{console.error('VELNIX auth restore failed:',error);const status=$('#authMessage');if(status){status.textContent='تعذر استعادة جلسة الدخول: '+(error?.message||'حاول تسجيل الدخول من جديد');status.classList.add('error')}});
 applyTheme(localStorage.getItem('velnix:theme')||'dark');
 $('#themeToggle').addEventListener('click',toggleTheme);$('#menuThemeBtn').addEventListener('click',toggleTheme);
 $('#accountTrigger').addEventListener('click',()=>{$('#accountMenu').hidden=!$('#accountMenu').hidden});
@@ -1404,17 +1403,27 @@ function renderStreamingHome(){
 }
 async function loadChannels(){
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
+ const all=[];
+ const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,source_group_title,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=1000&offset=';
  try{
-  const all=[];
-  const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,source_group_title,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=';
-  for(let base=0;base<100000;base+=2000){
-   const pages=await Promise.all([0,500,1000,1500].map(offset=>rest(query+(base+offset))));
+  for(let base=0;base<100000;base+=4000){
+   const pages=await Promise.all([0,1000,2000,3000].map(offset=>rest(query+(base+offset))));
    for(const rows of pages)all.push(...rows);
-   if(pages.some(rows=>rows.length<500))break;
+   channelRows=all;
+   try{renderStreamingHome()}catch(homeError){console.error('VELNIX home render failed:',homeError);$('#moviePosters').textContent='تعذر تجهيز قسم الأفلام: '+(homeError?.message||'خطأ غير معروف');$('#seriesPosters').textContent='تعذر تجهيز قسم المسلسلات.';}
+   status.textContent=lang==='ar'?'جارٍ تحميل الدليل… '+all.length.toLocaleString('ar-IQ')+' قناة':'Loading directory… '+all.length.toLocaleString('en-US')+' channels';
+   if(pages.some(rows=>rows.length<1000))break;
   }
-  channelRows=all;try{renderStreamingHome()}catch(homeError){console.error('VELNIX home render failed:',homeError);$('#moviePosters').textContent='تعذر تجهيز قسم الأفلام: '+(homeError?.message||'خطأ غير معروف');$('#seriesPosters').textContent='تعذر تجهيز قسم المسلسلات.';}renderChannels();populateAdminEpgChannels();
-  status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
- }catch(e){console.error(e);status.textContent=lang==='ar'?'تعذر تحميل دليل القنوات. حدّث الصفحة وحاول مجدداً.':'Could not load channels. Refresh and try again.';showSiteToast(status.textContent,'error')}
+  renderChannels();populateAdminEpgChannels();
+  status.textContent=all.length?(lang==='ar'?'تم تحميل '+all.length.toLocaleString('ar-IQ')+' قناة. اختر قناة للمشاهدة.':'Loaded '+all.length.toLocaleString('en-US')+' channels. Select one to watch.'):(lang==='ar'?'لا توجد قنوات مضافة حالياً.':'No channels available yet.');
+ }catch(e){
+  console.error('VELNIX channel catalog load failed:',e);
+  const message='تعذر تحميل الدليل: '+(e?.message||'تحقق من الاتصال ثم أعد المحاولة');
+  status.textContent=message;
+  if(!$('#moviePosters').querySelector('.stream-poster'))$('#moviePosters').textContent=message;
+  if(!$('#seriesPosters').querySelector('.stream-poster'))$('#seriesPosters').textContent=message;
+  showSiteToast(message,'error');
+ }
 }
 
 $('#streamHeroBrowse').addEventListener('click',()=>$('#moviesShelf').scrollIntoView({behavior:'smooth',block:'start'}));
