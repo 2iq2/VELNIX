@@ -1380,15 +1380,16 @@ function renderChannels(){
   const folders=new Map();
   for(const row of rows){
    const key=groupKeyFor(row),title=groupTitleFor(row),category=categoryFor(row);
-   if(!folders.has(key))folders.set(key,{key,title,category,count:0});
-   folders.get(key).count++;
+   if(!folders.has(key))folders.set(key,{key,title,category,count:0,logos:[]});
+   const folder=folders.get(key);folder.count++;
+   for(const variant of [row,...(row.variants||[])])if(variant.logo_url)folder.logos.push(String(variant.logo_url).trim());
   }
   const list=[...folders.values()].sort((a,b)=>collator.compare(displayGroupTitle(a.title),displayGroupTitle(b.title)));
   const usedFolderLogos=new Set();
   list.forEach(folder=>{
    const card=document.createElement('article');card.className='channel folder-card';card.tabIndex=0;card.setAttribute('role','button');
    const icon=document.createElement('div');icon.className='folder-logo folder-logo-category';icon.setAttribute('aria-hidden','true');
-   const candidates=(rows.filter(row=>groupKeyFor(row)===folder.key)).flatMap(row=>[row,...(row.variants||[])]).map(row=>String(row.logo_url||'').trim()).filter(url=>/^https:\/\//i.test(url));
+   const candidates=[...new Set(folder.logos)].filter(url=>/^https:\/\//i.test(url));
    const logoUrl=candidates.find(url=>!usedFolderLogos.has(url.replace(/[?#].*$/,'')));
    if(logoUrl){
     usedFolderLogos.add(logoUrl.replace(/[?#].*$/,''));
