@@ -22,6 +22,16 @@ header{position:sticky;top:0;z-index:20;background:rgba(9,12,18,.82);backdrop-fi
 .note{border:1px solid rgba(201,169,110,.18);background:linear-gradient(100deg,rgba(201,169,110,.07),rgba(20,29,42,.6));border-radius:18px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}.note strong{font-size:17px}.note p{color:var(--muted);font-size:13px;margin:6px 0 0}.note-icon{font-size:28px;color:var(--gold2)}
 footer{border-top:1px solid var(--line);margin-top:50px;padding:28px 0;color:var(--muted);font-size:12px}.foot{display:flex;justify-content:space-between;gap:20px;align-items:center}.foot b{font-family:"DM Sans",sans-serif;letter-spacing:2px;color:var(--text)}
 .modal{position:fixed;inset:0;background:#000b;z-index:50;display:none;place-items:center;padding:20px}.modal.show{display:grid}.dialog{width:min(420px,100%);background:#111925;border:1px solid rgba(201,169,110,.3);border-radius:22px;padding:27px;box-shadow:0 30px 90px #0009}.dialog h2{margin:0 0 8px}.dialog p{color:var(--muted);font-size:13px;line-height:1.7}.close{float:left;background:transparent;border:0;color:#aab2bf;font-size:23px}.field{width:100%;background:#0b111a;border:1px solid var(--line);border-radius:11px;padding:13px;color:white;margin:7px 0 12px;outline:none}.field:focus{border-color:var(--gold)}.dialog .primary{width:100%;margin-top:7px}.auth-message{font-size:13px;line-height:1.7;margin:8px 0;color:var(--gold2)}.auth-message.error{color:#ff9c91}.auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:14px}.auth-links button{border:0;background:none;color:var(--gold2);font-size:12px;padding:4px 0}.auth-links button:hover{text-decoration:underline}
+
+.subscription-gate{max-width:590px;margin:34px auto 28px;padding:clamp(25px,5vw,42px);text-align:center;border:1px solid rgba(229,9,20,.28);border-radius:22px;background:radial-gradient(ellipse at 50% 0%,rgba(229,9,20,.15),transparent 58%),linear-gradient(145deg,#171922,#0d0e13);box-shadow:0 24px 70px #0005}
+.subscription-gate-lock{font-size:38px;margin-bottom:12px}.subscription-kicker{font:700 10px "DM Sans",sans-serif;letter-spacing:3px;color:#ff747a}
+.subscription-gate h3{font-size:clamp(22px,4vw,29px);margin:10px 0}.subscription-gate p{color:#a4a5ad;line-height:1.9;font-size:14px;margin:0 auto 20px;max-width:430px}
+.subscription-gate-form{display:flex;gap:9px;max-width:440px;margin:auto}.subscription-gate-form input{min-width:0;flex:1;background:#090b10;border:1px solid #ffffff20;border-radius:12px;padding:13px;color:#fff;text-align:center;direction:ltr;letter-spacing:1px;outline:none}.subscription-gate-form input:focus{border-color:#e50914}
+.subscription-gate-form button{border:0;border-radius:12px;padding:12px 18px;background:#e50914;color:white;font-weight:800;white-space:nowrap}.subscription-gate-form button:disabled{opacity:.55;cursor:wait}
+.subscription-login-link{margin-top:13px;border:1px solid #ffffff24;background:#ffffff08;color:#fff;border-radius:11px;padding:10px 18px}
+.subscription-gate-status{display:block;min-height:22px;margin-top:13px;color:#ffb4b7;font-size:12px;line-height:1.7}
+body.subscription-locked #catalogSummary,body.subscription-locked #channelToolbar,body.subscription-locked #filters,body.subscription-locked #channelsGrid,body.subscription-locked #channelGroupNav,body.subscription-locked #channelStatus,body.subscription-locked #loadMoreChannels,body.subscription-locked #beinGate,body.subscription-locked #adminTools{display:none!important}
+@media(max-width:520px){.subscription-gate{margin:25px auto;padding:25px 17px}.subscription-gate-form{flex-direction:column}.subscription-gate-form button{width:100%}}
 [hidden]{display:none!important}
 /* VELNIX glass notifications */
 .site-toast{position:fixed;z-index:120;top:calc(18px + env(safe-area-inset-top));left:50%;width:min(430px,calc(100vw - 28px));min-height:54px;display:flex;align-items:center;gap:11px;padding:10px 15px;border:1px solid rgba(108,225,218,.26);border-radius:13px;background:rgba(7,17,25,.68);color:rgba(239,251,255,.92);box-shadow:0 12px 38px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;visibility:hidden;transform:translate(-50%,-9px);pointer-events:none;transition:opacity .24s ease,transform .24s ease,visibility .24s ease;font-size:13px;line-height:1.6}.site-toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}.site-toast-icon{width:17px;height:17px;display:grid;place-items:center;border:1px solid rgba(218,239,245,.48);border-radius:5px;font:800 10px "DM Sans",sans-serif;color:rgba(235,249,252,.78);transform:rotate(45deg);font-size:9px}.site-toast-copy{min-width:0;overflow-wrap:anywhere}.site-toast.success{border-color:rgba(92,224,164,.32)}.site-toast.error{border-color:rgba(255,112,132,.35)}.site-toast.info{border-color:rgba(108,225,218,.26)}@media(max-width:600px){.site-toast{top:calc(12px + env(safe-area-inset-top));width:calc(100vw - 24px);min-height:49px;padding:9px 12px;font-size:12px}}
@@ -672,6 +682,18 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
 
 <section class="wrap section" id="categories">
 <div class="section-head"><div><h2 data-ar="دليل القنوات" data-en="Channel guide">دليل القنوات</h2><p data-ar="كل قنواتك مرتبة حتى توصل للمحتوى بسرعة." data-en="Browse your channels by category.">كل قنواتك مرتبة حتى توصل للمحتوى بسرعة.</p></div></div>
+<div class="subscription-gate" id="subscriptionGate" hidden>
+ <div class="subscription-gate-lock">🔐</div>
+ <span class="subscription-kicker">VELNIX MEMBERSHIP</span>
+ <h3 id="subscriptionGateTitle">فعّل اشتراكك لفتح VELNIX</h3>
+ <p id="subscriptionGateDescription">أدخل كود الاشتراك حتى تظهر لك جميع القنوات والأقسام وتبدأ المشاهدة.</p>
+ <div class="subscription-gate-form" id="subscriptionGateForm">
+  <input id="subscriptionCodeInput" type="text" maxlength="23" placeholder="VELNIX-XXXX-XXXX-XXXX" autocomplete="off" aria-label="كود الاشتراك">
+  <button id="activateSubscriptionBtn" type="button">تفعيل الاشتراك</button>
+ </div>
+ <button class="subscription-login-link" id="subscriptionLoginBtn" type="button" hidden>تسجيل الدخول أولاً</button>
+ <span class="subscription-gate-status" id="subscriptionGateStatus" role="status"></span>
+</div>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
 <div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
@@ -756,7 +778,7 @@ let currentSession=null;
 let authMode='login';
 let profileData={display_name:'',avatar_url:'velnix-avatar:anime1'};let selectedAvatar='anime1';
 let lang='ar',channelRows=[];
-let beinAccess=false,beinExpiresAt=null;
+let beinAccess=false,beinExpiresAt=null;let subscriptionAccess=false,subscriptionExpiresAt=null;
 const $=(s,r=document)=>r.querySelector(s);
 let siteToastTimer=null;function showSiteToast(message,type='info'){const toast=$('#siteToast'),copy=$('#siteToastText'),icon=$('#siteToastIcon');if(!toast||!message)return;copy.textContent=String(message);toast.classList.remove('success','error','info','show');toast.classList.add(type);icon.textContent='V';requestAnimationFrame(()=>toast.classList.add('show'));if(siteToastTimer)clearTimeout(siteToastTimer);siteToastTimer=setTimeout(()=>toast.classList.remove('show'),4200)}
 const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
@@ -816,13 +838,14 @@ async function refreshAuth(){
  $('#loginBtn').hidden=!!user;$('#accountTrigger').hidden=!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;if($('#resumeM3uImport'))$('#resumeM3uImport').hidden=!admin||!localStorage.getItem('velnix:m3u-import-job');
  if(user){
   $('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;
-  try{const access=await gateway({action:'check_bein_access'});beinAccess=!!access.has_access;beinExpiresAt=access.expires_at||null;}catch(e){beinAccess=false;beinExpiresAt=null;}
+  try{const access=await gateway({action:'check_subscription_access'});subscriptionAccess=!!access.has_access;subscriptionExpiresAt=access.expires_at||null;beinAccess=subscriptionAccess;beinExpiresAt=subscriptionExpiresAt;}catch(e){subscriptionAccess=false;subscriptionExpiresAt=null;beinAccess=false;beinExpiresAt=null;}
   await loadUserProfile();await loadPersonalLists();if(admin)loadAdminDashboard();
  }else{
-  beinAccess=false;beinExpiresAt=null;favorites=new Set();recentChannels=[];$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;$('#accountMenu').hidden=true;
+  beinAccess=false;beinExpiresAt=null;subscriptionAccess=false;subscriptionExpiresAt=null;favorites=new Set();recentChannels=[];$('#accountPanel').hidden=true;$('#authForm').hidden=false;$('#authSwitch').hidden=false;$('#forgotPassword').hidden=false;$('#accountMenu').hidden=true;
  }
  if(channelRows.length)renderChannels();
  syncBeinGate();
+ if(subscriptionAccess||admin){if(!channelRows.length)await loadChannels();}
  if(admin&&$('#beinCodesList'))loadBeinCodes();
 }
 function setAuthMode(mode){
@@ -1136,22 +1159,22 @@ async function playChannel(row){
 }
 
 function syncBeinGate(){
- const active=$('#filters .filter.active')?.dataset.cat||'all';
  const admin=currentSession?.user?.app_metadata?.role==='admin';
- const locked=active==='bein'&&!beinAccess&&!admin;
- $('#beinGate').hidden=!locked;
- $('#channelsGrid').hidden=locked;
- $('#loadMoreChannels').hidden=locked||$('#loadMoreChannels').hidden;
- $('#channelStatus').hidden=locked;
- if(locked){
-  $('#beinGateForm').hidden=!currentSession?.user;
-  $('#beinGateTitle').textContent=currentSession?.user?'قسم beIN SPORTS مقفول':'سجّل الدخول لفتح قسم beIN SPORTS';
-  $('#beinGateDescription').textContent=currentSession?.user?'أدخل كود التفعيل الصادر من إدارة VELNIX. كل كود يُربط بأول حساب يفعّله ولا يمكن استخدامه بحساب آخر.':'يجب تسجيل الدخول أولاً، ثم إدخال كود التفعيل الخاص بك.';
- }
- if(active==='bein'&&(beinAccess||admin)){
-  $('#beinGate').hidden=true;$('#channelsGrid').hidden=false;$('#channelStatus').hidden=false;
- }
+ const locked=!subscriptionAccess&&!admin;
+ document.body.classList.toggle('subscription-locked',locked);
+ $('#subscriptionGate').hidden=!locked;
+ $('#subscriptionGateForm').hidden=!currentSession?.user;
+ $('#subscriptionLoginBtn').hidden=!!currentSession?.user;
+ $('#subscriptionGateTitle').textContent=!currentSession?.user?'سجّل الدخول لتفعيل VELNIX':'فعّل اشتراكك لفتح جميع القنوات';
+ $('#subscriptionGateDescription').textContent=!currentSession?.user?'أنشئ حساباً أو سجّل الدخول، ثم أدخل كود الاشتراك لفتح دليل القنوات بالكامل.':'أدخل كود الاشتراك الصادر من إدارة VELNIX. بعد التفعيل ستظهر جميع القنوات والأقسام تلقائياً.';
+ if(locked){$('#channelsGrid').hidden=true;$('#channelStatus').hidden=true;$('#loadMoreChannels').hidden=true;$('#beinGate').hidden=true;}
+ else {$('#channelsGrid').hidden=false;$('#channelStatus').hidden=false;}
+ const active=$('#filters .filter.active')?.dataset.cat||'all';
+ const beinLocked=active==='bein'&&!subscriptionAccess&&!admin;
+ $('#beinGate').hidden=true;
+ if(!locked&&beinLocked){$('#beinGate').hidden=false;}
 }
+
 async function loadBeinCodes(){
  const list=$('#beinCodesList');if(!list)return;list.textContent='جارٍ تحميل الأكواد...';
  try{
@@ -1167,6 +1190,23 @@ async function loadBeinCodes(){
   if(!(result.codes||[]).length)list.textContent='لا توجد أكواد منشأة بعد.';
  }catch(e){list.textContent=e.message||'تعذر تحميل الأكواد'}
 }
+$('#subscriptionLoginBtn').addEventListener('click',()=>$('#loginBtn').click());
+$('#activateSubscriptionBtn').addEventListener('click',async()=>{
+ if(!currentSession){$('#loginBtn').click();return}
+ const code=$('#subscriptionCodeInput').value.trim().toUpperCase();
+ const status=$('#subscriptionGateStatus'),button=$('#activateSubscriptionBtn');
+ if(!code){status.textContent='اكتب كود الاشتراك أولاً.';return}
+ button.disabled=true;status.textContent='جارٍ التحقق من كود الاشتراك...';
+ try{
+  const result=await gateway({action:'activate_subscription_code',code});
+  subscriptionAccess=true;subscriptionExpiresAt=result.expires_at||null;beinAccess=true;beinExpiresAt=subscriptionExpiresAt;
+  $('#subscriptionCodeInput').value='';
+  status.textContent='تم تفعيل الاشتراك بنجاح'+(subscriptionExpiresAt?' · ينتهي في '+new Date(subscriptionExpiresAt).toLocaleDateString('ar-IQ'):'')+'.';
+  showSiteToast('تم فتح جميع قنوات VELNIX','success');syncBeinGate();await loadChannels();
+ }catch(e){status.textContent=e.message||'تعذر تفعيل الكود';showSiteToast(status.textContent,'error')}
+ finally{button.disabled=false}
+});
+$('#subscriptionCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#activateSubscriptionBtn').click()});
 $('#activateBeinBtn').addEventListener('click',async()=>{
  if(!currentSession){$('#loginBtn').click();return}
  const code=$('#beinActivationCode').value.trim().toUpperCase();
@@ -1475,6 +1515,8 @@ function renderChannels(){
  const visibleCount=Math.min(rows.length,visibleLimit);$('#channelStatus').textContent=lang==='ar'?'يعرض '+visibleCount.toLocaleString('ar-IQ')+' من '+rows.length.toLocaleString('ar-IQ')+' قناة.':'Showing '+visibleCount.toLocaleString('en-US')+' of '+rows.length.toLocaleString('en-US')+' channels.';
 }
 async function loadChannels(){
+ const admin=currentSession?.user?.app_metadata?.role==='admin';
+ if(!subscriptionAccess&&!admin){channelRows=[];renderChannels();syncBeinGate();return;}
  const status=$('#channelStatus');status.textContent=lang==='ar'?'جارٍ تحميل القنوات...':'Loading channels...';
  const all=[];
  const query='channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,source_group_title,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=1000&offset=';
