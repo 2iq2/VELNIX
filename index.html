@@ -454,47 +454,6 @@ body[data-theme="light"] .section-head p,body[data-theme="light"] .channel-statu
 @media(max-width:600px){.nav-utility{gap:6px}.account-trigger{padding:4px 8px 4px 4px;font-size:12px}.account-avatar{width:31px;height:31px}.theme-toggle{padding:8px 9px}.avatar-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.profile-dialog{padding:16px}.subscription-grid{grid-template-columns:1fr 1fr}}
 
 
-/* VELNIX fixtures */
-.fixtures-section{padding-top:34px}
-.fixtures-kicker{display:block;color:var(--gold2);font:700 10px "DM Sans",sans-serif;letter-spacing:2.5px;margin-bottom:8px}
-.fixtures-head{align-items:center}
-.fixtures-head h2{margin:0 0 7px}
-.fixtures-refresh{border:1px solid rgba(201,169,110,.35);background:rgba(201,169,110,.08);color:var(--gold2);border-radius:12px;padding:11px 17px;font-weight:700;white-space:nowrap}
-.fixtures-refresh:disabled{opacity:.55;cursor:wait}
-.fixtures-datebar{display:flex;gap:9px;overflow-x:auto;padding:4px 1px 13px;scrollbar-width:thin}
-.fixtures-day{min-width:82px;border:1px solid var(--line);background:#111823;color:#aeb6c3;border-radius:13px;padding:10px 13px;text-align:center}
-.fixtures-day strong,.fixtures-day small{display:block}
-.fixtures-day strong{font-size:13px}.fixtures-day small{font-size:11px;color:var(--muted);margin-top:4px}
-.fixtures-day.active{background:linear-gradient(140deg,#e2c894,#b58e51);color:#11151c;border-color:transparent}
-.fixtures-day.active small{color:#34302a}
-.fixtures-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:7px 0 18px}
-.fixtures-select-wrap{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
-.fixtures-select-wrap select{background:#111823;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 32px 10px 12px;max-width:220px}
-.fixtures-timezone{color:var(--muted);font-size:12px}
-.fixtures-status{color:var(--muted);font-size:13px;min-height:22px;margin:4px 0 13px}
-.fixtures-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-.fixture-card{background:linear-gradient(145deg,#151e2a,#0d141e);border:1px solid var(--line);border-radius:17px;padding:16px;min-width:0;transition:.22s}
-.fixture-card:hover{transform:translateY(-3px);border-color:rgba(201,169,110,.35);box-shadow:0 14px 30px #0003}
-.fixture-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px}
-.fixture-league{font-size:11px;color:var(--gold2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fixture-state{font-size:10px;padding:5px 9px;border-radius:30px;background:rgba(255,255,255,.06);color:#b9c2ce;white-space:nowrap}
-.fixture-state.live{background:rgba(214,75,75,.14);color:#ff9696}
-.fixture-state.done{background:rgba(255,255,255,.07);color:#aab4c1}
-.fixture-teams{display:grid;grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr);align-items:center;gap:7px}
-.fixture-team{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;min-width:0}
-.fixture-team img{width:43px;height:43px;object-fit:contain}
-.fixture-team-name{font-size:12px;line-height:1.5;font-weight:700;max-width:100%;overflow-wrap:anywhere}
-.fixture-score{text-align:center;font:800 22px "DM Sans",sans-serif;letter-spacing:1px;color:var(--text)}
-.fixture-score.upcoming{font-size:14px;color:var(--gold2);letter-spacing:0}
-.fixture-time{font-size:11px;color:var(--muted);text-align:center;margin-top:13px}
-.fixture-empty{grid-column:1/-1;text-align:center;padding:32px 18px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);line-height:1.8}
-.fixtures-source{margin-top:16px;color:#687383;font-size:10px;text-align:left}
-body[data-theme="light"] .fixtures-day,body[data-theme="light"] .fixtures-select-wrap select{background:#f1f3f7;color:#283247}
-body[data-theme="light"] .fixture-card{background:linear-gradient(145deg,#fff,#f5f7fa);border-color:#dce2ec}
-body[data-theme="light"] .fixture-score{color:#172033}
-@media(max-width:680px){.fixtures-grid{grid-template-columns:1fr}.fixtures-head{align-items:flex-start}.fixtures-head h2{font-size:23px}.fixtures-timezone{font-size:10px}.fixtures-toolbar{align-items:flex-start;flex-direction:column}.fixture-card{padding:14px}.fixtures-section{padding-top:25px}}
-
-
 /* VELNIX cinematic intro */
 .clayko-intro.velnix-cinematic{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#17130d 0%,#090909 48%,#030303 100%);color:#f4ead7;opacity:1;visibility:visible;backdrop-filter:none;-webkit-backdrop-filter:none}
 .clayko-intro.velnix-cinematic:before,.clayko-intro.velnix-cinematic:after{content:none!important;display:none!important}
@@ -549,7 +508,7 @@ body[data-theme="light"] .fixture-score{color:#172033}
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" aria-atomic="true"><span class="site-toast-icon" id="siteToastIcon">V</span><span class="site-toast-copy" id="siteToastText"></span></div>
 <header><div class="wrap nav">
 <a class="brand" href="#"><span class="brand-mark"><span>V</span></span><span>VELNIX</span></a>
-<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#fixtures" data-ar="مواعيد المباريات" data-en="Fixtures">المباريات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="theme-toggle" id="themeToggle" type="button" aria-label="تبديل الثيم">☀️</button><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="account-trigger" id="accountTrigger" type="button" hidden><span class="account-avatar" id="headerAvatar">🙂</span><span id="headerUserName">حسابي</span>⌄</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button><div class="account-menu" id="accountMenu" hidden><div class="account-menu-head"><span class="account-avatar" id="menuAvatar">🙂</span><span><strong id="menuUserName">حسابي</strong><small id="menuUserEmail"></small></span></div><button id="openProfileBtn" type="button">👤 الملف الشخصي والاشتراك</button><button id="menuThemeBtn" type="button">☼ تغيير الثيم</button><button id="menuSignOutBtn" type="button">↪ تسجيل الخروج</button></div></div>
+<nav><a href="#home" data-ar="الرئيسية" data-en="Home">الرئيسية</a><a href="#categories" data-ar="التصنيفات" data-en="Categories">التصنيفات</a><a href="#about" data-ar="عن المنصة" data-en="About">عن المنصة</a></nav><div class="nav-utility"><button class="theme-toggle" id="themeToggle" type="button" aria-label="تبديل الثيم">☀️</button><button class="login" id="loginBtn" type="button">تسجيل الدخول</button><button class="account-trigger" id="accountTrigger" type="button" hidden><span class="account-avatar" id="headerAvatar">🙂</span><span id="headerUserName">حسابي</span>⌄</button><button class="login" id="adminBtn" type="button" hidden>الإدارة</button><div class="account-menu" id="accountMenu" hidden><div class="account-menu-head"><span class="account-avatar" id="menuAvatar">🙂</span><span><strong id="menuUserName">حسابي</strong><small id="menuUserEmail"></small></span></div><button id="openProfileBtn" type="button">👤 الملف الشخصي والاشتراك</button><button id="menuThemeBtn" type="button">☼ تغيير الثيم</button><button id="menuSignOutBtn" type="button">↪ تسجيل الخروج</button></div></div>
 
 </div></header>
 <main>
@@ -604,17 +563,6 @@ body[data-theme="light"] .fixture-score{color:#172033}
 </div>
 </div>
 <div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div id="channelGroupNav" class="group-nav" hidden></div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button>
-</section>
-<section class="wrap section fixtures-section" id="fixtures">
- <div class="section-head fixtures-head">
-  <div><span class="fixtures-kicker">VELNIX SPORTS</span><h2>مواعيد وأوقات المباريات</h2><p>جدول المباريات حسب توقيت العراق، مع تحديث تلقائي لحالة المباريات المباشرة</p></div>
-  <button class="fixtures-refresh" id="fixturesRefresh" type="button">↻ تحديث</button>
- </div>
- <div class="fixtures-datebar" id="fixturesDates" aria-label="اختيار اليوم"></div>
- <div class="fixtures-toolbar"><span class="fixtures-timezone">⏱ جميع البطولات · التوقيت المحلي بغداد</span></div>
- <div class="fixtures-status" id="fixturesStatus" role="status" aria-live="polite">جارٍ تحميل مواعيد المباريات...</div>
- <div class="fixtures-grid" id="fixturesGrid"></div>
- <div class="fixtures-source">بيانات المواعيد والنتائج عبر ESPN · قد تختلف التغطية حسب البطولة</div>
 </section>
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="VELNIX تجمع القنوات المباشرة والرياضة والأخبار والترفيه في تجربة مشاهدة واحدة، بتصميم سينمائي يناسب جميع أجهزتك." data-en="Live channels, sports, news and entertainment in one cinematic viewing experience, designed for every screen.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
@@ -1555,130 +1503,6 @@ $('#m3uFile').addEventListener('change',async e=>{
  }finally{e.target.value='';}
 });
 
-/* VELNIX match schedule — combined soccer fixtures */
-const FIXTURE_LEAGUES=[
- ['uefa.nations','دوري الأمم الأوروبية'],['fifa.friendly','مباريات ودية دولية'],['fifa.friendly.w','وديات المنتخبات النسائية'],['fifa.friendly_u21','وديات تحت 21 سنة'],['fifa.u20.friendly','وديات تحت 20 سنة'],
- ['fifa.worldq','تصفيات كأس العالم'],['fifa.worldq.uefa','تصفيات أوروبا لكأس العالم'],['fifa.worldq.caf','تصفيات أفريقيا لكأس العالم'],['fifa.worldq.afc','تصفيات آسيا لكأس العالم'],['fifa.worldq.concacaf','تصفيات الكونكاكاف لكأس العالم'],['fifa.worldq.conmebol','تصفيات أمريكا الجنوبية لكأس العالم'],['fifa.worldq.ofc','تصفيات أوقيانوسيا لكأس العالم'],
- ['caf.nations','كأس أمم أفريقيا'],['caf.nations_qual','تصفيات كأس أمم أفريقيا'],['caf.champions','دوري أبطال أفريقيا'],['caf.confed','كأس الكونفدرالية الأفريقية'],
- ['concacaf.nations.league','دوري أمم الكونكاكاف'],['concacaf.gold','الكأس الذهبية'],['concacaf.champions','دوري أبطال الكونكاكاف'],
- ['uefa.euro','كأس أمم أوروبا'],['uefa.euroq','تصفيات أمم أوروبا'],['uefa.euro_u21','بطولة أوروبا تحت 21'],['uefa.euro_u21_qual','تصفيات أوروبا تحت 21'],['uefa.euro.u19','بطولة أوروبا تحت 19'],['uefa.wchampions','دوري أبطال أوروبا للسيدات'],
- ['uefa.champions','دوري أبطال أوروبا'],['uefa.champions_qual','تصفيات دوري الأبطال'],['uefa.europa','الدوري الأوروبي'],['uefa.europa_qual','تصفيات الدوري الأوروبي'],['uefa.europa.conf','دوري المؤتمر الأوروبي'],['uefa.europa.conf_qual','تصفيات دوري المؤتمر'],
- ['eng.1','الدوري الإنجليزي'],['eng.2','دوري البطولة الإنجليزية'],['eng.fa','كأس الاتحاد الإنجليزي'],['eng.league_cup','كأس الرابطة الإنجليزية'],['eng.w.1','الدوري الإنجليزي للسيدات'],
- ['esp.1','الدوري الإسباني'],['esp.2','الدرجة الثانية الإسبانية'],['esp.copa_del_rey','كأس ملك إسبانيا'],['esp.copa_de_la_reina','كأس ملكة إسبانيا'],
- ['ita.1','الدوري الإيطالي'],['ita.2','الدرجة الثانية الإيطالية'],['ita.coppa_italia','كأس إيطاليا'],
- ['ger.1','الدوري الألماني'],['ger.2','الدرجة الثانية الألمانية'],['ger.dfb_pokal','كأس ألمانيا'],
- ['fra.1','الدوري الفرنسي'],['fra.2','الدرجة الثانية الفرنسية'],['fra.coupe_de_france','كأس فرنسا'],
- ['por.1','الدوري البرتغالي'],['ned.1','الدوري الهولندي'],['bel.1','الدوري البلجيكي'],['tur.1','الدوري التركي'],
- ['ksa.1','الدوري السعودي'],['afc.champions','دوري أبطال آسيا'],['afc.cup','دوري أبطال آسيا 2'],['afc.asian.cup','كأس آسيا'],
- ['usa.1','الدوري الأمريكي'],['mex.1','الدوري المكسيكي'],['conmebol.libertadores','كوبا ليبرتادوريس'],['conmebol.sudamericana','كوبا سود أمريكانا'],['arg.1','الدوري الأرجنتيني'],['bra.1','الدوري البرازيلي'],['jpn.1','الدوري الياباني'],['aus.1','الدوري الأسترالي']
-].map(([id,name])=>({id,name}));
-let fixtureDayOffset=0,fixtureEvents=[],fixtureLoading=false,fixtureTimer=null;
-function baghdadDateKey(offset=0){
- const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
- const part=Object.fromEntries(parts.map(p=>[p.type,p.value]));
- const base=new Date(part.year+'-'+part.month+'-'+part.day+'T12:00:00Z');base.setUTCDate(base.getUTCDate()+offset);return base.toISOString().slice(0,10);
-}
-function fixtureDateLabel(offset){
- const date=new Date(baghdadDateKey(offset)+'T12:00:00+03:00');
- if(offset===0)return 'اليوم';if(offset===1)return 'غداً';
- return new Intl.DateTimeFormat('ar-IQ',{weekday:'short',timeZone:'Asia/Baghdad'}).format(date);
-}
-function renderFixtureDates(){
- const host=$('#fixturesDates');host.replaceChildren();
- for(let offset=0;offset<7;offset++){
-  const date=new Date(baghdadDateKey(offset)+'T12:00:00+03:00'),b=document.createElement('button');
-  b.type='button';b.className='fixtures-day'+(offset===fixtureDayOffset?' active':'');
-  const strong=document.createElement('strong');strong.textContent=fixtureDateLabel(offset);
-  const small=document.createElement('small');small.textContent=new Intl.DateTimeFormat('ar-IQ',{day:'numeric',month:'short',timeZone:'Asia/Baghdad'}).format(date);
-  b.append(strong,small);b.addEventListener('click',()=>{fixtureDayOffset=offset;renderFixtureDates();loadFixtures()});host.append(b);
- }
-}
-function fixtureClock(value){
- const d=new Date(value);if(Number.isNaN(d.getTime()))return 'الوقت غير محدد';
- return new Intl.DateTimeFormat('ar-IQ',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Baghdad'}).format(d);
-}
-function renderFixtures(){
- const grid=$('#fixturesGrid');grid.replaceChildren();
- const rows=fixtureEvents.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
- if(!rows.length){const empty=document.createElement('div');empty.className='fixture-empty';empty.textContent='لم نعثر على مباريات لهذا اليوم من مصادر الجدول. جرّب تحديث البيانات بعد قليل.';grid.append(empty);return}
- let lastDay='';
- rows.forEach(event=>{
-  const comp=event.competitions?.[0]||{},teams=comp.competitors||[];
-  const home=teams.find(t=>t.homeAway==='home')||teams[0]||{},away=teams.find(t=>t.homeAway==='away')||teams[1]||{};
-  const status=comp.status||event.status||{},state=status.type?.state||'pre';
-  const card=document.createElement('article');card.className='fixture-card';
-  const meta=document.createElement('div');meta.className='fixture-meta';
-  const league=document.createElement('span');league.className='fixture-league';league.textContent=event._leagueName||event.season?.name||'مباراة';
-  const stateEl=document.createElement('span');stateEl.className='fixture-state'+(state==='in'?' live':state==='post'?' done':'');
-  stateEl.textContent=state==='in'?'● مباشر':state==='post'?'انتهت':(status.type?.shortDetail||'قادمة');meta.append(league,stateEl);
-  const teamsWrap=document.createElement('div');teamsWrap.className='fixture-teams';
-  function makeTeam(team){
-   const box=document.createElement('div');box.className='fixture-team';const logo=team.team?.logo;
-   if(logo){const img=document.createElement('img');img.src=logo;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();box.append(img)}
-   const name=document.createElement('span');name.className='fixture-team-name';name.textContent=team.team?.displayName||team.team?.name||'—';box.append(name);return box;
-  }
-  const score=document.createElement('div');score.className='fixture-score'+(state==='pre'?' upcoming':'');score.textContent=state==='pre'?'VS':(home.score??'0')+' - '+(away.score??'0');
-  teamsWrap.append(makeTeam(home),score,makeTeam(away));
-  const time=document.createElement('div');time.className='fixture-time';time.textContent=state==='in'?(status.type?.detail||'المباراة جارية'):(state==='post'?'موعد المباراة · ':'موعد البداية · ')+fixtureClock(event.date);
-  card.append(meta,teamsWrap,time);grid.append(card);
- });
-}
-function normalizeSportsDb(item){
- const stamp=item.strTimestamp||((item.dateEvent||'')+'T'+(item.strTime||'00:00:00')+'Z');
- const date=new Date(stamp);if(Number.isNaN(date.getTime()))return null;
- const finished=/finished|complete|ft/i.test(item.strStatus||'');
- const live=/live|in progress|1st half|2nd half|half time/i.test(item.strStatus||'');
- const status={type:{state:finished?'post':live?'in':'pre',shortDetail:item.strStatus||'قادمة',detail:item.strStatus||''}};
- const mk=(side,name,badge,score)=>({homeAway:side,team:{displayName:name||'—',logo:badge||''},score:score==null?'':String(score)});
- return {id:item.idEvent||('sdb-'+item.strEvent),date:date.toISOString(),_leagueName:item.strLeague||'مباراة',competitions:[{competitors:[mk('home',item.strHomeTeam,item.strHomeTeamBadge,item.intHomeScore),mk('away',item.strAwayTeam,item.strAwayTeamBadge,item.intAwayScore)],status}]};
-}
-async function fetchEspnAll(targetDate){
- const dateKey=targetDate.replaceAll('-','');
- const hosts=['https://site.api.espn.com','https://site.web.api.espn.com'];
- let lastError=null;
- for(const host of hosts){
-  try{
-   const url=host+'/apis/site/v2/sports/soccer/all/scoreboard?dates='+dateKey;
-   const response=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
-   if(!response.ok){lastError=new Error('ESPN HTTP '+response.status);continue}
-   const data=await response.json();
-   const events=(data.events||[]).filter(event=>{
-    const localDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date));
-    return localDate===targetDate;
-   }).map(event=>({...event,_leagueName:event.league?.name||event.competitions?.[0]?.series?.name||event.season?.name||'كرة القدم'}));
-   if(events.length)return {events,ok:true};
-   lastError=new Error('ESPN returned no events for '+dateKey);
-  }catch(error){lastError=error;console.warn('ESPN all-soccer feed failed:',host,error)}
- }
- return {events:[],ok:false,error:lastError};
-}
-async function loadFixtures(silent=false){
- if(fixtureLoading)return;fixtureLoading=true;
- const button=$('#fixturesRefresh'),status=$('#fixturesStatus');if(button)button.disabled=true;
- if(!silent)status.textContent='جارٍ جمع مباريات جميع البطولات...';
- try{
-  const targetDate=baghdadDateKey(fixtureDayOffset);
-  const primary=await fetchEspnAll(targetDate);
-  let events=primary.events.slice(),secondaryOk=false;
-  try{
-   const dbUrl='https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d='+encodeURIComponent(targetDate)+'&s=Soccer';
-   const dbResponse=await fetch(dbUrl,{headers:{Accept:'application/json'},cache:'no-store'});
-   if(dbResponse.ok){const dbData=await dbResponse.json();secondaryOk=true;events=events.concat((dbData.events||[]).map(normalizeSportsDb).filter(Boolean).filter(event=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(event.date))===targetDate))}
-   else console.warn('TheSportsDB HTTP status:',dbResponse.status);
-  }catch(error){console.warn('Secondary fixtures feed unavailable',error)}
-  const unique=new Map();events.forEach(event=>{if(event.id)unique.set(String(event.id),event)});
-  fixtureEvents=[...unique.values()].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  renderFixtures();
-  status.textContent=fixtureEvents.length?'تم العثور على '+fixtureEvents.length.toLocaleString('ar-IQ')+' مباراة · كل المسابقات التي يوفرها المصدر · التوقيت بتوقيت بغداد · تحديث كل دقيقة.':(!primary.ok&&!secondaryOk?'تعذر الاتصال بمصادر المباريات. افحص الاتصال وحاول مجدداً.':'لا توجد بيانات مباريات منشورة لهذا اليوم في المصادر المتاحة حالياً.');
- }catch(error){
-  console.error('Fixtures loading failed:',error);status.textContent='تعذر الاتصال بمصادر المباريات حالياً. حاول التحديث بعد قليل.';
- }finally{fixtureLoading=false;if(button)button.disabled=false}
-}
-renderFixtureDates();
-$('#fixturesRefresh').addEventListener('click',()=>loadFixtures());
-loadFixtures();
-if(fixtureTimer)clearInterval(fixtureTimer);
-fixtureTimer=setInterval(()=>loadFixtures(true),60000);
 loadChannels();
 })().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
 </script>
