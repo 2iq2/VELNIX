@@ -540,6 +540,100 @@ img,video,canvas,svg{max-width:100%}
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
 </style>
+
+<style id="velnix-mobile-layout-final">
+/* Final responsive layout: overrides legacy theme fragments */
+html{width:100%;max-width:100%;overflow-x:clip}
+body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+main{display:block;width:100%;min-width:0}
+.wrap{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:auto}
+header .nav{width:min(1180px,calc(100% - 40px));margin-inline:auto}
+#home.hero{display:flex!important;flex-direction:row;align-items:center;justify-content:flex-start;width:min(1320px,100%);max-width:100%;min-width:0;margin-inline:auto;padding:88px clamp(24px,6vw,72px);min-height:500px}
+#home.hero>div{width:min(620px,100%);max-width:100%;min-width:0;flex:1 1 620px}
+#home.hero h1{max-width:100%;overflow-wrap:anywhere}
+#categories.section{display:block;width:min(1220px,calc(100% - 48px));max-width:100%;margin-inline:auto}
+#categories .section-head{display:block;width:100%;margin:0 0 20px}
+#categories .section-head>div{display:block;width:100%;min-width:0}
+#categories .catalog-summary{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 20px}
+#categories .channel-toolbar{display:flex;width:100%;min-width:0;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+#categories .channel-search{flex:1 1 260px;min-width:0;max-width:none}
+#categories .filters{display:flex;width:100%;min-width:0;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+#categories .channel-status,#categories .group-nav,#categories .channels{width:100%;min-width:0}
+#categories .channels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#about.section{width:min(1220px,calc(100% - 48px));max-width:100%;margin-inline:auto}
+#about .note{width:100%;min-width:0}
+footer{width:100%;max-width:100%}
+footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:auto}
+@media(max-width:900px){
+ #home.hero{min-height:0;padding:68px 30px;display:flex!important}
+ #categories .channels{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #categories .filters{flex-wrap:nowrap;overflow-x:auto;padding:3px 1px 10px;scrollbar-width:thin}
+ #categories .filters .filter{flex:0 0 auto;white-space:nowrap}
+}
+@media(max-width:700px){
+ html,body{width:100%!important;min-width:0!important;overflow-x:hidden!important}
+ .wrap,header .nav,footer .foot{width:calc(100% - 28px)!important;max-width:none!important}
+ header{width:100%;max-width:100%;overflow:visible}
+ header .nav{height:62px;gap:8px;justify-content:space-between}
+ .brand{font-size:19px;letter-spacing:2px;gap:8px;flex:0 1 auto;min-width:0}
+ .brand-mark{width:30px;height:30px;flex:0 0 30px}
+ header nav{display:none!important}
+ .nav-utility{display:flex!important;align-items:center;gap:6px;flex:0 0 auto;min-width:0}
+ .nav-utility .login{padding:8px 10px;font-size:11px;white-space:nowrap}
+ #home.hero{display:flex!important;flex-direction:column;align-items:stretch;justify-content:center;gap:0;width:100%!important;max-width:100%!important;min-width:0;min-height:0!important;margin:0;padding:54px 22px 42px!important}
+ #home.hero>div{display:block;width:100%!important;max-width:100%!important;min-width:0;flex:0 0 auto}
+ #home .eyebrow{font-size:10px;letter-spacing:1px;max-width:100%}
+ #home h1{font-size:clamp(32px,8.5vw,43px)!important;line-height:1.3;margin:17px 0 13px;letter-spacing:-.6px}
+ #home .intro{font-size:14px;line-height:1.9;max-width:100%;margin:0 0 20px}
+ #home .hero-ctas{display:flex;flex-wrap:wrap;gap:9px}
+ #home .hero-ctas button{flex:0 1 auto;max-width:100%;padding:12px 15px;font-size:12px}
+ #home:before{opacity:.65}
+ #categories.section{display:block;width:calc(100% - 28px)!important;max-width:none!important;margin-inline:auto;padding:30px 0!important}
+ #categories .section-head{display:block;width:100%;margin:0 0 16px}
+ #categories .section-head>div{width:100%;min-width:0}
+ #categories .section-head h2{font-size:23px;margin:0 0 5px}
+ #categories .section-head p{font-size:12px;line-height:1.7;margin:0 0 15px}
+ #categories .catalog-summary{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 14px}
+ #categories .catalog-summary>div{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;min-height:76px;padding:10px 8px;border-radius:12px;overflow:hidden}
+ #categories .catalog-summary strong{font-size:clamp(11px,3.2vw,15px);line-height:1.35;overflow-wrap:anywhere}
+ #categories .catalog-summary span{font-size:9px;line-height:1.5;overflow-wrap:anywhere}
+ #categories .channel-toolbar{display:grid;width:100%;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0 0 13px}
+ #categories .channel-search{grid-column:1/-1;width:100%;max-width:none;min-width:0}
+ #categories .channel-search input{width:100%;min-width:0;font-size:13px}
+ #categories .channel-toolbar>.filter{width:100%;min-width:0;padding:10px 7px;font-size:11px;white-space:nowrap}
+ #categories .filters{display:flex;width:100%;flex-wrap:nowrap;gap:7px;overflow-x:auto;overflow-y:hidden;padding:3px 1px 11px;margin:0 0 14px;scrollbar-width:thin;overscroll-behavior-inline:contain}
+ #categories .filters .filter{flex:0 0 auto;padding:9px 13px;font-size:11px;white-space:nowrap}
+ #categories .channel-status{font-size:11px;line-height:1.7;margin:0 0 12px}
+ #categories .channels{display:grid;width:100%;grid-template-columns:minmax(0,1fr)!important;gap:9px}
+ #categories .channel{width:100%;max-width:100%;min-width:0;min-height:78px;padding:11px 48px 11px 12px;border-radius:13px}
+ #categories .channel h3{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ #categories .group-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+ #categories #loadMoreChannels{max-width:100%;margin:18px auto 0!important}
+ #about.section{width:calc(100% - 28px)!important;margin-inline:auto;padding:24px 0!important}
+ #about .note{display:flex;flex-direction:row;align-items:center;gap:10px;padding:16px}
+ #about .note>div:first-child{min-width:0;flex:1}
+ #about .note strong{font-size:15px}
+ #about .note p{font-size:11px;line-height:1.8}
+ #about .note-icon{flex:0 0 auto;font-size:23px}
+ footer{margin-top:24px!important;padding:20px 0!important}
+ footer .foot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+ .modal,.player-modal{padding:10px}
+ .dialog,.profile-dialog,.player-shell{width:100%;max-width:100%;min-width:0}
+ .admin-tools,.admin-dashboard,.admin-card{min-width:0;max-width:100%}
+ .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:380px){
+ header .nav{gap:5px}
+ .brand{font-size:16px;letter-spacing:1px}
+ .nav-utility{gap:4px}
+ .nav-utility .login{padding:7px 8px;font-size:10px}
+ #home.hero{padding-inline:17px!important}
+ #categories .catalog-summary{gap:5px}
+ #categories .catalog-summary>div{padding:8px 6px}
+ #categories .channel-toolbar>.filter{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
@@ -577,7 +671,7 @@ img,video,canvas,svg{max-width:100%}
 
 
 <section class="wrap section" id="categories">
-<div class="section-head"><div><h2 data-ar="دليل القنوات" data-en="Channel guide">دليل القنوات</h2><p data-ar="كل قنواتك مرتبة حتى توصل للمحتوى بسرعة." data-en="Browse your channels by category.">كل قنواتك مرتبة حتى توصل للمحتوى بسرعة.</p>
+<div class="section-head"><div><h2 data-ar="دليل القنوات" data-en="Channel guide">دليل القنوات</h2><p data-ar="كل قنواتك مرتبة حتى توصل للمحتوى بسرعة." data-en="Browse your channels by category.">كل قنواتك مرتبة حتى توصل للمحتوى بسرعة.</p></div></div>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
 <div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
 <div class="filters" id="filters">
