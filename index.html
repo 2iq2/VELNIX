@@ -787,7 +787,7 @@ let beinAccess=false,beinExpiresAt=null;let subscriptionAccess=false,subscriptio
 const $=(s,r=document)=>r.querySelector(s);
 let siteToastTimer=null;function showSiteToast(message,type='info'){const toast=$('#siteToast'),copy=$('#siteToastText'),icon=$('#siteToastIcon');if(!toast||!message)return;copy.textContent=String(message);toast.classList.remove('success','error','info','show');toast.classList.add(type);icon.textContent='V';requestAnimationFrame(()=>toast.classList.add('show'));if(siteToastTimer)clearTimeout(siteToastTimer);siteToastTimer=setTimeout(()=>toast.classList.remove('show'),4200)}
 const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qualitySelect');
-let hlsInstance=null,mpegtsPlayer=null,Hls=null,mpegts=null;
+let hlsInstance=null,mpegtsPlayer=null,shakaPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
 const authListeners=new Set();
@@ -1023,7 +1023,26 @@ async function saveWatchHistory(channelId){
 }
 function destroyPlayerEngine(){
  if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
+ if(shakaPlayer){const old=shakaPlayer;shakaPlayer=null;try{old.destroy()}catch(e){}}
  if(mpegtsPlayer){try{mpegtsPlayer.pause();mpegtsPlayer.unload();mpegtsPlayer.detachMediaElement();mpegtsPlayer.destroy()}catch(e){}mpegtsPlayer=null}
+}
+let shakaLoadPromise=null;
+function loadShakaLibrary(){
+ if(window.shaka)return Promise.resolve(window.shaka);
+ if(shakaLoadPromise)return shakaLoadPromise;
+ shakaLoadPromise=new Promise((resolve,reject)=>{
+  const urls=['https://cdn.jsdelivr.net/npm/shaka-player@5.3.4/dist/shaka-player.compiled.js','https://unpkg.com/shaka-player@5.3.4/dist/shaka-player.compiled.js'];
+  let index=0;
+  const attempt=()=>{
+   if(window.shaka){resolve(window.shaka);return}
+   if(index>=urls.length){reject(new Error('Shaka Player CDN unavailable'));return}
+   const script=document.createElement('script');script.src=urls[index++];script.async=true;
+   script.onload=()=>window.shaka?resolve(window.shaka):attempt();
+   script.onerror=attempt;document.head.appendChild(script);
+  };
+  attempt();
+ });
+ return shakaLoadPromise;
 }
 function stopPlayback(){
  playbackGeneration++;activeRow=null;recovering=false;retryCount=0;
@@ -1046,6 +1065,15 @@ function qualities(){
   qualitySelect.append(group);
  }
  const auto=document.createElement('option');auto.value='-1';auto.textContent='تلقائي / Auto';qualitySelect.append(auto);
+ if(shakaPlayer?.getVariantTracks?.().length){
+  const group=document.createElement('optgroup');group.label='جودة المصدر';
+  shakaPlayer.getVariantTracks().forEach(track=>{
+   const o=document.createElement('option');o.value='track:'+track.id;
+   o.textContent=[track.height?track.height+'p':'دقة غير محددة',track.bandwidth?Math.round(track.bandwidth/1000)+' kbps':''].filter(Boolean).join(' • ');
+   group.append(o);
+  });
+  qualitySelect.append(group);
+ }
  if(hlsInstance?.levels?.length){
   const group=document.createElement('optgroup');group.label='دقة مصدر البث';
   hlsInstance.levels.forEach((level,i)=>{
@@ -1086,37 +1114,86 @@ async function startPlayback(row,generation,reason='initial'){
  const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
- if(type==='hls'){
-  const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
-  if(generation!==playbackGeneration)return;
-  Hls=mod.default||mod;
-  if(Hls.isSupported()){
-   hlsInstance=new Hls({
-    enableWorker:true,lowLatencyMode:false,
-    backBufferLength:45,maxBufferLength:240,maxMaxBufferLength:300,maxBufferSize:160*1000*1000,
-    maxBufferHole:0.8,highBufferWatchdogPeriod:3,liveSyncDurationCount:10,liveMaxLatencyDurationCount:30,
-    maxLiveSyncPlaybackRate:1.02,nudgeOffset:0.2,nudgeMaxRetry:20,
-    manifestLoadingMaxRetry:12,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:30000,
-    levelLoadingMaxRetry:12,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:30000,
-    fragLoadingMaxRetry:30,fragLoadingRetryDelay:1000,fragLoadingMaxRetryTimeout:60000,
-    startFragPrefetch:true,progressive:true
-   });
-   const instance=hlsInstance;
-   instance.on(Hls.Events.MANIFEST_PARSED,()=>{
-    if(generation!==playbackGeneration||instance!==hlsInstance)return;
-    qualities();state(lang==='ar'?'البث جاهز؛ تتم مراقبة الاتصال تلقائياً.':'Stream ready; connection recovery is enabled.');
-    video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
-   });
-   instance.on(Hls.Events.ERROR,(_e,d)=>{
-    if(generation!==playbackGeneration||instance!==hlsInstance)return;
-    if(d.fatal){scheduleRecovery(d.details||'HLS fatal error',generation);return;}
-    if(d.type===Hls.ErrorTypes.NETWORK_ERROR){try{instance.startLoad()}catch(e){scheduleRecovery(d.details||'HLS network error',generation)}}
-    else if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{instance.recoverMediaError()}catch(e){scheduleRecovery(d.details||'HLS media error',generation)}}
-   });
-   instance.loadSource(url);instance.attachMedia(video);return;
+ if(type==='hls'||type==='dash'||type==='mpd'){
+  let shakaReady=false;
+  try{
+   const shaka=await loadShakaLibrary();
+   if(generation!==playbackGeneration)return;
+   shaka.polyfill.installAll();
+   if(shaka.Player.isBrowserSupported()){
+    shakaPlayer=new shaka.Player(video);
+    const instance=shakaPlayer;
+    instance.configure({
+     abr:{enabled:true,defaultBandwidthEstimate:1800000,bandwidthUpgradeTarget:0.82,bandwidthDowngradeTarget:0.92},
+     restrictions:{maxHeight:1080,maxBandwidth:8000000},
+     streaming:{
+      bufferingGoal:28,rebufferingGoal:4,bufferBehind:22,
+      retryParameters:{maxAttempts:6,baseDelay:800,backoffFactor:1.6,fuzzFactor:0.25,maxDelay:10000,timeout:30000}
+     }
+    });
+    instance.addEventListener('error',event=>{
+     if(generation!==playbackGeneration||instance!==shakaPlayer)return;
+     const detail=event.detail||{};
+     if(detail.severity===shaka.util.Error.Severity.CRITICAL)scheduleRecovery(detail.message||'Shaka playback error',generation);
+    });
+    await instance.load(url);
+    if(generation!==playbackGeneration||instance!==shakaPlayer)return;
+    const variants=instance.getVariantTracks()||[];
+    const safe=variants.filter(track=>!track.height||track.height<=1080);
+    if(!safe.length&&variants.length){
+     instance.configure({restrictions:{maxHeight:2160,maxBandwidth:18000000}});
+     const lowest=variants.slice().sort((a,b)=>(a.bandwidth||0)-(b.bandwidth||0))[0];
+     instance.configure('abr.enabled',false);
+     instance.selectVariantTrack(lowest,true);
+     state(lang==='ar'?'المصدر يوفّر 4K فقط؛ تم اختيار أقل معدل متاح لتخفيف الحمل.':'Source only provides 4K; selected its lowest available bitrate.');
+    }else{
+     instance.configure('abr.enabled',true);
+     state(lang==='ar'?'المشغّل التكيفي جاهز؛ الجودة محددة تلقائياً حتى 1080p لتقليل الحمل.':'Adaptive player ready; automatic quality is capped at 1080p.');
+    }
+    qualities();
+    await video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+    return;
+   }
+  }catch(error){
+   if(generation!==playbackGeneration)return;
+   console.warn('Shaka Player unavailable; trying HLS.js fallback:',error);
+   if(type!=='hls')throw error;
   }
-  if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{userPaused=true});return}
-  throw new Error(lang==='ar'?'تعذر تحميل مشغل HLS على هذا الجهاز.':'HLS playback engine could not load on this device.');
+  if(type==='hls'){
+   const mod=await import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/+esm').catch(()=>import('https://esm.sh/hls.js@1.6.15'));
+   if(generation!==playbackGeneration)return;
+   Hls=mod.default||mod;
+   if(Hls.isSupported()){
+    hlsInstance=new Hls({
+     enableWorker:true,lowLatencyMode:false,
+     backBufferLength:24,maxBufferLength:32,maxMaxBufferLength:48,maxBufferSize:48*1000*1000,
+     maxBufferHole:0.6,highBufferWatchdogPeriod:3,liveSyncDurationCount:8,liveMaxLatencyDurationCount:24,
+     maxLiveSyncPlaybackRate:1.03,nudgeOffset:0.15,nudgeMaxRetry:12,
+     manifestLoadingMaxRetry:8,manifestLoadingRetryDelay:900,manifestLoadingMaxRetryTimeout:20000,
+     levelLoadingMaxRetry:8,levelLoadingRetryDelay:900,levelLoadingMaxRetryTimeout:20000,
+     fragLoadingMaxRetry:16,fragLoadingRetryDelay:900,fragLoadingMaxRetryTimeout:30000,
+     startFragPrefetch:true,progressive:true,capLevelToPlayerSize:true
+    });
+    const instance=hlsInstance;
+    instance.on(Hls.Events.MANIFEST_PARSED,()=>{
+     if(generation!==playbackGeneration||instance!==hlsInstance)return;
+     const safe=instance.levels.map((level,index)=>({level,index})).filter(x=>!x.level.height||x.level.height<=1080);
+     instance.autoLevelCapping=safe.length?safe[safe.length-1].index:0;
+     instance.currentLevel=-1;
+     qualities();state(lang==='ar'?'البث جاهز؛ الجودة التلقائية محدودة إلى 1080p مع تخزين أخف.':'Stream ready; auto quality capped at 1080p with a lighter buffer.');
+     video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+    });
+    instance.on(Hls.Events.ERROR,(_e,d)=>{
+     if(generation!==playbackGeneration||instance!==hlsInstance)return;
+     if(d.fatal){scheduleRecovery(d.details||'HLS fatal error',generation);return;}
+     if(d.type===Hls.ErrorTypes.NETWORK_ERROR){try{instance.startLoad()}catch(e){scheduleRecovery(d.details||'HLS network error',generation)}}
+     else if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{instance.recoverMediaError()}catch(e){scheduleRecovery(d.details||'HLS media error',generation)}}
+    });
+    instance.loadSource(url);instance.attachMedia(video);return;
+   }
+   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{userPaused=true});return}
+  }
+  throw new Error(lang==='ar'?'تعذر تشغيل مصدر HLS/DASH على هذا الجهاز.':'Unable to play this HLS/DASH source on this device.');
  }
  if(['file','mpegts','ts'].includes(type)){
   const mod=await import('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/+esm').catch(()=>import('https://esm.sh/mpegts.js@1.8.2'));
@@ -1153,7 +1230,8 @@ async function playChannel(row){
  if(categoryFor(row)==='bein'&&!beinAccess&&currentSession?.user?.app_metadata?.role!=='admin'){showSiteToast('قسم beIN SPORTS مقفول. فعّل حسابك أولاً.','error');syncBeinGate();return;}
  stopPlayback();
  const variants=(row.variants?.length?row.variants:[row]).slice().sort((a,b)=>(b._qualityRank||0)-(a._qualityRank||0));
- activeRow={...row,variants,selectedVariantId:variants[0].id};
+ const preferred=variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
+ activeRow={...row,variants,selectedVariantId:preferred.id};
  const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
  qualities();
@@ -1573,6 +1651,22 @@ qualitySelect.addEventListener('change',async()=>{
   try{await startPlayback(activeRow,generation,'initial')}
   catch(err){if(generation===playbackGeneration){state(err?.message||'Playback error');scheduleRecovery(err?.message||'variant switch failed',generation)}}
   showSiteToast('تم تغيير نسخة القناة إلى '+(variant?._quality||'نسخة أخرى'),'success');
+  return;
+ }
+ if(selected.startsWith('track:')&&shakaPlayer){
+  const trackId=Number(selected.slice(6));
+  const track=shakaPlayer.getVariantTracks().find(item=>item.id===trackId);
+  if(!track)return;
+  shakaPlayer.configure('abr.enabled',false);
+  shakaPlayer.selectVariantTrack(track,true);
+  $('#vcQuality').textContent=track.height?track.height+'p':'مخصص';
+  state('تم تغيير جودة البث إلى '+(qualitySelect.options[qualitySelect.selectedIndex]?.textContent||'مخصص'));
+  return;
+ }
+ if(shakaPlayer&&selected==='-1'){
+  shakaPlayer.configure('abr.enabled',true);
+  $('#vcQuality').textContent='AUTO';
+  state('تم تفعيل الجودة التلقائية حتى 1080p');
   return;
  }
  if(!hlsInstance||selected==='source')return;
