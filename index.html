@@ -403,7 +403,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .nav-utility{display:flex;align-items:center;gap:9px}
 .account-trigger{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#151b25;color:var(--text);border-radius:999px;padding:5px 12px 5px 6px;font-weight:700}
 .account-trigger[hidden]{display:none!important}
-.account-avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:linear-gradient(145deg,#263d60,#5b2b83);border:2px solid #a66aff;overflow:hidden;flex:none}.account-avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
+.account-avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:linear-gradient(145deg,#263d60,#5b2b83);border:2px solid #a66aff;overflow:hidden;flex:none}.account-avatar .avatar-art{width:100%;height:100%;display:block;background-size:400% 200%;background-repeat:no-repeat;border-radius:inherit}
 .account-menu{position:absolute;top:calc(100% + 9px);inset-inline-end:0;width:245px;padding:12px;background:#141b28;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 55px #0009;z-index:40}
 .nav-utility{position:relative}
 .account-menu-head{display:flex;align-items:center;gap:10px;padding:8px 7px 13px;border-bottom:1px solid var(--line);margin-bottom:8px}
@@ -420,7 +420,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .profile-current .account-avatar{width:64px;height:64px;font-size:34px}
 .profile-current strong{display:block}.profile-current small{color:var(--muted)}
 .avatar-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:12px 0 18px}
-.avatar-choice{border:2px solid transparent;background:#ffffff08;border-radius:14px;min-height:92px;padding:8px 5px;display:grid;place-items:center;gap:6px;color:var(--text);font-size:13px}.avatar-choice img{width:54px;height:54px;display:block;object-fit:cover;border-radius:13px;background:#202838;border:1px solid #ffffff18}
+.avatar-choice{border:2px solid transparent;background:#ffffff08;border-radius:14px;min-height:92px;padding:8px 5px;display:grid;place-items:center;gap:6px;color:var(--text);font-size:13px}.avatar-choice .avatar-art{width:54px;height:54px;display:block;background-size:400% 200%;background-repeat:no-repeat;border-radius:13px;background-color:#202838;border:1px solid #ffffff18}
 .avatar-choice small{font-size:10px;color:var(--muted)}
 .avatar-choice.selected{border-color:#a66aff;background:#8d4dff20;box-shadow:0 0 0 2px #8d4dff22}
 .profile-field{display:block;margin:12px 0 6px;font-size:13px;color:var(--muted)}
@@ -754,7 +754,7 @@ const KEY='sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo';
 const SESSION_KEY='velnix:auth-session';
 let currentSession=null;
 let authMode='login';
-let profileData={display_name:'',avatar_url:'velnix-avatar:anime1'};let selectedAvatar='fox';
+let profileData={display_name:'',avatar_url:'velnix-avatar:anime1'};let selectedAvatar='anime1';
 let lang='ar',channelRows=[];
 let beinAccess=false,beinExpiresAt=null;
 const $=(s,r=document)=>r.querySelector(s);
@@ -884,33 +884,33 @@ async function userRest(path,options={}){
  if(!response.ok)throw new Error(payload?.message||payload?.details||'تعذر حفظ بيانات الملف الشخصي');
  return payload;
 }
+const AVATAR_SPRITE='https://2iq2.github.io/VELNIX/assets/avatars/velnix-anime-sprite.webp';
 const avatarChoices=[
- ['anime1','https://i.imgur.com/A5w1B2G.png','المحقق الهادئ'],
- ['anime2','https://i.imgur.com/C9f3D4H.png','الفتاة الغامضة'],
- ['anime3','https://i.imgur.com/E7b2G5I.png','المقاتل القوي'],
- ['anime4','https://i.imgur.com/G2a8H1J.png','الفتاة المرحة'],
- ['anime5','https://i.imgur.com/I4k9E3B.png','القرصان الإلكتروني'],
- ['anime6','https://i.imgur.com/K3j6F7C.png','الفارسة الأنيقة'],
- ['anime7','https://i.imgur.com/M2h8G1D.png','العالم العبقري'],
- ['anime8','https://i.imgur.com/O5p7I9B.png','القائدة الصارمة']
+ ['anime1','0% 0%','المحقق الهادئ'],
+ ['anime2','33.333% 0%','الفتاة الغامضة'],
+ ['anime3','66.666% 0%','المقاتل القوي'],
+ ['anime4','100% 0%','الفتاة المرحة'],
+ ['anime5','0% 100%','القرصان الإلكتروني'],
+ ['anime6','33.333% 100%','الفارسة الأنيقة'],
+ ['anime7','66.666% 100%','العالم العبقري'],
+ ['anime8','100% 100%','القائدة الصارمة']
 ];
 function avatarChoice(id){return avatarChoices.find(x=>x[0]===id)||avatarChoices[0]}
+function makeAvatarArt(position,label){
+ const art=document.createElement('span');art.className='avatar-art';art.style.backgroundImage='url("'+AVATAR_SPRITE+'")';art.style.backgroundPosition=position;art.setAttribute('role','img');art.setAttribute('aria-label',label);return art;
+}
 function paintAvatarElement(el,id){
  if(!el)return;
- const choice=avatarChoice(id);el.replaceChildren();
- const img=document.createElement('img');img.src=choice[1];img.alt=choice[2];img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
- img.addEventListener('error',()=>{img.remove();el.textContent='V'});
- el.append(img);
+ const choice=avatarChoice(id);el.replaceChildren();el.append(makeAvatarArt(choice[1],choice[2]));
 }
 function paintAvatar(id){['headerAvatar','menuAvatar','profilePreviewAvatar'].forEach(key=>paintAvatarElement($('#'+key),id))}
 function applyTheme(theme){const selected=theme==='light'?'light':'dark';document.body.dataset.theme=selected;$('#themeToggle').textContent=selected==='light'?'🌙':'☀️';$('#menuThemeBtn').textContent=selected==='light'?'🌙 الثيم الليلي':'☀️ الثيم الأبيض';try{localStorage.setItem('velnix:theme',selected)}catch(e){}}
 function toggleTheme(){applyTheme(document.body.dataset.theme==='light'?'dark':'light')}
 function renderAvatarChoices(){
  const grid=$('#avatarGrid');grid.replaceChildren();
- avatarChoices.forEach(([id,url,label])=>{
+ avatarChoices.forEach(([id,position,label])=>{
   const b=document.createElement('button');b.type='button';b.className='avatar-choice'+(selectedAvatar===id?' selected':'');b.setAttribute('aria-label',label);
-  const img=document.createElement('img');img.src=url;img.alt=label;img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';img.addEventListener('error',()=>{img.remove();const fallback=document.createElement('span');fallback.textContent='V';b.prepend(fallback)});
-  const caption=document.createElement('small');caption.textContent=label;b.append(img,caption);
+  const caption=document.createElement('small');caption.textContent=label;b.append(makeAvatarArt(position,label),caption);
   b.addEventListener('click',()=>{selectedAvatar=id;renderAvatarChoices();paintAvatarElement($('#profilePreviewAvatar'),id)});
   grid.append(b);
  });
