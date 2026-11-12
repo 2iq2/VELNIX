@@ -1356,7 +1356,7 @@ function displayGroupTitle(value){
  return lang==='ar'?(names[raw.toLocaleLowerCase()]||raw):raw;
 }
 function folderMonogram(title){
- const words=String(title||'').replace(/[^\\p{L}\\p{N} ]/gu,' ').trim().split(/\\s+/).filter(Boolean);
+ const words=String(title||'').replace(/[^\p{L}\p{N} ]/gu,' ').trim().split(/\s+/).filter(Boolean);
  const value=words.length>1?words.slice(0,2).map(w=>Array.from(w)[0]).join(''):Array.from(words[0]||'VX').slice(0,2).join('');
  return value.toLocaleUpperCase();
 }
@@ -1388,7 +1388,7 @@ function renderChannels(){
   list.forEach(folder=>{
    const card=document.createElement('article');card.className='channel folder-card';card.tabIndex=0;card.setAttribute('role','button');
    const icon=document.createElement('div');icon.className='folder-logo folder-logo-category';icon.setAttribute('aria-hidden','true');
-   const candidates=(rows.filter(row=>groupKeyFor(row)===folder.key)).flatMap(row=>[row,...(row.variants||[])]).map(row=>String(row.logo_url||'').trim()).filter(url=>/^https:\\/\\//i.test(url));
+   const candidates=(rows.filter(row=>groupKeyFor(row)===folder.key)).flatMap(row=>[row,...(row.variants||[])]).map(row=>String(row.logo_url||'').trim()).filter(url=>/^https:\/\//i.test(url));
    const logoUrl=candidates.find(url=>!usedFolderLogos.has(url.replace(/[?#].*$/,'')));
    if(logoUrl){
     usedFolderLogos.add(logoUrl.replace(/[?#].*$/,''));
