@@ -698,7 +698,7 @@ const supabase={auth:{
 async function refreshAuth(){
  const {data}=await supabase.auth.getSession();currentSession=data.session;
  const user=currentSession?.user,admin=user?.app_metadata?.role==='admin';
- $('#loginBtn').hidden=!!user;$('#accountTrigger').hidden=!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;
+ $('#loginBtn').hidden=!!user;$('#accountTrigger').hidden=!user;$('#heroLogin').hidden=!!user;$('#adminBtn').hidden=!admin;$('#adminTools').hidden=!admin;if($('#resumeM3uImport'))$('#resumeM3uImport').hidden=!admin||!localStorage.getItem('velnix:m3u-import-job');
  if(user){
   $('#authMessage').textContent='تم تسجيل الدخول: '+user.email;$('#accountPanel').hidden=false;$('#authForm').hidden=true;$('#authSwitch').hidden=true;$('#forgotPassword').hidden=true;$('#accountEmail').textContent=user.email;
   try{const access=await gateway({action:'check_bein_access'});beinAccess=!!access.has_access;beinExpiresAt=access.expires_at||null;}catch(e){beinAccess=false;beinExpiresAt=null;}
