@@ -919,7 +919,7 @@ function qualities(){
 function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
  recovering=true;retryCount++;
- const delay=Math.min(10000,1000*Math.pow(1.45,Math.min(retryCount-1,8)));
+ const delay=Math.min(30000,2500*Math.pow(1.5,Math.min(retryCount-1,8)));
  state(lang==='ar'?'تم رصد توقف البث؛ إعادة الاتصال تلقائياً (المحاولة '+retryCount+')...':'Stream interruption detected; reconnecting (attempt '+retryCount+')...');
  if(retryTimer)clearTimeout(retryTimer);
  retryTimer=setTimeout(async()=>{
@@ -946,9 +946,9 @@ async function startPlayback(row,generation,reason='initial'){
   if(Hls.isSupported()){
    hlsInstance=new Hls({
     enableWorker:true,lowLatencyMode:false,
-    backBufferLength:90,maxBufferLength:120,maxMaxBufferLength:180,maxBufferSize:120*1000*1000,
-    maxBufferHole:0.5,highBufferWatchdogPeriod:2,liveSyncDurationCount:8,liveMaxLatencyDurationCount:24,
-    maxLiveSyncPlaybackRate:1.04,nudgeOffset:0.2,nudgeMaxRetry:12,
+    backBufferLength:45,maxBufferLength:240,maxMaxBufferLength:300,maxBufferSize:160*1000*1000,
+    maxBufferHole:0.8,highBufferWatchdogPeriod:3,liveSyncDurationCount:10,liveMaxLatencyDurationCount:30,
+    maxLiveSyncPlaybackRate:1.02,nudgeOffset:0.2,nudgeMaxRetry:20,
     manifestLoadingMaxRetry:12,manifestLoadingRetryDelay:1000,manifestLoadingMaxRetryTimeout:30000,
     levelLoadingMaxRetry:12,levelLoadingRetryDelay:1000,levelLoadingMaxRetryTimeout:30000,
     fragLoadingMaxRetry:30,fragLoadingRetryDelay:1000,fragLoadingMaxRetryTimeout:60000,
@@ -985,10 +985,10 @@ async function startPlayback(row,generation,reason='initial'){
   // Worker-based transmuxing/MSE reduces main-thread work on supported browsers.
   mpegtsPlayer=mpegts.createPlayer({type:'mpegts',isLive:true,url},{
    enableWorker:true,enableWorkerForMSE:true,
-   enableStashBuffer:true,stashInitialSize:8*1024*1024,
+   enableStashBuffer:true,stashInitialSize:12*1024*1024,
    lazyLoad:false,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:45,liveBufferLatencyMinRemain:10,
-   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:90,autoCleanupMinBackwardDuration:30,
+   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:90,liveBufferLatencyMinRemain:15,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:60,autoCleanupMinBackwardDuration:20,
    fixAudioTimestampGap:true,accurateSeek:false
   });
   const instance=mpegtsPlayer;
@@ -1140,7 +1140,7 @@ video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now()
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
 video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Playback stalled')});
-video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering&&Date.now()-lastProgressAt>7000)scheduleRecovery('Waiting for stream data')});
+video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering&&Date.now()-lastProgressAt>12000)scheduleRecovery('Waiting for stream data')});
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||userPaused||video.ended||recovering)return;
  const now=Date.now();
@@ -1149,7 +1149,7 @@ watchdogTimer=setInterval(()=>{
  const bufferLabel=ahead>=1?'التخزين أمامك: '+Math.floor(ahead)+' ثانية':(video.paused?'بانتظار استقرار البث...':'جارٍ تعبئة التخزين المؤقت...');
  $('#bufferText').textContent=bufferLabel;
  if(!video.paused&&video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=now;if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}}
- else if(now-lastProgressAt>9000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
+ else if(now-lastProgressAt>14000)scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');
 },3000);
 const CATEGORY_META={
  bein:{ar:'قنوات beIN',en:'beIN channels',icon:'📡'},
