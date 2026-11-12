@@ -1391,13 +1391,24 @@ $('#curateChannelsBtn').addEventListener('click',async()=>{
  if(!confirm('سيتم إعادة ترتيب جميع القنوات وجلب الشعارات من ملف M3U. لن يتم حذف أي قناة أو رابط بث. متابعة؟'))return;
  btn.disabled=true;status.textContent='جارٍ قراءة ملف القنوات وتجميع الأقسام وإضافة الشعارات…';
  try{
-  const result=await gateway({action:'admin_curate_channels',job_id:jobId});
-  if(!result.success)throw new Error(result.error||'تعذر إكمال تنظيم القنوات.');
-  const stats=result.stats||{};
+  let stats={},done=false;
+  for(let batch=0;batch<50;batch++){
+   status.textContent=batch===0?'جارٍ تجهيز شعارات الملف وتقسيم القنوات إلى دفعات…':'جارٍ تنظيم الدفعة '+batch+' · تمت معالجة '+Number(stats.scanned||0).toLocaleString('ar-IQ')+' قناة…';
+   let result=null,lastError=null;
+   for(let attempt=0;attempt<2;attempt++){
+    try{result=await gateway({action:'admin_curate_channels',job_id:jobId});lastError=null;break}
+    catch(err){lastError=err;if(attempt===0)await new Promise(resolve=>setTimeout(resolve,1200))}
+   }
+   if(lastError)throw lastError;
+   if(!result?.success)throw new Error(result?.error||'تعذر إكمال دفعة تنظيم القنوات.');
+   stats=result.stats||stats;
+   if(result.done){done=true;break}
+  }
+  if(!done)throw new Error('توقف التنظيم قبل إكمال كل الدفعات. اضغط الزر مرة أخرى للاستكمال من آخر نقطة محفوظة.');
   status.textContent='اكتمل التنظيم: '+Number(stats.grouped||0).toLocaleString('ar-IQ')+' قناة · '+Number(stats.logos_added||0).toLocaleString('ar-IQ')+' شعار من الملف.';
   showSiteToast(status.textContent,'success');
   await loadChannels();
- }catch(err){status.textContent='تعذر التنظيم: '+(err?.message||'خطأ غير معروف');showSiteToast(status.textContent,'error')}
+ }catch(err){status.textContent='تعذر التنظيم: '+(err?.message||'خطأ غير معروف')+' — يمكنك الضغط مرة أخرى للاستكمال دون حذف ما تم.';showSiteToast(status.textContent,'error')}
  finally{btn.disabled=false;}
 });
 $('#resumeM3uImport').addEventListener('click',async()=>{
