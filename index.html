@@ -1171,7 +1171,7 @@ async function startPlayback(row,generation,reason='initial'){
      state(lang==='ar'?'المشغّل التكيفي جاهز؛ الجودة محددة تلقائياً حتى 1080p لتقليل الحمل.':'Adaptive player ready; automatic quality is capped at 1080p.');
     }
     qualities();
-    await video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+    await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
     return;
    }
   }catch(error){
@@ -1201,7 +1201,7 @@ async function startPlayback(row,generation,reason='initial'){
      instance.autoLevelCapping=safe.length?safe[safe.length-1].index:0;
      instance.currentLevel=-1;
      qualities();state(lang==='ar'?'البث جاهز؛ الجودة التلقائية محدودة إلى 1080p مع تخزين أخف.':'Stream ready; auto quality capped at 1080p with a lighter buffer.');
-     video.play().catch(()=>{userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')});
+     video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
     });
     instance.on(Hls.Events.ERROR,(_e,d)=>{
      if(generation!==playbackGeneration||instance!==hlsInstance)return;
@@ -1211,7 +1211,7 @@ async function startPlayback(row,generation,reason='initial'){
     });
     instance.loadSource(url);instance.attachMedia(video);return;
    }
-   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(()=>{userPaused=true});return}
+   if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Native HLS start failed',generation)}});return}
   }
   throw new Error(lang==='ar'?'تعذر تشغيل مصدر HLS/DASH على هذا الجهاز.':'Unable to play this HLS/DASH source on this device.');
  }
@@ -1243,7 +1243,7 @@ async function startPlayback(row,generation,reason='initial'){
   instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ التخزين المؤقت الموسّع والاستعادة التلقائية مفعّلان.':'Connected; extended buffering and automatic recovery are enabled.')}).catch(e=>{if(generation===playbackGeneration){if(e?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(e?.message||'MPEG-TS play failed',generation)}}});
   return;
  }
- video.src=url;await video.play().catch(()=>{userPaused=true});
+ video.src=url;await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
 }
 async function playChannel(row){
  if(!currentSession){showSiteToast('لازم تسجّل دخول حتى تشاهد القنوات.','error');$('#loginBtn').click();return;}
