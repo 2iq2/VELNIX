@@ -1152,7 +1152,7 @@ function categoryFor(row){
  const group=String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'').toLowerCase();
  const name=String(row.name_en||row.name_ar||'').toLowerCase();
  const both=group+' '+name;
- if(/bein|بي\\s*ان|بين\\s*ان/.test(both))return 'bein';
+ if(/bein|بي\s*ان|بين\s*ان/.test(both))return 'bein';
  if(/sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
  if(/news|info|actualité|actualite|inform|اخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
  if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
