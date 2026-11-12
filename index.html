@@ -1201,7 +1201,7 @@ function categoryFor(row){
  if(/kids|junior|cartoon|infantil|kinder|crianc|enfant/.test(group)||/kids|cartoon|nick|disney junior|baby tv|boomerang|gulli|spacetoon/.test(name))return 'kids';
  if(/doc|document|nature|science|wissensch|natuur/.test(group)||/documentary|discovery|nat geo|national geographic|history channel|animal planet|bbc earth/.test(name))return 'documentaries';
  if(/series|drama|drame|fiction|مسلسل|مسلسلات/.test(both))return 'series';
- if(/cinema|movie|film|cine|prime video/.test(group)||/movies|cinema|ciné|film|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
+ if(/cinema|movie|film|cine|prime|netflix/.test(group)||/movies|cinema|ciné|film|hbo|cinemax|showtime movies|osn movies/.test(name))return 'movies';
  if(/radio|music|musique|musica|music/.test(group)||/radio|music|mtv|mezzo|trace urban|vh1|rotana music|موسيقى/.test(name))return 'music';
  if(/arabic|middle east|moyen orient|maghreb|maroc|quran|islamic|arab|mbc group|bein movies/.test(group)||/iraq|iraqia|mbc|osn|shahid|rotana|al arabiya|al jazeera|quran|alkass|abudhabi|abu dhabi|oman|kuwait|saudi|syria|lebanon|egypt|morocco|tunisia|jordan|palestine|arab/.test(name))return 'arabic';
  if(/arab|middle east|maghreb|maroc/.test(group))return 'arabic';
