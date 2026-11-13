@@ -85,53 +85,65 @@ export default {
       });
     }
 
-    let upstream = null;
-    let viaSupabase = false;
-    try {
-      upstream = await fetch(resolved.resource_url, {
-        method: "GET",
-        headers: upstreamHeaders,
+    const fetchWithConnectTimeout = async (url, init, timeoutMs = 12000) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try { return await fetch(url, { ...init, signal: controller.signal }); }
+      finally { clearTimeout(timer); }
+    };
+
+    const openUpstream = async (preferSupabase = false) => {
+      if (!preferSupabase) {
+        try {
+          const direct = await fetchWithConnectTimeout(resolved.resource_url, {
+            method: "GET", headers: upstreamHeaders, redirect: "follow",
+          });
+          if (direct.status !== 403 && direct.status !== 429 && direct.status < 500) {
+            return { response: direct, viaSupabase: false };
+          }
+          console.error("VELNIX_RELAY_DIRECT_RETRY", JSON.stringify({
+            status: direct.status, host: hostOf(resolved.resource_url)
+          }));
+          await direct.body?.cancel().catch(() => {});
+        } catch (error) {
+          console.error("VELNIX_RELAY_DIRECT_EXCEPTION", JSON.stringify({
+            name: error?.name, message: error?.message, host: hostOf(resolved.resource_url)
+          }));
+        }
+      }
+      const fallback = await fetchWithConnectTimeout(env.SUPABASE_RESOLVE_URL, {
+        method: "POST",
+        headers: { ...upstreamHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "proxy", channel_id: channelId, access_token: accessToken }),
         redirect: "follow",
-      });
-      if (upstream.status === 403 || upstream.status === 429 || upstream.status >= 500) {
-        console.error("VELNIX_RELAY_DIRECT_RETRY", JSON.stringify({ status: upstream.status, host: hostOf(resolved.resource_url) }));
-        await upstream.body?.cancel().catch(() => {});
-        upstream = await proxyThroughSupabase(env, channelId, accessToken);
-        viaSupabase = true;
-      }
-    } catch (error) {
-      console.error("VELNIX_RELAY_DIRECT_EXCEPTION", JSON.stringify({
-        name: error?.name, message: error?.message, host: hostOf(resolved.resource_url)
-      }));
-      try {
-        upstream = await proxyThroughSupabase(env, channelId, accessToken);
-        viaSupabase = true;
-      } catch (fallbackError) {
-        console.error("VELNIX_RELAY_FALLBACK_EXCEPTION", JSON.stringify({
-          name: fallbackError?.name, message: fallbackError?.message
-        }));
-        return new Response("Stream connection failed", { status: 502, headers: cors });
-      }
+      }, 20000);
+      return { response: fallback, viaSupabase: true };
+    };
+
+    let opened;
+    try { opened = await openUpstream(false); }
+    catch (error) {
+      console.error("VELNIX_RELAY_FALLBACK_EXCEPTION", JSON.stringify({ name: error?.name, message: error?.message }));
+      return new Response("Stream connection failed", { status: 502, headers: cors });
     }
+    let upstream = opened.response;
+    const viaSupabase = opened.viaSupabase;
 
     if (!upstream?.ok && upstream?.status !== 206) {
       console.error("VELNIX_RELAY_UPSTREAM_STATUS", JSON.stringify({
-        status: upstream?.status || 0,
-        via: viaSupabase ? "supabase" : "direct",
+        status: upstream?.status || 0, via: viaSupabase ? "supabase" : "direct",
         host: hostOf(resolved.resource_url)
       }));
       const status = upstream?.status === 401 || upstream?.status === 403 ? upstream.status : 502;
       await upstream?.body?.cancel().catch(() => {});
       return new Response("Upstream stream unavailable", {
-        status,
-        headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+        status, headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
     if (!upstream.body) {
       console.error("VELNIX_RELAY_EMPTY_BODY", JSON.stringify({ status: upstream.status, via: viaSupabase ? "supabase" : "direct" }));
       return new Response("Upstream returned an empty stream", {
-        status: 502,
-        headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+        status: 502, headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
 
@@ -144,17 +156,88 @@ export default {
     headers.set("Accept-Ranges", "none");
     headers.set("X-Content-Type-Options", "nosniff");
 
-    // Pass the upstream stream through natively. The previous per-chunk
-    // ReadableStream pull/reconnect loop could consume the Worker's CPU budget
-    // on long MPEG-TS sessions, terminating playback despite a healthy upstream.
-    // The player already has retry/fallback handling for EOF or network failures.
+    // Backpressure-aware recovery: each pull waits for real upstream data.
+    // On EOF, read error, or 18s of silence, reopen the origin (or Supabase
+    // fallback) while keeping this browser response and its media buffer alive.
+    let reader = upstream.body.getReader();
+    let closed = false;
+    let consecutiveReconnects = 0;
+    let useSupabase = viaSupabase;
+    const reconnectingBody = new ReadableStream({
+      async pull(controller) {
+        while (!closed) {
+          let timer;
+          let result;
+          try {
+            result = await Promise.race([
+              reader.read().then(value => ({ kind: "read", value })),
+              new Promise(resolve => { timer = setTimeout(() => resolve({ kind: "idle" }), 18000); }),
+            ]);
+          } catch (error) {
+            result = { kind: "error", error };
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
+
+          if (result.kind === "read" && !result.value.done && result.value.value?.byteLength) {
+            consecutiveReconnects = 0;
+            controller.enqueue(result.value.value);
+            return;
+          }
+
+          const reason = result.kind === "idle" ? "idle-timeout" :
+            result.kind === "error" ? "read-error" : "upstream-ended";
+          await reader.cancel().catch(() => {});
+          if (closed) return;
+          if (consecutiveReconnects >= 10) {
+            controller.error(new Error("Upstream stream could not be restored"));
+            return;
+          }
+
+          const delay = Math.min(8000, 500 * Math.pow(2, Math.min(consecutiveReconnects, 4)));
+          await new Promise(resolve => setTimeout(resolve, delay));
+          if (closed) return;
+
+          try {
+            const next = await openUpstream(useSupabase);
+            const response = next.response;
+            if ((!response?.ok && response?.status !== 206) || !response.body) {
+              await response?.body?.cancel().catch(() => {});
+              consecutiveReconnects++;
+              console.error("VELNIX_RELAY_RECONNECT_FAILED", JSON.stringify({
+                attempt: consecutiveReconnects, reason, status: response?.status || 0,
+                via: next.viaSupabase ? "supabase" : "direct", host: hostOf(resolved.resource_url)
+              }));
+              continue;
+            }
+            reader = response.body.getReader();
+            useSupabase = next.viaSupabase;
+            consecutiveReconnects++;
+            console.log("VELNIX_RELAY_RECONNECTED", JSON.stringify({
+              attempt: consecutiveReconnects, reason,
+              via: useSupabase ? "supabase" : "direct", host: hostOf(resolved.resource_url)
+            }));
+          } catch (error) {
+            consecutiveReconnects++;
+            console.error("VELNIX_RELAY_RECONNECT_EXCEPTION", JSON.stringify({
+              attempt: consecutiveReconnects, reason, name: error?.name,
+              message: error?.message, host: hostOf(resolved.resource_url)
+            }));
+          }
+        }
+      },
+      async cancel(reason) {
+        closed = true;
+        await reader.cancel(reason).catch(() => {});
+      },
+    });
+
     console.log("VELNIX_RELAY_STREAM_PASSTHROUGH", JSON.stringify({
-      via: viaSupabase ? "supabase" : "direct",
-      host: hostOf(resolved.resource_url),
-      contentType
+      via: viaSupabase ? "supabase" : "direct", host: hostOf(resolved.resource_url),
+      contentType, reconnect: "idle-or-eof"
     }));
 
-    return new Response(upstream.body, {
+    return new Response(reconnectingBody, {
       status: upstream.status === 206 ? 200 : upstream.status,
       headers,
     });
