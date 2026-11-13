@@ -218,7 +218,37 @@ export default {
           }
 
           try {
-            const part = await activeReader.read();
+            // MPEG-TS should deliver data continuously. A stalled upstream can
+            // leave read() pending forever without closing the response; detect
+            // that idle state and reconnect instead of freezing playback.
+            let idleTimer;
+            const readResult = await Promise.race([
+              activeReader.read(),
+              new Promise(resolve => {
+                idleTimer = setTimeout(() => resolve({ idleTimeout: true }), 15000);
+              }),
+            ]);
+            clearTimeout(idleTimer);
+
+            if (readResult?.idleTimeout) {
+              failures++;
+              reconnects++;
+              console.warn("VELNIX_RELAY_STREAM_IDLE", JSON.stringify({
+                idle_ms: 15000, via: useSupabase ? "supabase" : "direct",
+                attempt: reconnects, totalBytes
+              }));
+              try { await activeReader.cancel("upstream idle timeout"); } catch {}
+              try { activeReader.releaseLock(); } catch {}
+              activeReader = null;
+              response = null;
+              if (failures >= 4 || reconnects >= 30) {
+                controller.error(new Error("Upstream stream idle timeout"));
+                return;
+              }
+              continue;
+            }
+
+            const part = readResult;
             if (part.done) {
               const durationMs = Date.now() - sourceOpenedAt;
               console.warn("VELNIX_RELAY_STREAM_EOF", JSON.stringify({
