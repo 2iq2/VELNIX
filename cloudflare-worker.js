@@ -61,6 +61,8 @@ export default {
     }
 
     if (request.method === "HEAD") {
+      // Detect whether the origin rejects Cloudflare egress without opening
+      // a second Supabase streaming response during the preflight.
       let viaSupabase = false;
       try {
         const probe = await fetch(resolved.resource_url, {
@@ -69,35 +71,13 @@ export default {
           redirect: "follow",
           signal: AbortSignal.timeout(5000),
         });
-        const needsFallback = probe.status === 403 || probe.status === 429 || probe.status >= 500;
+        viaSupabase = probe.status === 403 || probe.status === 429 || probe.status >= 500;
         await probe.body?.cancel().catch(() => {});
-        if (needsFallback) {
-          const fallback = await proxyThroughSupabase(env, channelId, accessToken);
-          if (!fallback.ok && fallback.status !== 206) {
-            await fallback.body?.cancel().catch(() => {});
-            return new Response(null, { status: 502, headers: cors });
-          }
-          await fallback.body?.cancel().catch(() => {});
-          viaSupabase = true;
-        }
       } catch (error) {
+        viaSupabase = true;
         console.error("VELNIX_RELAY_PROBE_DIRECT_EXCEPTION", JSON.stringify({
           name: error?.name, message: error?.message, host: hostOf(resolved.resource_url)
         }));
-        try {
-          const fallback = await proxyThroughSupabase(env, channelId, accessToken);
-          if (!fallback.ok && fallback.status !== 206) {
-            await fallback.body?.cancel().catch(() => {});
-            return new Response(null, { status: 502, headers: cors });
-          }
-          await fallback.body?.cancel().catch(() => {});
-          viaSupabase = true;
-        } catch (fallbackError) {
-          console.error("VELNIX_RELAY_PROBE_FALLBACK_FAILED", JSON.stringify({
-            name: fallbackError?.name, message: fallbackError?.message
-          }));
-          return new Response(null, { status: 502, headers: cors });
-        }
       }
       return new Response(null, {
         status: 200,
