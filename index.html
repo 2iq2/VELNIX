@@ -2453,33 +2453,9 @@ video.addEventListener('playing',()=>{
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  if(gatewayRefreshPrepareTimer){clearTimeout(gatewayRefreshPrepareTimer);gatewayRefreshPrepareTimer=null}
  preparedGatewayStream=null;
- const refreshVariant=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);
- const refreshType=String(refreshVariant?.stream_type||activeRow?.stream_type||'').toLowerCase();
- // The Cloudflare Worker reconnects its own upstream stream; only direct
- // Supabase streaming still needs the browser-side lifetime refresh.
- if(!activeRow?.streamViaWorker&&['file','mpegts','ts'].includes(refreshType)){
-  const refreshGeneration=playbackGeneration;
-  gatewayRefreshPrepareTimer=setTimeout(async()=>{
-   gatewayRefreshPrepareTimer=null;
-   const row=activeRow,variant=row?.variants?.find(v=>v.id===row.selectedVariantId);
-   if(refreshGeneration!==playbackGeneration||!row||!variant||userPaused||video.paused||recovering)return;
-   try{
-    recordPlaybackEvent('تجهيز رابط التجديد','طلب رابط المصدر الجديد مسبقاً قبل موعد التجديد');
-    const fresh=await gateway({action:'stream',channel_id:variant.id});
-    if(refreshGeneration===playbackGeneration&&activeRow===row&&!userPaused&&!video.paused){
-     preparedGatewayStream={channelId:variant.id,stream:fresh,preparedAt:Date.now()};
-     recordPlaybackEvent('رابط التجديد جاهز','تم تجهيز رابط المصدر مسبقاً');
-    }
-   }catch(error){recordPlaybackEvent('تعذر التجهيز المسبق',error?.message||String(error))}
-  },85000);
-  gatewayRefreshTimer=setTimeout(()=>{
-   gatewayRefreshTimer=null;
-   if(refreshGeneration===playbackGeneration&&activeRow&&playerModal.classList.contains('show')&&!userPaused&&!video.paused&&!recovering){
-    recordPlaybackEvent('تجديد اتصال تلقائي','استخدام رابط المصدر الذي تم تجهيزه مسبقاً لتقليل وقت التجديد');
-    scheduleRecovery('Gateway lifetime refresh',refreshGeneration);
-   }
-  },115000);
- }
+ // Do not force a player teardown on a timer. Keep the live connection open;
+ // recover only when the media element or the stream watchdog detects a real failure.
+ preparedGatewayStream=null;
  candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
  $('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ التخزين المسبق الموسّع مفعّل (حتى 90 ثانية حسب المصدر والجهاز).':'Connected; extended pre-buffering enabled (up to 90s, source/device dependent).'
