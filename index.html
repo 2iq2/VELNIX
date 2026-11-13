@@ -1248,7 +1248,8 @@ async function startPlayback(row,generation,reason='initial'){
      manifestLoadingMaxRetry:8,manifestLoadingRetryDelay:900,manifestLoadingMaxRetryTimeout:20000,
      levelLoadingMaxRetry:8,levelLoadingRetryDelay:900,levelLoadingMaxRetryTimeout:20000,
      fragLoadingMaxRetry:16,fragLoadingRetryDelay:900,fragLoadingMaxRetryTimeout:30000,
-     startFragPrefetch:true,progressive:true,capLevelToPlayerSize:true
+     startFragPrefetch:true,progressive:true,capLevelToPlayerSize:true,
+     abrBandWidthFactor:0.82,abrBandWidthUpFactor:0.68,abrEwmaFastLive:4,abrEwmaSlowLive:10
     });
     const instance=hlsInstance;
     instance.on(Hls.Events.MANIFEST_PARSED,()=>{
@@ -1263,6 +1264,7 @@ async function startPlayback(row,generation,reason='initial'){
      const loaded=Number(d?.stats?.loaded||0),elapsed=Number(d?.stats?.loading?.end||0)-Number(d?.stats?.loading?.start||0);
      if(loaded>0&&elapsed>0){diagnosticBandwidthKbps=Math.round(loaded*8/elapsed);renderDiagnostics()}
     });
+    instance.on(Hls.Events.LEVEL_SWITCHED,(_e,d)=>recordPlaybackEvent('تغيير تلقائي للجودة',String(instance.levels?.[d.level]?.height||'unknown')+'p'));
     instance.on(Hls.Events.ERROR,(_e,d)=>{
      if(generation!==playbackGeneration||instance!==hlsInstance)return;
      recordPlaybackEvent('خطأ HLS',String(d.details||d.type||'unknown')+(d.fatal?' · fatal':''));
@@ -1512,6 +1514,7 @@ $('#diagnosticsExport')?.addEventListener('click',()=>{
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||userPaused||video.ended||recovering)return;
  const now=Date.now();
+ try{const stats=shakaPlayer?.getStats?.();if(stats?.estimatedBandwidth>0){diagnosticBandwidthKbps=Math.round(stats.estimatedBandwidth/1000);renderDiagnostics()}}catch(e){}
  let ahead=0;
  try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i);if(video.currentTime>=start-0.35&&video.currentTime<=end+0.35){ahead=Math.max(0,end-video.currentTime);break}}}catch(e){}
  const bufferLabel=ahead>=1?(lang==='ar'?'المخزون أمامك: ':'Buffered ahead: ')+Math.floor(ahead)+'s':(lang==='ar'?'جارٍ تعبئة التخزين المؤقت…':'Filling playback buffer…');
