@@ -1012,7 +1012,7 @@ async function gateway(body){
  }catch(error){if(body?.action==='stream')recordPlaybackEvent('فشل طلب المصدر',error?.message||String(error));throw error}
 }
 let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateLastCurrentTime=0,candidateStable=false;
-let diagnosticSession=null,diagnosticEvents=[],diagnosticLoadMs=0,diagnosticBandwidthKbps=0,diagnosticStalls=0,diagnosticStartedAt=0;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
+let diagnosticSession=null,diagnosticEvents=[],diagnosticLoadMs=0,diagnosticFirstFrameMs=0,diagnosticBandwidthKbps=0,diagnosticStalls=0,diagnosticStartedAt=0;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 async function loadPersonalLists(){
  const user=currentSession?.user;if(!user)return;
  try{
@@ -1074,8 +1074,8 @@ function recordPlaybackEvent(type,detail=''){
 function renderDiagnostics(){
  const summary=$('#diagnosticsSummary'),stats=$('#diagnosticsStats'),list=$('#diagnosticsEvents');
  if(!summary||!stats||!list)return;
- summary.textContent=diagnosticSession?(diagnosticStalls+' توقف · '+(diagnosticLoadMs||'—')+'ms تحميل'):'لا توجد جلسة بث بعد';
- stats.textContent='مدة الجلسة: '+(diagnosticStartedAt?Math.floor((Date.now()-diagnosticStartedAt)/1000)+' ث':'—')+' | تحميل المصدر: '+(diagnosticLoadMs||'—')+' ms | سرعة البيانات المقدّرة: '+(diagnosticBandwidthKbps?diagnosticBandwidthKbps+' kbps':'بانتظار القياس')+' | التوقفات: '+diagnosticStalls+' | المحاولات: '+retryCount;
+ summary.textContent=diagnosticSession?(diagnosticStalls+' توقف · '+(diagnosticFirstFrameMs||'بانتظار أول إطار')+'ms بدء'):'لا توجد جلسة بث بعد';
+ stats.textContent='مدة الجلسة: '+(diagnosticStartedAt?Math.floor((Date.now()-diagnosticStartedAt)/1000)+' ث':'—')+' | طلب المصدر: '+(diagnosticLoadMs||'—')+' ms | بدء الصورة: '+(diagnosticFirstFrameMs||'—')+' ms | سرعة البيانات المقدّرة: '+(diagnosticBandwidthKbps?diagnosticBandwidthKbps+' kbps':'بانتظار القياس')+' | التوقفات: '+diagnosticStalls+' | المحاولات: '+retryCount;
  list.replaceChildren(...diagnosticEvents.slice(0,30).map(item=>{const li=document.createElement('li');li.textContent=item.at+' · '+item.type+(item.detail?' — '+item.detail:'');return li}));
 }
 function state(value){$('#playerState').textContent=value;if(diagnosticSession&&/تعذر|error|failed|توقف|بديل|إعادة تشغيل/i.test(String(value)))recordPlaybackEvent('حالة المشغّل',value);if(/تم رصد توقف البث|تعذر|error|متصل بالبث|اضغط تشغيل|reconnecting|interruption/i.test(String(value)))showSiteToast(value,/تعذر|error|failed/i.test(String(value))?'error':/متصل بالبث/i.test(String(value))?'success':'info')}
@@ -1169,7 +1169,7 @@ function scheduleRecovery(reason,generation=playbackGeneration){
 }
 async function startPlayback(row,generation,reason='initial'){
  if(generation!==playbackGeneration||!activeRow)return;
- if(reason==='initial'||reason==='manual source'){diagnosticSession={channel:row.name_ar||row.name_en||'Channel',startedAt:new Date().toISOString()};diagnosticEvents=[];diagnosticLoadMs=0;diagnosticBandwidthKbps=0;diagnosticStalls=0;diagnosticStartedAt=Date.now();renderDiagnostics();recordPlaybackEvent('بدء تحميل القناة',diagnosticSession.channel)}
+ if(reason==='initial'||reason==='manual source'){diagnosticSession={channel:row.name_ar||row.name_en||'Channel',startedAt:new Date().toISOString()};diagnosticEvents=[];diagnosticLoadMs=0;diagnosticFirstFrameMs=0;diagnosticBandwidthKbps=0;diagnosticStalls=0;diagnosticStartedAt=Date.now();renderDiagnostics();recordPlaybackEvent('بدء تحميل القناة',diagnosticSession.channel)}
  else recordPlaybackEvent('محاولة إعادة تشغيل',reason);
  state(lang==='ar'?(reason==='initial'?'جارٍ تجهيز البث...':'جارٍ إعادة تشغيل البث...'):(reason==='initial'?'Preparing stream...':'Restarting stream...'));
  const sourceRow=row.variants?.find(v=>v.id===row.selectedVariantId)||row;
@@ -1494,14 +1494,19 @@ video.addEventListener('timeupdate',()=>{
 });
 video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!userPaused&&!recovering&&!suppressPauseTracking&&!video.ended)scheduleRecovery('Unexpected playback pause')});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
-video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;$('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ جارٍ اختبار ثبات المصدر…':'Connected; validating stream stability…'});
+video.addEventListener('playing',()=>{
+ userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;
+ candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
+ if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
+ $('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ جارٍ اختبار ثبات المصدر…':'Connected; validating stream stability…'
+});
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('خطأ عنصر الفيديو',String(video.error?.code||'unknown')+' · '+String(video.error?.message||''));scheduleRecovery('Media element error')}});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
 video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled');scheduleRecovery('Playback stalled')}});
 video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering&&Date.now()-lastProgressAt>12000){recordPlaybackEvent('انتظار البيانات','waiting > 12s');scheduleRecovery('Waiting for stream data')}});
 $('#diagnosticsToggle')?.addEventListener('click',()=>{$('#diagnosticsPanel').hidden=!$('#diagnosticsPanel').hidden;renderDiagnostics()});
 $('#diagnosticsExport')?.addEventListener('click',()=>{
- const report={product:'VELNIX',generated_at:new Date().toISOString(),channel:diagnosticSession,load_ms:diagnosticLoadMs,estimated_bandwidth_kbps:diagnosticBandwidthKbps,stalls:diagnosticStalls,retry_count:retryCount,selected_source:activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId)||null,events:diagnosticEvents};
+ const report={product:'VELNIX',generated_at:new Date().toISOString(),channel:diagnosticSession,source_request_ms:diagnosticLoadMs,first_frame_ms:diagnosticFirstFrameMs,estimated_bandwidth_kbps:diagnosticBandwidthKbps,stalls:diagnosticStalls,retry_count:retryCount,selected_source:activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId)||null,events:diagnosticEvents};
  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='velnix-playback-diagnostics.json';a.click();URL.revokeObjectURL(url);
 });
 watchdogTimer=setInterval(()=>{
