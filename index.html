@@ -720,6 +720,26 @@ img,video,canvas,svg{max-width:100%}
  .velnix-controls,.vc-topbar,.vc-icon,.vc-quality{transition:none}
 }
 
+
+/* VELNIX custom pointer badge — desktop only; keep native cursor as fallback */
+@media (hover:hover) and (pointer:fine) {
+  #velnixMouseBadge {
+    position:fixed; left:0; top:0; z-index:99999;
+    width:34px; height:34px; border:1px solid rgba(234,213,167,.82);
+    border-radius:50%; display:grid; place-items:center;
+    color:#ead5a7; background:rgba(10,16,24,.48);
+    box-shadow:0 0 0 5px rgba(201,169,110,.08),0 5px 20px rgba(0,0,0,.28);
+    font:800 11px "DM Sans",sans-serif; letter-spacing:1px;
+    pointer-events:none; opacity:0; visibility:hidden;
+    transform:translate(-50%,-50%) scale(.82);
+    transition:opacity .16s ease,transform .16s ease,visibility .16s ease;
+    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+  }
+  #velnixMouseBadge.is-visible {opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+  #velnixMouseBadge.is-hovering {background:rgba(201,169,110,.2);box-shadow:0 0 0 8px rgba(201,169,110,.11),0 5px 24px rgba(0,0,0,.3);transform:translate(-50%,-50%) scale(1.18)}
+}
+@media (hover:none), (pointer:coarse) { #velnixMouseBadge {display:none!important} }
+
 </style>
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
@@ -2240,4 +2260,29 @@ $('#m3uFile').addEventListener('change',async e=>{
 loadChannels();
 })().catch(err=>{console.error('VELNIX initialization failed:',err);const status=document.getElementById('channelStatus');if(status)status.textContent='تعذر تشغيل دليل القنوات: '+(err?.message||'تحقق من الاتصال ثم حدّث الصفحة.');window.__VELNIX_AUTH_LOAD_ERROR__=err?.message||'فشل تحميل خدمات المنصة';});
 </script>
+
+<!-- VELNIX custom mouse badge -->
+<div id="velnixMouseBadge" aria-hidden="true">V</div>
+<script>
+(() => {
+  const badge = document.getElementById('velnixMouseBadge');
+  if (!badge || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  let raf = 0, x = -100, y = -100;
+  document.addEventListener('mousemove', event => {
+    x = event.clientX; y = event.clientY;
+    if (!raf) raf = requestAnimationFrame(() => {
+      badge.style.left = x + 'px';
+      badge.style.top = y + 'px';
+      badge.classList.add('is-visible');
+      raf = 0;
+    });
+  }, {passive:true});
+  document.addEventListener('mouseover', event => {
+    badge.classList.toggle('is-hovering', !!event.target.closest('a,button,[role="button"],.channel,.folder-card,select'));
+  }, {passive:true});
+  document.addEventListener('mouseleave', () => badge.classList.remove('is-visible'));
+  document.addEventListener('mouseenter', () => badge.classList.add('is-visible'));
+})();
+</script>
+
 </body></html>
