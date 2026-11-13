@@ -20,7 +20,7 @@ export default {
     const incoming = new URL(request.url);
     const channelId = incoming.searchParams.get("channel_id") || "";
     const accessToken = incoming.searchParams.get("access_token") || "";
-    if (!channelId || !accessToken || !env.SUPABASE_RESOLVE_URL || !env.VELNIX_WORKER_SECRET) {
+    if (!channelId || !accessToken || !env.SUPABASE_RESOLVE_URL) {
       return new Response("Missing stream configuration", { status: 400, headers: cors });
     }
 
