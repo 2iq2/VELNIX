@@ -23,11 +23,15 @@ export default {
         body: JSON.stringify({ action: "resolve_stream", channel_id: channelId, access_token: accessToken }),
       });
       resolved = await auth.json().catch(() => ({}));
-      if (!auth.ok || !resolved.resource_url) return new Response(resolved.error || "Stream authorization failed", {
+      if (!auth.ok || !resolved.resource_url) {
+        console.error("VELNIX_RELAY_AUTH_FAILED", JSON.stringify({ status: auth.status, hasResource: !!resolved.resource_url }));
+        return new Response(resolved.error || "Stream authorization failed", {
         status: auth.status || 502,
         headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-      });
-    } catch {
+        });
+      }
+    } catch (error) {
+      console.error("VELNIX_RELAY_AUTH_EXCEPTION", JSON.stringify({ name: error?.name, message: error?.message }));
       return new Response("Could not verify stream access", { status: 502, headers: cors });
     }
 
@@ -44,18 +48,32 @@ export default {
         },
         redirect: "follow",
       });
-    } catch {
+    } catch (error) {
+      console.error("VELNIX_RELAY_UPSTREAM_EXCEPTION", JSON.stringify({
+        name: error?.name,
+        message: error?.message,
+        host: (() => { try { return new URL(resolved.resource_url).host; } catch { return "invalid-url"; } })()
+      }));
       return new Response("Upstream stream connection failed", { status: 502, headers: cors });
     }
 
-    if (!upstream.ok && upstream.status !== 206) return new Response("Upstream stream unavailable (" + upstream.status + ")", {
+    if (!upstream.ok && upstream.status !== 206) {
+      console.error("VELNIX_RELAY_UPSTREAM_STATUS", JSON.stringify({
+        status: upstream.status,
+        host: (() => { try { return new URL(resolved.resource_url).host; } catch { return "invalid-url"; } })()
+      }));
+      return new Response("Upstream stream unavailable (" + upstream.status + ")", {
       status: 502,
       headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-    });
-    if (!upstream.body && request.method !== "HEAD") return new Response("Upstream returned an empty stream", {
+      });
+    }
+    if (!upstream.body && request.method !== "HEAD") {
+      console.error("VELNIX_RELAY_EMPTY_BODY", JSON.stringify({ status: upstream.status }));
+      return new Response("Upstream returned an empty stream", {
       status: 502,
       headers: { ...cors, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-    });
+      });
+    }
 
     const headers = new Headers(cors);
     headers.set("Cache-Control", "no-store, no-transform");
