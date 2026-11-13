@@ -1353,6 +1353,25 @@ main{width:100%;min-width:0}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
+<style id="velnix-ipad-portrait-category-fix">
+/* iPad/tablet portrait: show category controls as a readable grid, not a clipped horizontal strip */
+@media (min-width:701px) and (max-width:1100px) and (orientation:portrait){
+ #categories.section{width:calc(100% - 32px)!important;max-width:900px!important;margin-inline:auto!important}
+ #categories .catalog-browse-layout{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:16px!important;width:100%!important;min-width:0!important}
+ #categories .catalog-sidebar{display:block!important;position:static!important;inset:auto!important;width:100%!important;max-width:100%!important;min-width:0!important;padding:15px!important;overflow:visible!important}
+ #categories .catalog-sidebar-heading{display:flex!important;align-items:center!important;margin:0 0 12px!important;padding:0 2px 11px!important}
+ #categories .catalog-sidebar .filters{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(135px,1fr))!important;grid-auto-flow:row!important;gap:8px!important;width:100%!important;max-width:100%!important;overflow:visible!important;padding:0!important;margin:0!important}
+ #categories .catalog-sidebar .filters .filter{display:flex!important;align-items:center!important;justify-content:flex-start!important;flex:initial!important;width:100%!important;max-width:none!important;min-width:0!important;min-height:46px!important;padding:10px 12px!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:start!important}
+ #categories .catalog-sidebar .filters .filter:before{flex:0 0 7px!important}
+ #categories .catalog-results{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important}
+ #categories .catalog-results>*{max-width:100%!important;min-width:0!important}
+}
+@media (min-width:701px) and (max-width:1100px) and (orientation:landscape){
+ #categories .catalog-browse-layout{grid-template-columns:minmax(0,1fr)!important}
+ #categories .catalog-sidebar{position:static!important}
+ #categories .catalog-sidebar .filters{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important}
+}
+</style>
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
