@@ -1007,7 +1007,7 @@ async function gateway(body){
  if(!response.ok)throw new Error(data.error||('Stream request failed: HTTP '+response.status));
  return data;
 }
-let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateStable=false;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateLastCurrentTime=0,candidateStable=false;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 async function loadPersonalLists(){
  const user=currentSession?.user;if(!user)return;
  try{
@@ -1273,7 +1273,7 @@ async function playChannel(row){
  const generation=playbackGeneration;
  playerModal.classList.add('show');$('#playerTitle').textContent=lang==='ar'?row.name_ar:row.name_en;
  qualities();
- retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateStable=false;
+ retryCount=0;userPaused=false;lastProgressAt=Date.now();lastCurrentTime=0;lastStableAt=Date.now();candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  const id=activeRow.selectedVariantId;recentChannels=[id,...recentChannels.filter(x=>x!==id)].slice(0,30);try{localStorage.setItem('velnix:recent',JSON.stringify(recentChannels))}catch(e){}saveWatchHistory(id);
  try{await startPlayback(activeRow,generation,'initial')}
  catch(e){if(generation===playbackGeneration){state(e?.message||'Playback error');scheduleRecovery(e?.message||'initial failure',generation)}}
@@ -1424,8 +1424,8 @@ playbackModeSelect?.addEventListener('change',async()=>{
   const generation=playbackGeneration,selected=activeRow.selectedVariantId;
   recovering=true;state(lang==='ar'?'جارٍ تطبيق إعدادات التخزين الجديدة…':'Applying new buffer settings…');
   destroyPlayerEngine();suppressPauseTracking=true;video.pause();suppressPauseTracking=false;video.removeAttribute('src');video.load();
-  activeRow.selectedVariantId=selected;candidateStartedAt=Date.now();candidateStable=false;lastProgressAt=Date.now();lastCurrentTime=0;
-  try{await startPlayback(activeRow,generation,'initial')}catch(error){if(generation===playbackGeneration)scheduleRecovery(error?.message||'mode restart failed',generation)}
+  activeRow.selectedVariantId=selected;candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;lastProgressAt=Date.now();lastCurrentTime=0;
+  try{await startPlayback(activeRow,generation,'initial')}catch(error){recovering=false;if(generation===playbackGeneration)scheduleRecovery(error?.message||'mode restart failed',generation);return}
   recovering=false;
  }
 });
@@ -1435,7 +1435,7 @@ video.addEventListener('timeupdate',()=>{
 });
 video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!userPaused&&!recovering&&!suppressPauseTracking&&!video.ended)scheduleRecovery('Unexpected playback pause')});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
-video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateStable=false;$('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ جارٍ اختبار ثبات المصدر…':'Connected; validating stream stability…'});
+video.addEventListener('playing',()=>{userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;$('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ جارٍ اختبار ثبات المصدر…':'Connected; validating stream stability…'});
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Media element error')});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
 video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering)scheduleRecovery('Playback stalled')});
@@ -1446,8 +1446,8 @@ watchdogTimer=setInterval(()=>{
  let ahead=0;
  try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i);if(video.currentTime>=start-0.35&&video.currentTime<=end+0.35){ahead=Math.max(0,end-video.currentTime);break}}}catch(e){}
  const bufferLabel=ahead>=1?(lang==='ar'?'المخزون أمامك: ':'Buffered ahead: ')+Math.floor(ahead)+'s':(lang==='ar'?'جارٍ تعبئة التخزين المؤقت…':'Filling playback buffer…');
- if(!video.paused&&video.currentTime>lastCurrentTime+0.15){
-  lastCurrentTime=video.currentTime;lastProgressAt=now;candidateLastProgressAt=now;
+ if(!video.paused&&video.currentTime>candidateLastCurrentTime+0.15){
+  candidateLastCurrentTime=video.currentTime;lastCurrentTime=video.currentTime;lastProgressAt=now;candidateLastProgressAt=now;
   if(!candidateStable&&candidateStartedAt&&now-candidateStartedAt>=25000){
    candidateStable=true;lastStableAt=now;retryCount=0;
    state(lang==='ar'?'تم التحقق: هذا المصدر مستقر حالياً.':'Validated: this stream is currently stable.');
