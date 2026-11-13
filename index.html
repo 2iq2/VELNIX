@@ -1544,10 +1544,10 @@ async function playChannel(row){
  if(identity){
   const known=new Set(variants.map(v=>v.id));
   const sameName=channelRows.filter(candidate=>candidate.id!==row.id&&categoryFor(candidate)===categoryFor(row)&&failoverMatches(candidate,row)&&!known.has(candidate.id));
-  sameName.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||failoverQualityRank(b)-failoverQualityRank(a));
+  sameName.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||failoverQualityRank(b)-failoverQualityRank(a)||failoverSourceRank(a)-failoverSourceRank(b));
   for(const candidate of sameName){const q=qualityInfo(String(candidate.name_en||candidate.name_ar||'').replace(/\b(ar|ara|arabic|en|eng|english|fr|fra|french|tr|tur|turkish|de|ger|es|spa|it|ita|th|thai|ph|au|uk|us|usa|ksa|sa|ca|br|lat|latin)\b/gi,' '));variants.push({...candidate,_qualityRank:failoverQualityRank(candidate),_quality:q.quality});known.add(candidate.id)}
  }
- variants.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||0)-(a._qualityRank||0));
+ variants.sort((a,b)=>failoverLanguageRank(a)-failoverLanguageRank(b)||(b._qualityRank||0)-(a._qualityRank||0)||failoverSourceRank(a)-failoverSourceRank(b));
  const preferred=variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===4)||variants.find(v=>failoverLanguageRank(v)===0&&v._qualityRank===3)||variants.find(v=>v._qualityRank===4)||variants.find(v=>v._qualityRank===3)||variants.find(v=>v._qualityRank===2)||variants[variants.length-1]||variants[0];
  activeRow={...row,variants,selectedVariantId:preferred.id};
  failoverVisited=new Set([preferred.id]);
@@ -1834,6 +1834,10 @@ function failoverIdentityFromName(original){
  return words.join(' ');
 }
 function failoverIdentity(row){return failoverIdentityFromName(row?.name_en)||failoverIdentityFromName(row?.name_ar)}
+function failoverSourceRank(row){
+ const provider=String(row?.source_provider||'').toLowerCase();
+ return provider==='authorized_manual_source'?0:provider==='m3u'?1:provider==='xtream'?2:3;
+}
 function failoverMatches(a,b){
  const left=new Set([failoverIdentityFromName(a?.name_en),failoverIdentityFromName(a?.name_ar)].filter(Boolean));
  return [failoverIdentityFromName(b?.name_en),failoverIdentityFromName(b?.name_ar)].some(value=>value&&left.has(value));
@@ -1865,7 +1869,7 @@ function buildChannelGroups(){
   const variants=bucket.rows;
   const distinctQualities=new Set(variants.map(v=>v._quality||'SOURCE'));
   const isGroup=variants.length>1;
-  variants.sort((a,b)=>b._qualityRank-a._qualityRank);
+  variants.sort((a,b)=>(b._qualityRank-a._qualityRank)||(failoverSourceRank(a)-failoverSourceRank(b)));
   const representative=variants[0];
   const baseAr=qualityInfo(representative.name_ar||representative.name_en).base||bucket.base;
   const baseEn=qualityInfo(representative.name_en||representative.name_ar).base||bucket.base;
