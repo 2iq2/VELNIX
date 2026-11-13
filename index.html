@@ -1395,6 +1395,7 @@ async function startPlayback(row,generation,reason='initial'){
  }
  row.streamViaWorker=!!stream.stream_via_worker;
  const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
+ recordPlaybackEvent('مسار البث',(row.streamViaWorker?'Cloudflare Worker':'Supabase Gateway')+' · '+type);
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
  if(type==='hls'||type==='dash'||type==='mpd'){
@@ -1512,7 +1513,11 @@ async function startPlayback(row,generation,reason='initial'){
   });
   const instance=mpegtsPlayer;
   instance.on(mpegts.Events.ERROR,(_t,d,info)=>{
-   if(generation===playbackGeneration&&instance===mpegtsPlayer)scheduleRecovery(info?.msg||d||'MPEG-TS error',generation);
+   if(generation===playbackGeneration&&instance===mpegtsPlayer){
+    const detail=[info?.code,info?.msg,d].filter(Boolean).join(' · ')||'MPEG-TS error';
+    recordPlaybackEvent('تفاصيل خطأ MPEG-TS',detail);
+    scheduleRecovery(detail,generation);
+   }
   });
   instance.attachMediaElement(video);instance.load();
   instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ التخزين المؤقت الموسّع والاستعادة التلقائية مفعّلان.':'Connected; extended buffering and automatic recovery are enabled.')}).catch(e=>{if(generation===playbackGeneration){if(e?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(e?.message||'MPEG-TS play failed',generation)}}});
