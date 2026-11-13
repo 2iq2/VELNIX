@@ -2056,20 +2056,24 @@ function scheduleRecovery(reason,generation=playbackGeneration){
  if(generation!==playbackGeneration||!activeRow||!playerModal.classList.contains('show')||recovering)return;
  const currentVariant=activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId);
  const currentType=String(currentVariant?.stream_type||activeRow.stream_type||'').toLowerCase();
- const expectedGatewayRefresh=reason==='Gateway lifetime refresh'||(reason==='Stream ended'&&['file','mpegts','ts'].includes(currentType)&&lastPlaybackPlayingAt>0&&Date.now()-lastPlaybackPlayingAt>110000);
+ const longStreamEnded=reason==='Stream ended'&&['file','mpegts','ts'].includes(currentType)&&lastPlaybackPlayingAt>0&&Date.now()-lastPlaybackPlayingAt>110000;
+ const expectedGatewayRefresh=reason==='Gateway lifetime refresh';
  recovering=true;retryCount++;
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  const currentId=activeRow.selectedVariantId;
- // First recovery attempt retries the current source immediately; only switch
- // variants after the same source has failed more than once.
- if(currentId&&!expectedGatewayRefresh&&retryCount>1)failoverVisited.add(currentId);
- let nextServer=(expectedGatewayRefresh||retryCount===1)?null:(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
+ // A long MPEG-TS end is treated as an upstream/source end, not a scheduled
+ // Edge Function refresh. Try another known variant immediately when available.
+ if(currentId&&!expectedGatewayRefresh&&(retryCount>1||longStreamEnded))failoverVisited.add(currentId);
+ let nextServer=expectedGatewayRefresh?null:longStreamEnded
+  ?(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id))
+  :(retryCount===1?null:(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id)));
  if(!expectedGatewayRefresh&&retryCount>1&&!nextServer&&(activeRow.variants||[]).length>1){
   failoverVisited=new Set(currentId?[currentId]:[]);
   nextServer=(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
  }
- if(expectedGatewayRefresh)recordPlaybackEvent('تجديد اتصال البث','إعادة فتح المصدر نفسه قبل حد 150 ثانية للـ Edge Function');
- else if(nextServer){activeRow.selectedVariantId=nextServer.id;recordPlaybackEvent('التحويل إلى نسخة بديلة',nextServer.name_ar||nextServer.name_en||nextServer.id)}
+ if(expectedGatewayRefresh)recordPlaybackEvent('تجديد اتصال البث','إعادة فتح المصدر نفسه بناءً على طلب تجديد صريح');
+ else if(nextServer){activeRow.selectedVariantId=nextServer.id;recordPlaybackEvent(longStreamEnded?'انتهى تدفق المصدر؛ تجربة نسخة بديلة':'التحويل إلى نسخة بديلة',nextServer.name_ar||nextServer.name_en||nextServer.id)}
+ else if(longStreamEnded)recordPlaybackEvent('انتهى تدفق المصدر','لا توجد نسخة بديلة متاحة؛ ستتم إعادة محاولة المصدر الحالي');
  else recordPlaybackEvent(retryCount===1?'إعادة اتصال فورية بالمصدر نفسه':'إعادة المحاولة على المصدر الحالي',reason);
  diagnosticStalls++;recordPlaybackEvent(expectedGatewayRefresh?'تجديد اتصال مجدول':'توقف أو تقطيع',reason);
  const delay=expectedGatewayRefresh?250:retryCount===1?100:nextServer?450:Math.min(8000,700*Math.pow(1.5,Math.min(retryCount-2,6)));
