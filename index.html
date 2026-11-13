@@ -982,6 +982,10 @@ function applyAdaptiveBuffer(reason='update'){
  if(diagnosticSession){recordPlaybackEvent('تعديل التخزين المؤقت',target+'s · '+reason);renderDiagnostics()}
 }
 function increaseAdaptiveBuffer(reason){
+  if(mpegtsPlayer){
+   if(diagnosticSession)recordPlaybackEvent('انتظار استعادة MPEG-TS','تم إبقاء المشغّل مفتوحاً؛ يتولى Worker إعادة الاتصال بالمصدر');
+   return;
+  }
  const now=Date.now(),base=playbackTuning().bufferingGoal;
  if(now-adaptiveLastIncreaseAt<7000)return;
  adaptiveLastIncreaseAt=now;adaptiveLastStallAt=now;adaptiveStallCount++;
@@ -1403,7 +1407,7 @@ async function startPlayback(row,generation,reason='initial'){
    const probe=await fetch(url,{method:'HEAD',cache:'no-store'});
    row.streamViaSupabaseFallback=probe.headers.get('X-Velnix-Relay-Via')==='supabase'||!probe.ok;
   }catch(error){row.streamViaSupabaseFallback=true}
-  if(row.streamViaSupabaseFallback)recordPlaybackEvent('مسار احتياطي محدود المدة','سيتم تجديد اتصال البث تلقائياً قبل حد مدة Edge Function');
+  if(row.streamViaSupabaseFallback)recordPlaybackEvent('مسار احتياطي عبر Worker','سيُعاد فتح اتصال المصدر تلقائياً عند انقطاع البيانات أو انتهاء اتصال Edge Function');
  }
  recordPlaybackEvent('مسار البث',(row.streamViaWorker?'Cloudflare Worker':'Supabase Gateway')+' · '+type);
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
@@ -1729,12 +1733,14 @@ video.addEventListener('playing',()=>{
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  const refreshVariant=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);
  const refreshType=String(refreshVariant?.stream_type||activeRow?.stream_type||'').toLowerCase();
- if((!activeRow?.streamViaWorker||activeRow?.streamViaSupabaseFallback)&&['file','mpegts','ts'].includes(refreshType)){
+ // The Cloudflare Worker reconnects its own upstream stream; only direct
+ // Supabase streaming still needs the browser-side lifetime refresh.
+ if(!activeRow?.streamViaWorker&&['file','mpegts','ts'].includes(refreshType)){
   const refreshGeneration=playbackGeneration;
   gatewayRefreshTimer=setTimeout(()=>{
    gatewayRefreshTimer=null;
    if(refreshGeneration===playbackGeneration&&activeRow&&playerModal.classList.contains('show')&&!userPaused&&!video.paused&&!recovering){
-    recordPlaybackEvent('تجديد اتصال تلقائي','تحديث اتصال المصدر قبل بلوغ حد 150 ثانية');
+    recordPlaybackEvent('تجديد اتصال تلقائي','تحديث اتصال المصدر قبل حد مدة Edge Function');
     scheduleRecovery('Gateway lifetime refresh',refreshGeneration);
    }
   },115000);
@@ -1745,9 +1751,9 @@ video.addEventListener('playing',()=>{
 });
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('خطأ عنصر الفيديو',String(video.error?.code||'unknown')+' · '+String(video.error?.message||''));scheduleRecovery('Media element error')}});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
-video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('حدث stalled من عنصر الفيديو')}recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled');scheduleRecovery('Playback stalled')}});
-video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('انتظار بيانات البث')}if(Date.now()-lastProgressAt>12000){recordPlaybackEvent('انتظار البيانات','waiting > 12s');scheduleRecovery('Waiting for stream data')}}});
-$('#diagnosticsToggle')?.addEventListener('click',()=>{$('#diagnosticsPanel').hidden=!$('#diagnosticsPanel').hidden;renderDiagnostics()});
+video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('حدث stalled من عنصر الفيديو')}recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled · انتظار إعادة اتصال Worker دون هدم المخزون')}});
+ video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('انتظار بيانات البث')}const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();const waitingLimit=['file','mpegts','ts'].includes(activeType)?26000:12000;if(Date.now()-lastProgressAt>waitingLimit){recordPlaybackEvent('انتظار البيانات','waiting > '+Math.round(waitingLimit/1000)+'s');scheduleRecovery('Waiting for stream data')}}});
+ $('#diagnosticsToggle')?.addEventListener('click',()=>{$('#diagnosticsPanel').hidden=!$('#diagnosticsPanel').hidden;renderDiagnostics()});
 $('#diagnosticsExport')?.addEventListener('click',()=>{
  const report={product:'VELNIX',generated_at:new Date().toISOString(),channel:diagnosticSession,source_request_ms:diagnosticLoadMs,first_frame_ms:diagnosticFirstFrameMs,estimated_bandwidth_kbps:diagnosticBandwidthKbps,stalls:diagnosticStalls,retry_count:retryCount,selected_source:activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId)||null,events:diagnosticEvents};
  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='velnix-playback-diagnostics.json';a.click();URL.revokeObjectURL(url);
@@ -1767,7 +1773,11 @@ watchdogTimer=setInterval(()=>{
    state(lang==='ar'?'تم التحقق: هذا المصدر مستقر حالياً.':'Validated: this stream is currently stable.');
   }
   if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}
- }else if(now-lastProgressAt>14000){scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');return}
+ }else{
+   const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();
+   const noProgressLimit=['file','mpegts','ts'].includes(activeType)?32000:14000;
+   if(now-lastProgressAt>noProgressLimit){scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');return}
+  }
  const modeLabel=lang==='ar'?(playbackMode==='stable'?'ثبات أعلى':playbackMode==='balanced'?'متوازن':'توفير البيانات'):(playbackMode==='stable'?'Stability':playbackMode==='balanced'?'Balanced':'Data saver');
  $('#bufferText').textContent=bufferLabel+' · '+modeLabel+(candidateStable?(lang==='ar'?' · المصدر مستقر':' · stable source'):'');
 },3000);
