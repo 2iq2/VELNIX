@@ -1380,7 +1380,7 @@ html{width:100%;max-width:100%;overflow-x:hidden;scroll-padding-top:88px}
 body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 img,video,canvas,svg{max-width:100%;height:auto}
 button,input,select,textarea{max-width:100%;min-width:0}
-.wrap{width:min(100% - (var(--page-gutter)*2),1440px);max-width:1440px;margin-inline:auto}
+.wrap{width:min(calc(100% - var(--page-gutter) - var(--page-gutter)),1440px);max-width:1440px;margin-inline:auto}
 header,.nav,main,section,footer,.section-head,.hero,.hero>*,.catalog-summary,.channel-toolbar{min-width:0;max-width:100%}
 .nav{height:clamp(60px,7vw,78px);gap:clamp(8px,2vw,24px)}
 .brand{min-width:0;font-size:clamp(17px,2vw,23px);letter-spacing:clamp(1px,.25vw,3px)}
