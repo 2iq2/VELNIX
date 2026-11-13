@@ -882,6 +882,45 @@ body[data-theme="light"]:before{background:radial-gradient(ellipse at 12% 8%,rgb
 .folder-cat-variety{--folder-accent:#e0b4ff;--folder-glow:rgba(184,113,255,.24);--folder-border:rgba(198,140,255,.25);--folder-wash:rgba(184,113,255,.09)}
 @media(max-width:700px){.folder-card{min-height:108px!important;padding:13px 39px 13px 11px!important;gap:10px!important}.folder-card .folder-logo{width:52px!important;height:52px!important;flex-basis:52px!important;border-radius:15px!important}.folder-symbol{font-size:23px}.folder-card h3{font-size:14px!important}.folder-card p{font-size:10px!important}.folder-arrow{top:10px;inset-inline-end:9px;width:23px;height:23px}}
 
+
+/* VELNIX category sidebar and catalog sorting */
+#categories .catalog-browse-layout{display:grid;grid-template-columns:226px minmax(0,1fr);gap:22px;align-items:start;width:100%;min-width:0}
+#categories .catalog-sidebar{position:sticky;top:92px;min-width:0;padding:15px;border:1px solid rgba(183,133,255,.18);border-radius:19px;background:linear-gradient(160deg,rgba(27,19,42,.96),rgba(13,12,23,.96));box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.catalog-sidebar-heading{display:flex;align-items:center;gap:11px;padding:2px 3px 15px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.catalog-sidebar-heading>div{display:flex;flex-direction:column;gap:3px}
+.catalog-sidebar-heading strong{font-size:14px;color:#f4eaff}
+.catalog-sidebar-heading small{font-size:10px;color:#988ba8}
+.catalog-sidebar-mark{width:35px;height:35px;display:grid;place-items:center;border:1px solid rgba(196,151,255,.36);border-radius:11px;background:linear-gradient(145deg,#54327d,#21152f);color:#f0d7ff;font:800 16px "DM Sans",sans-serif;box-shadow:0 5px 18px rgba(155,94,255,.17)}
+#categories .catalog-sidebar .filters{display:flex;flex-direction:column;gap:6px;width:100%;margin:0;padding:0;overflow:visible}
+#categories .catalog-sidebar .filters .filter{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:40px;padding:9px 12px;border:1px solid transparent;border-radius:11px;background:transparent;color:#b8adc5;text-align:start;font-size:12px;white-space:normal;transition:background .18s,border-color .18s,color .18s,transform .18s}
+#categories .catalog-sidebar .filters .filter:before{content:"";width:7px;height:7px;flex:0 0 7px;margin-inline-end:10px;border-radius:3px;background:#8e73b3;box-shadow:0 0 10px #a46cff55}
+#categories .catalog-sidebar .filters .filter[data-cat="sports"]:before{background:#86d8ff}
+#categories .catalog-sidebar .filters .filter[data-cat="bein"]:before{background:#d9a6ff}
+#categories .catalog-sidebar .filters .filter[data-cat="movies"]:before{background:#ffb58d}
+#categories .catalog-sidebar .filters .filter[data-cat="news"]:before{background:#ff929f}
+#categories .catalog-sidebar .filters .filter.active{background:linear-gradient(100deg,rgba(158,99,224,.24),rgba(236,112,190,.10));border-color:rgba(196,151,255,.25);color:#f1dcff;box-shadow:inset 3px 0 #c58cff}
+#categories .catalog-sidebar .filters .filter:hover{background:rgba(255,255,255,.055);color:#fff;transform:translateX(-2px)}
+#categories .catalog-results{min-width:0;width:100%}
+#categories .catalog-sort-label{display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid rgba(190,150,240,.2);border-radius:12px;background:rgba(25,17,38,.75);color:#ad9fbb;font-size:11px}
+#categories .catalog-sort-label select{max-width:145px;min-width:0;padding:11px 3px;border:0;outline:0;background:transparent;color:#eadcff;font:inherit}
+#categories .catalog-sort-label option{background:#171020;color:#fff}
+@media(max-width:900px){
+ #categories .catalog-browse-layout{grid-template-columns:1fr;gap:12px}
+ #categories .catalog-sidebar{position:static;padding:10px 11px;border-radius:15px}
+ .catalog-sidebar-heading{padding:0 2px 9px;margin-bottom:9px}
+ .catalog-sidebar-mark{width:29px;height:29px;font-size:13px}
+ .catalog-sidebar-heading strong{font-size:12px}
+ #categories .catalog-sidebar .filters{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:1px 1px 5px;scrollbar-width:thin;overscroll-behavior-inline:contain}
+ #categories .catalog-sidebar .filters .filter{flex:0 0 auto;width:auto;min-height:35px;padding:8px 11px;font-size:11px;white-space:nowrap}
+ #categories .catalog-sidebar .filters .filter:before{width:6px;height:6px;flex-basis:6px;margin-inline-end:7px}
+ #categories .catalog-sidebar .filters .filter.active{box-shadow:inset 0 -2px #c58cff}
+ #categories .catalog-sidebar .filters .filter:hover{transform:none}
+}
+@media(max-width:700px){
+ #categories .catalog-sort-label{grid-column:1/-1;justify-content:space-between;min-height:42px;padding-inline:12px}
+ #categories .catalog-sort-label select{flex:1;text-align:end;max-width:none}
+}
+
 </style>
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
@@ -1031,8 +1070,8 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
  <span class="subscription-gate-status" id="subscriptionGateStatus" role="status"></span>
 </div>
 <div class="catalog-summary"><div><strong id="catalogCount">3,842</strong><span data-ar="قناة مباشرة" data-en="live channels">قناة مباشرة</span></div><div><strong id="catalogCategoryCount">9</strong><span data-ar="أقسام مرتبة" data-en="organized categories">أقسام مرتبة</span></div><div><strong>HD · FHD · 4K</strong><span data-ar="جودات متعددة حسب المصدر" data-en="quality depends on source">جودات متعددة حسب المصدر</span></div></div>
-<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button></div>
-<div class="filters" id="filters">
+<div class="channel-toolbar"><label class="channel-search"><span>⌕</span><input id="channelSearch" type="search" placeholder="ابحث عن قناة أو شبكة..." autocomplete="off"></label><button class="filter" id="favoritesFilter" type="button">☆ المفضلة</button><button class="filter" id="recentFilter" type="button">◷ شوهدت مؤخراً</button><label class="catalog-sort-label"><span data-ar="الترتيب" data-en="Sort">الترتيب</span><select id="channelSort" aria-label="ترتيب القنوات"><option value="name" data-ar="أبجدياً" data-en="A to Z">أبجدياً</option><option value="quality" data-ar="أعلى جودة أولاً" data-en="Best quality">أعلى جودة أولاً</option></select></label></div>
+<div class="catalog-browse-layout"><aside class="catalog-sidebar"><div class="catalog-sidebar-heading"><span class="catalog-sidebar-mark">V</span><div><strong data-ar="تصفّح الأقسام" data-en="Browse categories">تصفّح الأقسام</strong><small data-ar="اختر نوع المحتوى" data-en="Choose a content type">اختر نوع المحتوى</small></div></div><div class="filters" id="filters">
 <button class="filter active" data-cat="all" data-ar="كل القنوات" data-en="All channels">كل القنوات</button>
 <button class="filter" data-cat="sports" data-ar="الرياضة" data-en="Sports">الرياضة</button>
 <button class="filter" data-cat="bein" data-ar="قنوات beIN" data-en="beIN channels">قنوات beIN</button>
@@ -1046,7 +1085,7 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
 <button class="filter" data-cat="music" data-ar="موسيقى وراديو" data-en="Music & Radio">موسيقى وراديو</button>
 <button class="filter" data-cat="variety" data-ar="منوعات" data-en="Variety">منوعات</button>
 <button class="filter" data-cat="world" data-ar="قنوات عالمية" data-en="World">قنوات عالمية</button>
-</div>
+</div></aside><div class="catalog-results">
 <div class="bein-gate" id="beinGate" hidden>
 <div class="bein-gate-lock" id="beinGateIcon">🔒</div>
 <h3 id="beinGateTitle">قسم beIN SPORTS مقفول</h3>
@@ -1073,7 +1112,7 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
 <div class="bein-admin-list" id="beinCodesList"></div>
 </div>
 </div>
-<div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div id="channelGroupNav" class="group-nav" hidden></div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button>
+<div id="channelStatus" class="channel-status" role="status">جارٍ تحميل دليل القنوات...</div><div id="channelGroupNav" class="group-nav" hidden></div><div class="channels" id="channelsGrid"></div><button class="secondary" id="loadMoreChannels" type="button" hidden style="display:block;margin:22px auto 0;min-width:190px">عرض المزيد</button></div></div>
 </section>
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="VELNIX تجمع القنوات المباشرة والرياضة والأخبار والترفيه في تجربة مشاهدة واحدة، بتصميم سينمائي يناسب جميع أجهزتك." data-en="Live channels, sports, news and entertainment in one cinematic viewing experience, designed for every screen.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
@@ -1378,7 +1417,7 @@ async function gateway(body){
  }catch(error){if(body?.action==='stream')recordPlaybackEvent('فشل طلب المصدر',error?.message||String(error));throw error}
 }
 let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,gatewayRefreshTimer=null,lastPlaybackPlayingAt=0,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateLastCurrentTime=0,candidateStable=false;
-let diagnosticSession=null,diagnosticEvents=[],diagnosticLoadMs=0,diagnosticFirstFrameMs=0,diagnosticBandwidthKbps=0,diagnosticStalls=0,diagnosticStartedAt=0;let favorites=new Set(),recentChannels=[],catalogMode='all',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
+let diagnosticSession=null,diagnosticEvents=[],diagnosticLoadMs=0,diagnosticFirstFrameMs=0,diagnosticBandwidthKbps=0,diagnosticStalls=0,diagnosticStartedAt=0;let favorites=new Set(),recentChannels=[],catalogMode='all',catalogSort='name',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 async function loadPersonalLists(){
  const user=currentSession?.user;if(!user)return;
  try{
@@ -2100,6 +2139,7 @@ function renderChannels(){
  });
  const collator=new Intl.Collator(lang==='ar'?'ar':'en',{numeric:true,sensitivity:'base'});
  if(catalogMode==='recent')rows.sort((a,b)=>Math.min(...a.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n}))-Math.min(...b.variants.map(v=>{const n=recentChannels.indexOf(v.id);return n<0?999:n})));
+ else if(catalogSort==='quality')rows.sort((a,b)=>(Number(b._qualityRank)||0)-(Number(a._qualityRank)||0)||collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  else rows.sort((a,b)=>collator.compare(cleanChannelName(a.name_en||a.name_ar),cleanChannelName(b.name_en||b.name_ar)));
  const folderView=catalogMode==='all'&&!selectedGroupKey&&!q;
  if(folderView){
@@ -2199,6 +2239,7 @@ $('#exploreBtn').addEventListener('click',()=>$('#categories').scrollIntoView({b
 $('#adminBtn').addEventListener('click',()=>{const panel=$('#adminTools');panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});});
  $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;selectedGroupKey=null;visibleLimit=90;catalogMode='all';$('#favoritesFilter').classList.remove('active');$('#recentFilter').classList.remove('active');document.querySelectorAll('#filters .filter').forEach(x=>x.classList.toggle('active',x===b));renderChannels();syncBeinGate()});
 $('#channelSearch').addEventListener('input',()=>{visibleLimit=90;renderChannels()});
+ $('#channelSort').addEventListener('change',e=>{catalogSort=e.target.value==='quality'?'quality':'name';visibleLimit=90;renderChannels()});
 $('#loadMoreChannels').addEventListener('click',()=>{visibleLimit+=90;renderChannels()});
 $('#favoritesFilter').addEventListener('click',()=>{selectedGroupKey=null;visibleLimit=90;catalogMode=catalogMode==='favorites'?'all':'favorites';$('#favoritesFilter').classList.toggle('active',catalogMode==='favorites');$('#recentFilter').classList.remove('active');renderChannels()});
 $('#recentFilter').addEventListener('click',()=>{selectedGroupKey=null;visibleLimit=90;catalogMode=catalogMode==='recent'?'all':'recent';$('#recentFilter').classList.toggle('active',catalogMode==='recent');$('#favoritesFilter').classList.remove('active');renderChannels()});
