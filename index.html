@@ -422,7 +422,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .account-menu button:hover{background:#ffffff10}
 .theme-toggle{border:1px solid var(--line);background:#151b25;color:var(--text);border-radius:999px;padding:9px 12px}
 .profile-modal{position:fixed;inset:0;background:#000c;z-index:90;display:none;place-items:center;padding:16px}
-.profile-modal.show{display:grid}
+.profile-modal.show{display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;z-index:9999!important}.profile-modal{isolation:isolate}
 .profile-dialog{width:min(600px,100%);max-height:min(90vh,850px);overflow:auto;background:#111925;border:1px solid rgba(166,122,255,.35);border-radius:22px;padding:22px;box-shadow:0 25px 90px #000b}
 .profile-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .profile-head h2{margin:0;font-size:23px}
@@ -1559,7 +1559,7 @@ $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut(
 refreshAuth().catch(error=>{console.error('VELNIX auth restore failed:',error);const status=$('#authMessage');if(status){status.textContent='تعذر استعادة جلسة الدخول: '+(error?.message||'حاول تسجيل الدخول من جديد');status.classList.add('error')}});
 applyTheme(localStorage.getItem('velnix:theme')||'dark');
 $('#themeToggle').addEventListener('click',toggleTheme);$('#menuThemeBtn').addEventListener('click',toggleTheme);
-$('#accountTrigger').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const menu=$('#accountMenu');menu.hidden=!menu.hidden;$('#accountTrigger').setAttribute('aria-expanded',String(!menu.hidden));});
+$('#accountTrigger').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openProfile().catch(error=>{console.error('VELNIX profile open failed:',error);const status=$('#profileStatus');if(status)status.textContent='تعذر فتح الملف الشخصي: '+(error?.message||'خطأ غير معروف')});});
 $('#openProfileBtn').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openProfile().catch(error=>{console.error('VELNIX profile open failed:',error);$('#profileStatus').textContent='تعذر تحميل بعض بيانات الحساب، لكن يمكنك تعديل الملف الشخصي والمحاولة مجدداً.'});});
 document.addEventListener('click',e=>{const menu=$('#accountMenu');if(menu&&!menu.hidden&&!menu.contains(e.target)&&!$('#accountTrigger').contains(e.target)){menu.hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=$('#accountMenu');if(menu&&!menu.hidden){menu.hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false')}}});
@@ -1646,13 +1646,16 @@ async function loadSubscriptionDetails(){
  }
 }
 async function openProfile(){
- const session=currentSession||await refreshSessionIfNeeded().then(session=>{currentSession=session;return session});
- if(!session?.user){$('#authModal').classList.add('show');return}
- $('#accountMenu').hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false');
- $('#profileModal').classList.add('show');$('#profileModal').setAttribute('aria-hidden','false');
- $('#profileStatus').textContent='جارٍ تحميل بيانات الحساب…';renderAvatarChoices();
- await loadUserProfile();await loadSubscriptionDetails();
- if($('#profileStatus').textContent==='جارٍ تحميل بيانات الحساب…')$('#profileStatus').textContent='';
+ const modal=$('#profileModal');const status=$('#profileStatus');
+ modal.classList.add('show');modal.hidden=false;modal.setAttribute('aria-hidden','false');
+ $('#accountMenu').hidden=true;
+ status.textContent='جارٍ تحميل بيانات الحساب…';renderAvatarChoices();
+ try{
+  const session=await refreshSessionIfNeeded();currentSession=session;
+  if(!session?.user){modal.classList.remove('show');modal.hidden=true;modal.setAttribute('aria-hidden','true');$('#authModal').classList.add('show');return}
+  await loadUserProfile();await loadSubscriptionDetails();
+  if(status.textContent==='جارٍ تحميل بيانات الحساب…')status.textContent='';
+ }catch(error){status.textContent='تعذر تحميل بعض بيانات الحساب: '+(error?.message||'حاول مرة أخرى');console.error('VELNIX profile load failed:',error)}
 }
 async function saveUserProfile(){
  const name=$('#profileNameInput').value.trim();if(name.length<2){$('#profileStatus').textContent='الاسم لازم يكون حرفين على الأقل.';return}
