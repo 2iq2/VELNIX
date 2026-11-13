@@ -1,11 +1,36 @@
 {
-  "name": "VELNIX",
+  "name": "VELNIX | ڤيلنكس",
   "short_name": "VELNIX",
-  "description": "Premium live entertainment experience",
+  "description": "تطبيق VELNIX لمشاهدة القنوات والمحتوى الترفيهي",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#090c12",
-  "theme_color": "#090c12",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#090910",
+  "theme_color": "#130d20",
   "lang": "ar",
-  "dir": "rtl"
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "entertainment",
+    "video"
+  ]
 }
