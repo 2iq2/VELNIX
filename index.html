@@ -921,6 +921,101 @@ body[data-theme="light"]:before{background:radial-gradient(ellipse at 12% 8%,rgb
  #categories .catalog-sort-label select{flex:1;text-align:end;max-width:none}
 }
 
+
+/* VELNIX player premium redesign — violet / rose */
+.player-modal{
+ padding:clamp(8px,2vw,24px)!important;
+ background:radial-gradient(ellipse at 12% 0%,rgba(139,83,255,.19),transparent 38%),radial-gradient(ellipse at 92% 100%,rgba(255,89,187,.13),transparent 38%),rgba(3,3,9,.96)!important;
+ backdrop-filter:blur(18px)!important
+}
+.player-shell{
+ width:min(1180px,100%)!important;
+ border:1px solid rgba(181,133,255,.34)!important;
+ border-radius:25px!important;
+ background:linear-gradient(145deg,#171126 0%,#0d0a17 52%,#130d1c 100%)!important;
+ box-shadow:0 32px 110px rgba(0,0,0,.72),0 0 55px rgba(142,86,255,.10)!important;
+ overflow:hidden
+}
+.player-head{
+ min-height:72px!important;padding:14px 20px!important;
+ background:linear-gradient(100deg,rgba(115,70,190,.13),rgba(255,111,194,.055))!important;
+ border-bottom:1px solid rgba(204,164,255,.13)!important
+}
+.player-brand{gap:13px!important}
+.player-live-dot,.buffer-dot,.vc-live-dot{background:#ff72c6!important;box-shadow:0 0 13px rgba(255,114,198,.65)!important}
+.player-brand strong{color:#fff1ff!important;font-size:16px!important;letter-spacing:.1px}
+.player-brand small{color:#a99ab9!important;letter-spacing:1.4px!important}
+.player-retry,.player-options .secondary,.player-diagnostics .secondary,.player-feature-btn{
+ border:1px solid rgba(178,133,255,.27)!important;
+ background:linear-gradient(135deg,rgba(139,91,255,.17),rgba(255,105,190,.09))!important;
+ color:#f0d8ff!important;border-radius:12px!important;
+ transition:transform .2s,border-color .2s,background .2s,box-shadow .2s!important
+}
+.player-retry:hover,.player-options .secondary:hover,.player-diagnostics .secondary:hover{
+ transform:translateY(-2px);border-color:rgba(255,129,207,.55)!important;
+ box-shadow:0 8px 24px rgba(155,91,255,.16)
+}
+.player-close{color:#f8eaff!important;background:rgba(255,255,255,.045)!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:12px!important}
+.video-wrap{
+ background:#030208!important;
+ border-top:1px solid rgba(255,255,255,.035);
+ border-bottom:1px solid rgba(190,145,255,.13);
+ box-shadow:inset 0 0 55px rgba(0,0,0,.45)
+}
+.video-wrap video{object-fit:contain!important}
+.player-toolbar{
+ padding:16px 20px 10px!important;
+ background:linear-gradient(100deg,rgba(125,79,202,.075),rgba(255,104,190,.035))!important
+}
+.buffer-indicator{color:#c5b5d7!important}
+.player-options{gap:9px!important}
+.player-options label{color:#b9a9cb!important}
+.player-options select{
+ color:#f8efff!important;background:#171126!important;
+ border:1px solid rgba(180,137,255,.24)!important;border-radius:11px!important;
+ min-height:39px;padding:8px 12px!important;outline:none
+}
+.player-options select:focus{border-color:#d28cff!important;box-shadow:0 0 0 3px rgba(167,108,255,.12)}
+.player-options .secondary,.player-feature-btn{min-height:39px;padding:8px 13px!important;font-size:12px!important}
+.player-feature-btn[aria-pressed="true"]{background:linear-gradient(110deg,#8052dc,#c34f9b)!important;color:white!important;border-color:#d58cff!important}
+.player-state{color:#d9c2f2!important;padding:9px 20px 16px!important}
+.player-epg-panel,.player-diagnostics-panel{
+ border:1px solid rgba(181,133,255,.17)!important;border-radius:15px!important;
+ background:rgba(12,8,21,.72)!important
+}
+.player-epg-head strong{color:#f1d7ff!important}
+.player-diagnostics{color:#a99ab9!important}
+.vc-icon{
+ color:#f8eaff!important;background:rgba(18,12,30,.82)!important;
+ border:1px solid rgba(199,154,255,.30)!important;
+ box-shadow:0 5px 18px rgba(0,0,0,.25)!important
+}
+.vc-icon:hover{background:linear-gradient(135deg,rgba(143,91,255,.55),rgba(255,105,190,.35))!important;border-color:#e0a8ff!important}
+.vc-quality{background:linear-gradient(120deg,#8352d8,#bd559e)!important;color:white!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:11px!important}
+.vc-seek{accent-color:#d58cff!important}
+.vc-time{color:#f1dfff!important}
+.vc-status{color:#e9d4ff!important}
+.vc-topbar{background:linear-gradient(180deg,rgba(9,5,17,.78),transparent)!important}
+.vc-exit{background:rgba(20,12,31,.7)!important;border:1px solid rgba(206,163,255,.25)!important;color:#f6eaff!important;border-radius:10px!important}
+@media(max-width:650px){
+ .player-modal{padding:0!important;align-items:center!important}
+ .player-shell{width:100%!important;max-height:100dvh!important;border-radius:0!important;border-inline:0!important;overflow-y:auto!important}
+ .player-head{min-height:62px!important;padding:10px 12px!important}
+ .player-brand strong{font-size:14px!important;max-width:42vw!important}
+ .player-head-actions{gap:6px!important}
+ .player-retry{padding:8px 9px!important;font-size:10px!important}
+ .video-wrap{width:100%;aspect-ratio:16/9!important;max-height:none!important}
+ .player-toolbar{padding:12px!important}
+ .player-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .player-options label{font-size:11px}
+ .player-options select,.player-options .secondary,.player-feature-btn{width:100%!important;min-width:0!important;font-size:11px!important;padding:9px 7px!important}
+ .player-state{padding:8px 12px 14px!important}
+ .player-diagnostics{padding:0 12px 10px!important}
+}
+#videoStage:fullscreen{width:100vw!important;height:100vh!important;max-height:none!important;aspect-ratio:auto!important;background:#000!important}
+#videoStage:fullscreen video{width:100%;height:100%;object-fit:contain}
+#videoStage:fullscreen .velnix-controls{z-index:5}
+
 </style>
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
@@ -1117,7 +1212,7 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
 <section class="wrap section" id="about"><div class="note"><div><strong data-ar="تجربة VELNIX تبدأ هنا" data-en="Your VELNIX experience starts here">تجربة VELNIX تبدأ هنا</strong><p data-ar="VELNIX تجمع القنوات المباشرة والرياضة والأخبار والترفيه في تجربة مشاهدة واحدة، بتصميم سينمائي يناسب جميع أجهزتك." data-en="Live channels, sports, news and entertainment in one cinematic viewing experience, designed for every screen.">هذه النسخة التأسيسية للواجهة. سيتم تفعيل الحسابات ومصادر البث والقنوات بعد تجهيز الخدمات الخلفية.</p></div><div class="note-icon">✦</div></div></section>
 </main>
 <footer><div class="wrap foot"><b>VELNIX</b><span data-ar="© 2026 VELNIX. جميع الحقوق محفوظة." data-en="© 2026 VELNIX. All rights reserved.">© 2026 VELNIX. جميع الحقوق محفوظة.</span><span>PREMIUM ENTERTAINMENT EXPERIENCE</span></div></footer>
-<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-retry" id="playerEpgBtn" type="button">دليل البرامج</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap" id="videoStage"><video id="liveVideo" playsinline preload="auto"></video><div class="velnix-watermark" id="velnixWatermark" aria-hidden="true"><span class="watermark-mark">V</span><span class="watermark-name">VELNIX</span></div><div class="vc-topbar" id="vcTopbar"><span class="vc-top-title" id="vcTopTitle">VELNIX LIVE</span><button class="vc-exit" id="vcExit" type="button" aria-label="الخروج من ملء الشاشة">↗ <span>خروج</span></button></div><div class="velnix-controls" id="velnixControls" dir="rtl"><div class="vc-progress-row"><span class="vc-time" id="vcCurrent">00:00</span><input id="vcSeek" class="vc-seek" type="range" min="0" max="1000" value="0" aria-label="تقدم البث"><span class="vc-time" id="vcDuration">LIVE</span></div><div class="vc-actions"><div class="vc-main-actions"><button class="vc-icon" id="vcPlay" type="button" aria-label="تشغيل أو إيقاف">▶</button><button class="vc-icon" id="vcBack" type="button" aria-label="رجوع 10 ثوان">↶10</button><button class="vc-icon" id="vcForward" type="button" aria-label="تقديم 10 ثوان">↷10</button><span class="vc-volume-wrap"><button class="vc-icon" id="vcMute" type="button" aria-label="كتم الصوت">◖))</button><input id="vcVolume" type="range" min="0" max="1" step="0.05" value="1" aria-label="مستوى الصوت"></span></div><div class="vc-status"><span class="vc-live-dot"></span><span>VELNIX LIVE</span></div><div class="vc-extra-actions"><button class="vc-quality" id="vcQuality" type="button">AUTO</button><button class="vc-icon" id="vcFullscreen" type="button" aria-label="ملء الشاشة">⛶</button></div></div></div></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="playbackMode">وضع البث</label><select id="playbackMode" aria-label="Playback stability mode"><option value="stable">ثبات أعلى</option><option value="balanced">متوازن</option><option value="data">توفير البيانات</option></select><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button></div></div><div class="player-epg-panel" id="playerEpgPanel" hidden><div class="player-epg-head"><strong>دليل البرامج · EPG</strong><span id="playerEpgStatus">جارٍ التحميل…</span></div><div id="playerEpgList" class="player-epg-list"></div></div><div class="player-diagnostics"><button type="button" class="secondary" id="diagnosticsToggle">تشخيص البث</button><button type="button" class="secondary" id="diagnosticsExport">تصدير التقرير</button><span id="diagnosticsSummary">لا توجد جلسة بث بعد</span></div><div class="player-diagnostics-panel" id="diagnosticsPanel" hidden><div id="diagnosticsStats"></div><ol id="diagnosticsEvents"></ol></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="VELNIX player"><div class="player-shell"><div class="player-head"><div class="player-brand"><span class="player-live-dot"></span><div><strong id="playerTitle">VELNIX LIVE</strong><small id="playerMeta">LIVE • VELNIX PLAYER</small></div></div><div class="player-head-actions"><button class="player-retry" id="playerRetry" type="button">↻ إعادة الاتصال</button><button class="player-retry" id="playerEpgBtn" type="button">دليل البرامج</button><button class="player-close" id="closePlayer" type="button" aria-label="Close">×</button></div></div><div class="video-wrap" id="videoStage"><video id="liveVideo" playsinline preload="auto"></video><div class="velnix-watermark" id="velnixWatermark" aria-hidden="true"><span class="watermark-mark">V</span><span class="watermark-name">VELNIX</span></div><div class="vc-topbar" id="vcTopbar"><span class="vc-top-title" id="vcTopTitle">VELNIX LIVE</span><button class="vc-exit" id="vcExit" type="button" aria-label="الخروج من ملء الشاشة">↗ <span>خروج</span></button></div><div class="velnix-controls" id="velnixControls" dir="rtl"><div class="vc-progress-row"><span class="vc-time" id="vcCurrent">00:00</span><input id="vcSeek" class="vc-seek" type="range" min="0" max="1000" value="0" aria-label="تقدم البث"><span class="vc-time" id="vcDuration">LIVE</span></div><div class="vc-actions"><div class="vc-main-actions"><button class="vc-icon" id="vcPlay" type="button" aria-label="تشغيل أو إيقاف">▶</button><button class="vc-icon" id="vcBack" type="button" aria-label="رجوع 10 ثوان">↶10</button><button class="vc-icon" id="vcForward" type="button" aria-label="تقديم 10 ثوان">↷10</button><span class="vc-volume-wrap"><button class="vc-icon" id="vcMute" type="button" aria-label="كتم الصوت">◖))</button><input id="vcVolume" type="range" min="0" max="1" step="0.05" value="1" aria-label="مستوى الصوت"></span></div><div class="vc-status"><span class="vc-live-dot"></span><span>VELNIX LIVE</span></div><div class="vc-extra-actions"><button class="vc-quality" id="vcQuality" type="button">AUTO</button><button class="vc-icon" id="vcFullscreen" type="button" aria-label="ملء الشاشة">⛶</button></div></div></div></div><div class="player-toolbar"><div class="buffer-indicator"><span class="buffer-dot"></span><span id="bufferText">التخزين المؤقت الذكي مفعّل</span></div><div class="player-options"><label for="playbackMode">وضع البث</label><select id="playbackMode" aria-label="Playback stability mode"><option value="stable">ثبات أعلى</option><option value="balanced">متوازن</option><option value="data">توفير البيانات</option></select><label for="qualitySelect">الجودة</label><select id="qualitySelect" aria-label="Playback quality"><option value="-1">تلقائي / Auto</option></select><button class="secondary" id="fullscreenBtn" type="button">⛶ ملء الشاشة</button><button class="secondary player-feature-btn" id="rotateScreenBtn" type="button" aria-pressed="false">⤢ تدوير الشاشة</button><button class="secondary player-feature-btn" id="pipBtn" type="button">▣ نافذة عائمة</button></div></div><div class="player-epg-panel" id="playerEpgPanel" hidden><div class="player-epg-head"><strong>دليل البرامج · EPG</strong><span id="playerEpgStatus">جارٍ التحميل…</span></div><div id="playerEpgList" class="player-epg-list"></div></div><div class="player-diagnostics"><button type="button" class="secondary" id="diagnosticsToggle">تشخيص البث</button><button type="button" class="secondary" id="diagnosticsExport">تصدير التقرير</button><span id="diagnosticsSummary">لا توجد جلسة بث بعد</span></div><div class="player-diagnostics-panel" id="diagnosticsPanel" hidden><div id="diagnosticsStats"></div><ol id="diagnosticsEvents"></ol></div><div class="player-state" id="playerState" role="status" aria-live="polite">اختر قناة لبدء المشاهدة.</div></div></div>
 <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle"><div class="profile-dialog"><div class="profile-head"><h2 id="profileTitle">ملفي الشخصي</h2><button class="close" id="closeProfileBtn" type="button" aria-label="إغلاق">×</button></div><div class="profile-current"><span class="account-avatar" id="profilePreviewAvatar">🙂</span><span><strong id="profilePreviewName">مستخدم VELNIX</strong><small>اختر شخصية من مكتبة VELNIX</small></span></div><label class="profile-field" for="profileNameInput">اسم العرض</label><input class="profile-input" id="profileNameInput" maxlength="40" placeholder="اكتب الاسم الذي يظهر للآخرين"><div class="profile-field">اختر صورة شخصيتك</div><div class="avatar-grid" id="avatarGrid"></div><div class="subscription-card"><h3>💎 تفاصيل الاشتراك</h3><div class="subscription-grid"><div class="subscription-item"><small>الباقة</small><strong id="subPlan">جارٍ التحميل…</strong></div><div class="subscription-item"><small>الحالة</small><strong id="subStatus">—</strong></div><div class="subscription-item"><small>تاريخ التفعيل</small><strong id="subStart">—</strong></div><div class="subscription-item"><small>تاريخ الانتهاء</small><strong id="subExpiry">—</strong></div><div class="subscription-item"><small>المدة المتبقية</small><strong id="subRemaining">—</strong></div><div class="subscription-item"><small>نوع الوصول</small><strong id="subAccessType">—</strong></div></div><div class="subscription-status" id="subStatusNote"></div></div><div id="profileStatus" role="status"></div><div class="profile-actions"><button class="primary" id="saveProfileBtn" type="button">حفظ التغييرات</button><button class="secondary" id="cancelProfileBtn" type="button">إغلاق</button></div></div></div><div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog"><button class="close" id="closeModal" aria-label="Close">×</button><h2 id="modalTitle">مرحباً بك في VELNIX</h2><p id="authIntro">سجّل الدخول أو أنشئ حساباً جديداً.</p><div id="authMessage" class="auth-message" role="status" aria-live="polite"></div><form id="authForm"><label id="nameLabel" for="displayName">الاسم</label><input class="field" id="displayName" type="text" autocomplete="name" placeholder="اسمك" hidden><label for="authEmail">البريد الإلكتروني</label><input class="field" id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required><label id="passwordLabel" for="authPassword">كلمة المرور</label><input class="field" id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 أحرف على الأقل" required><button class="primary" id="authSubmit" type="submit">تسجيل الدخول</button></form><div class="auth-links"><button type="button" id="authSwitch">إنشاء حساب جديد</button><button type="button" id="forgotPassword">نسيت كلمة المرور؟</button></div><div id="accountPanel" hidden><p id="accountEmail"></p><button class="primary" id="signOutBtn" type="button">تسجيل الخروج</button></div></div></div>
 <script>
 /* Keep the sign-in dialog usable even if a third-party module fails to load. */
@@ -2290,6 +2385,45 @@ qualitySelect.addEventListener('change',async()=>{
  showSiteToast('جودة البث: '+label,'success');
 });
 $('#fullscreenBtn').addEventListener('click',()=>{const el=$('.video-wrap');if(el.requestFullscreen)el.requestFullscreen()});
+let playerLandscapeLocked=false;
+async function togglePlayerRotation(){
+ const stage=$('#videoStage'),btn=$('#rotateScreenBtn');
+ try{
+  if(playerLandscapeLocked){
+   try{screen.orientation?.unlock?.()}catch(e){}
+   playerLandscapeLocked=false;
+   btn.setAttribute('aria-pressed','false');btn.textContent='⤢ تدوير الشاشة';
+   showSiteToast('تم إلغاء تثبيت اتجاه الشاشة.','info');
+   return;
+  }
+  if(!document.fullscreenElement){
+   if(stage.requestFullscreen)await stage.requestFullscreen();
+   else throw new Error('ملء الشاشة غير مدعوم في هذا المتصفح');
+  }
+  if(!screen.orientation?.lock)throw new Error('تدوير الشاشة غير مدعوم هنا؛ افتح الموقع من متصفح Chrome وحدّثه.');
+  await screen.orientation.lock('landscape');
+  playerLandscapeLocked=true;
+  btn.setAttribute('aria-pressed','true');btn.textContent='↻ إلغاء التدوير';
+  showSiteToast('تم تدوير المشغّل للوضع الأفقي.','success');
+ }catch(error){
+  showSiteToast(error?.message||'تعذر تدوير الشاشة. جرّب ملء الشاشة أولاً.','error');
+ }
+}
+$('#rotateScreenBtn').addEventListener('click',togglePlayerRotation);
+$('#pipBtn').addEventListener('click',async()=>{
+ try{
+  if(!document.pictureInPictureEnabled||!video.requestPictureInPicture)throw new Error('النافذة العائمة غير مدعومة في هذا المتصفح.');
+  if(document.pictureInPictureElement)await document.exitPictureInPicture();
+  else await video.requestPictureInPicture();
+ }catch(error){showSiteToast(error?.message||'تعذر فتح النافذة العائمة.','error')}
+});
+document.addEventListener('fullscreenchange',()=>{
+ if(!document.fullscreenElement&&playerLandscapeLocked){
+  try{screen.orientation?.unlock?.()}catch(e){}
+  playerLandscapeLocked=false;
+  const btn=$('#rotateScreenBtn');if(btn){btn.setAttribute('aria-pressed','false');btn.textContent='⤢ تدوير الشاشة'}
+ }
+});
 $('#loginBtn').hidden=false;$('#heroLogin').hidden=false;
 let streamHealthOffset=0,streamHealthWorking=0,streamHealthFailed=0,streamHealthRunning=false;
 $('#enrichLogosBtn').addEventListener('click',async()=>{
