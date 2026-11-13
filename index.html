@@ -1660,14 +1660,14 @@ function inferMediaKind(type,url,mime=''){
  return t==='file'?'mpegts':t;
 }
 function playbackTuning(){
- if(playbackMode==='data')return {bufferingGoal:18,rebufferingGoal:3,backBuffer:12,hlsBuffer:20,hlsMaxBuffer:28,hlsMaxSize:28*1000*1000,mpegStash:6*1024*1024,liveSync:6,liveMax:18};
- if(playbackMode==='balanced')return {bufferingGoal:28,rebufferingGoal:4,backBuffer:18,hlsBuffer:30,hlsMaxBuffer:42,hlsMaxSize:42*1000*1000,mpegStash:10*1024*1024,liveSync:8,liveMax:24};
- return {bufferingGoal:42,rebufferingGoal:6,backBuffer:24,hlsBuffer:44,hlsMaxBuffer:60,hlsMaxSize:64*1000*1000,mpegStash:16*1024*1024,liveSync:10,liveMax:30};
+ if(playbackMode==='data')return {bufferingGoal:30,rebufferingGoal:8,backBuffer:30,hlsBuffer:36,hlsMaxBuffer:48,hlsMaxSize:48*1000*1000,mpegStash:12*1024*1024,liveSync:8,liveMax:24};
+ if(playbackMode==='balanced')return {bufferingGoal:60,rebufferingGoal:15,backBuffer:60,hlsBuffer:68,hlsMaxBuffer:82,hlsMaxSize:96*1000*1000,mpegStash:24*1024*1024,liveSync:10,liveMax:30};
+ return {bufferingGoal:90,rebufferingGoal:22,backBuffer:90,hlsBuffer:96,hlsMaxBuffer:110,hlsMaxSize:128*1000*1000,mpegStash:32*1024*1024,liveSync:12,liveMax:36};
 }
 let adaptiveBufferSeconds=playbackTuning().bufferingGoal,adaptiveLastStallAt=0,adaptiveLastIncreaseAt=0,adaptiveWaiting=false,adaptiveStallCount=0;
 function adaptiveBufferLimit(){
  const base=playbackTuning().bufferingGoal;
- return Math.min(base+34,playbackMode==='stable'?76:playbackMode==='balanced'?58:36);
+ return Math.min(base+20,playbackMode==='stable'?110:playbackMode==='balanced'?90:48);
 }
 function applyAdaptiveBuffer(reason='update'){
  const tuning=playbackTuning(),target=Math.max(tuning.bufferingGoal,Math.min(adaptiveBufferSeconds,adaptiveBufferLimit()));
@@ -2133,7 +2133,7 @@ async function startPlayback(row,generation,reason='initial'){
      abr:{enabled:true,defaultBandwidthEstimate:1800000,bandwidthUpgradeTarget:0.82,bandwidthDowngradeTarget:0.92},
      restrictions:{maxHeight:playerMaxHeight(),maxBandwidth:25000000},
      streaming:{
-      bufferingGoal:adaptiveBufferSeconds,rebufferingGoal:Math.min(12,Math.max(tuning.rebufferingGoal,Math.round(adaptiveBufferSeconds/9))),bufferBehind:tuning.backBuffer,
+      bufferingGoal:adaptiveBufferSeconds,rebufferingGoal:Math.min(30,Math.max(tuning.rebufferingGoal,Math.round(adaptiveBufferSeconds/4))),bufferBehind:tuning.backBuffer,
       retryParameters:{maxAttempts:8,baseDelay:700,backoffFactor:1.5,fuzzFactor:0.2,maxDelay:12000,timeout:35000}
      }
     });
@@ -2176,7 +2176,7 @@ async function startPlayback(row,generation,reason='initial'){
     hlsInstance=new Hls({
      enableWorker:true,lowLatencyMode:false,
      backBufferLength:tuning.backBuffer,maxBufferLength:adaptiveBufferSeconds,maxMaxBufferLength:Math.max(tuning.hlsMaxBuffer,adaptiveBufferSeconds+12),maxBufferSize:tuning.hlsMaxSize,
-     maxBufferHole:0.8,highBufferWatchdogPeriod:3,liveSyncDurationCount:tuning.liveSync,liveMaxLatencyDurationCount:tuning.liveMax,
+     maxBufferHole:1.2,highBufferWatchdogPeriod:4,liveSyncDurationCount:tuning.liveSync,liveMaxLatencyDurationCount:tuning.liveMax,
      maxLiveSyncPlaybackRate:1.03,nudgeOffset:0.15,nudgeMaxRetry:12,
      manifestLoadingMaxRetry:8,manifestLoadingRetryDelay:900,manifestLoadingMaxRetryTimeout:20000,
      levelLoadingMaxRetry:8,levelLoadingRetryDelay:900,levelLoadingMaxRetryTimeout:20000,
@@ -2190,7 +2190,7 @@ async function startPlayback(row,generation,reason='initial'){
      const safe=instance.levels.map((level,index)=>({level,index})).filter(x=>!x.level.height||x.level.height<=1080);
      instance.autoLevelCapping=safe.length?safe[safe.length-1].index:0;
      instance.currentLevel=-1;
-     qualities();state(lang==='ar'?'البث جاهز؛ الجودة التلقائية محدودة إلى 1080p مع تخزين أخف.':'Stream ready; auto quality capped at 1080p with a lighter buffer.');
+     qualities();state(lang==='ar'?'البث جاهز؛ التخزين المسبق الموسّع مفعّل.':'Stream ready; extended pre-buffering enabled.');
      video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
     });
     instance.on(Hls.Events.FRAG_LOADED,(_e,d)=>{
@@ -2231,8 +2231,8 @@ async function startPlayback(row,generation,reason='initial'){
    enableWorker:true,enableWorkerForMSE:true,
    enableStashBuffer:true,stashInitialSize:playbackTuning().mpegStash,
    lazyLoad:false,
-   liveBufferLatencyChasing:true,liveBufferLatencyMaxLatency:120,liveBufferLatencyMinRemain:20,
-   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:60,autoCleanupMinBackwardDuration:20,
+   liveBufferLatencyChasing:false,
+   autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:playbackTuning().backBuffer,autoCleanupMinBackwardDuration:Math.max(20,Math.floor(playbackTuning().backBuffer/2)),
    fixAudioTimestampGap:true,accurateSeek:false
   });
   const instance=mpegtsPlayer;
@@ -2244,7 +2244,7 @@ async function startPlayback(row,generation,reason='initial'){
    }
   });
   instance.attachMediaElement(video);instance.load();
-  instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل بالبث؛ التخزين المؤقت الموسّع والاستعادة التلقائية مفعّلان.':'Connected; extended buffering and automatic recovery are enabled.')}).catch(e=>{if(generation===playbackGeneration){if(e?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(e?.message||'MPEG-TS play failed',generation)}}});
+  instance.play().then(()=>{if(generation===playbackGeneration)state(lang==='ar'?'متصل؛ التخزين المسبق الموسّع مفعّل.':'Connected; extended pre-buffering enabled.')}).catch(e=>{if(generation===playbackGeneration){if(e?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(e?.message||'MPEG-TS play failed',generation)}}});
   return;
  }
  video.src=url;await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
@@ -2457,12 +2457,12 @@ video.addEventListener('playing',()=>{
  }
  candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
- $('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ جارٍ اختبار ثبات المصدر…':'Connected; validating stream stability…'
+ $('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ التخزين المسبق الموسّع مفعّل (حتى 90 ثانية حسب المصدر والجهاز).':'Connected; extended pre-buffering enabled (up to 90s, source/device dependent).'
 });
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('خطأ عنصر الفيديو',String(video.error?.code||'unknown')+' · '+String(video.error?.message||''));scheduleRecovery('Media element error')}});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
 video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('حدث stalled من عنصر الفيديو')}recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled · انتظار إعادة اتصال Worker دون هدم المخزون')}});
- video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('انتظار بيانات البث')}const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();const waitingLimit=['file','mpegts','ts'].includes(activeType)?26000:12000;if(Date.now()-lastProgressAt>waitingLimit){recordPlaybackEvent('انتظار البيانات','waiting > '+Math.round(waitingLimit/1000)+'s');scheduleRecovery('Waiting for stream data')}}});
+ video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('انتظار بيانات البث')}const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();const waitingLimit=['file','mpegts','ts'].includes(activeType)?60000:30000;if(Date.now()-lastProgressAt>waitingLimit){recordPlaybackEvent('انتظار البيانات','waiting > '+Math.round(waitingLimit/1000)+'s');scheduleRecovery('Waiting for stream data')}}});
  $('#diagnosticsToggle')?.addEventListener('click',()=>{$('#diagnosticsPanel').hidden=!$('#diagnosticsPanel').hidden;renderDiagnostics()});
 $('#diagnosticsExport')?.addEventListener('click',()=>{
  const report={product:'VELNIX',generated_at:new Date().toISOString(),channel:diagnosticSession,source_request_ms:diagnosticLoadMs,first_frame_ms:diagnosticFirstFrameMs,estimated_bandwidth_kbps:diagnosticBandwidthKbps,stalls:diagnosticStalls,retry_count:retryCount,selected_source:activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId)||null,events:diagnosticEvents};
@@ -2485,7 +2485,7 @@ watchdogTimer=setInterval(()=>{
   if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}
  }else{
    const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();
-   const noProgressLimit=300000;
+   const noProgressLimit=90000;
    if(now-lastProgressAt>noProgressLimit){scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');return}
   }
  const modeLabel=lang==='ar'?(playbackMode==='stable'?'ثبات أعلى':playbackMode==='balanced'?'متوازن':'توفير البيانات'):(playbackMode==='stable'?'Stability':playbackMode==='balanced'?'Balanced':'Data saver');
