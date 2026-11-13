@@ -1639,6 +1639,21 @@ const playerModal=$('#playerModal'),video=$('#liveVideo'),qualitySelect=$('#qual
 let playbackMode='stable';
 try{const savedMode=localStorage.getItem('velnix:playback-mode');if(['stable','balanced','data'].includes(savedMode))playbackMode=savedMode}catch(e){}
 if(playbackModeSelect)playbackModeSelect.value=playbackMode;
+function playerMaxHeight(){
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ const width=Math.max(video?.clientWidth||0,window.innerWidth||0);
+ const mobile=window.matchMedia('(max-width: 700px)').matches;
+ return mobile?1080:(width*dpr>=3000?2160:1440);
+}
+function inferMediaKind(type,url,mime=''){
+ const t=String(type||'').toLowerCase().trim(),m=String(mime||'').toLowerCase();
+ const path=String(url||'').split('?')[0].toLowerCase();
+ if(['hls','m3u8'].includes(t)||m.includes('mpegurl')||/\.m3u8$/.test(path))return 'hls';
+ if(['dash','mpd'].includes(t)||m.includes('dash+xml')||/\.mpd$/.test(path))return 'dash';
+ if(['mpegts','ts'].includes(t)||m.includes('mp2t')||/\.(ts|mts|m2ts)$/.test(path))return 'mpegts';
+ if(['mp4','m4v','mov','webm','ogv','mp3','m4a','aac','ogg','oga','wav','flac'].includes(t)||/^(video|audio)\//.test(m)||/\.(mp4|m4v|mov|webm|ogv|mp3|m4a|aac|ogg|oga|wav|flac)$/.test(path))return 'native';
+ return t==='file'?'mpegts':t;
+}
 function playbackTuning(){
  if(playbackMode==='data')return {bufferingGoal:18,rebufferingGoal:3,backBuffer:12,hlsBuffer:20,hlsMaxBuffer:28,hlsMaxSize:28*1000*1000,mpegStash:6*1024*1024,liveSync:6,liveMax:18};
  if(playbackMode==='balanced')return {bufferingGoal:28,rebufferingGoal:4,backBuffer:18,hlsBuffer:30,hlsMaxBuffer:42,hlsMaxSize:42*1000*1000,mpegStash:10*1024*1024,liveSync:8,liveMax:24};
@@ -2022,7 +2037,7 @@ function applyManualQuality(height){
   if(target){shakaPlayer.configure('abr.enabled',false);shakaPlayer.selectVariantTrack(target,true);selected=true;recordPlaybackEvent('تغيير الجودة',target.height+'p (requested '+height+'p)')}
  }
  if(!selected&&hlsInstance){
-  const levels=hlsInstance.levels.map((level,index)=>({level,index})).filter(x=>x.level.height&&x.level.height<=1080);
+  const levels=hlsInstance.levels.map((level,index)=>({level,index})).filter(x=>x.level.height&&x.level.height<=playerMaxHeight());
   const exact=levels.filter(x=>x.level.height===height).sort((a,b)=>(a.level.bitrate||0)-(b.level.bitrate||0))[0];
   const fallback=levels.filter(x=>x.level.height<=height).sort((a,b)=>(b.level.height||0)-(a.level.height||0)||(a.level.bitrate||0)-(b.level.bitrate||0))[0];
   const target=exact||fallback;
@@ -2072,6 +2087,7 @@ async function startPlayback(row,generation,reason='initial'){
  else recordPlaybackEvent('محاولة إعادة تشغيل',reason);
  state(lang==='ar'?(reason==='initial'?'جارٍ تجهيز البث...':'جارٍ إعادة تشغيل البث...'):(reason==='initial'?'Preparing stream...':'Restarting stream...'));
  const sourceRow=row.variants?.find(v=>v.id===row.selectedVariantId)||row;
+ adaptiveBufferSeconds=playbackTuning().bufferingGoal;adaptiveWaiting=false;adaptiveStallCount=0;adaptiveLastStallAt=0;adaptiveLastIncreaseAt=0;
  const stream=await gateway({action:'stream',channel_id:sourceRow.id});
  if(generation!==playbackGeneration)return;
  if(Array.isArray(stream.alternates)&&stream.alternates.length){
@@ -2087,11 +2103,17 @@ async function startPlayback(row,generation,reason='initial'){
  // Cloudflare relay disabled: use the original Supabase stream gateway for every format.
  row.streamViaWorker=false;
  row.streamViaSupabaseFallback=false;
- const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
- recordPlaybackEvent('مسار البث','Supabase Gateway · '+type);
+ const url=stream.stream_url,rawType=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
+ const type=inferMediaKind(rawType,url,stream.mime_type||stream.content_type||'');
+ recordPlaybackEvent('مسار البث','Supabase Gateway · '+type+' (source: '+rawType+')');
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
- if(type==='hls'||type==='dash'||type==='mpd'){
+ if(type==='native'){
+  destroyPlayerEngine();video.src=url;video.load();
+  await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{throw error}});
+  return;
+ }
+ if(type==='hls'||type==='dash'){
   let shakaReady=false;
   try{
    const shaka=await loadShakaLibrary();
@@ -2104,7 +2126,7 @@ async function startPlayback(row,generation,reason='initial'){
     adaptiveBufferSeconds=Math.max(tuning.bufferingGoal,adaptiveBufferSeconds);
     instance.configure({
      abr:{enabled:true,defaultBandwidthEstimate:1800000,bandwidthUpgradeTarget:0.82,bandwidthDowngradeTarget:0.92},
-     restrictions:{maxHeight:1080,maxBandwidth:8000000},
+     restrictions:{maxHeight:playerMaxHeight(),maxBandwidth:25000000},
      streaming:{
       bufferingGoal:adaptiveBufferSeconds,rebufferingGoal:Math.min(12,Math.max(tuning.rebufferingGoal,Math.round(adaptiveBufferSeconds/9))),bufferBehind:tuning.backBuffer,
       retryParameters:{maxAttempts:8,baseDelay:700,backoffFactor:1.5,fuzzFactor:0.2,maxDelay:12000,timeout:35000}
@@ -2121,14 +2143,14 @@ async function startPlayback(row,generation,reason='initial'){
     const variants=instance.getVariantTracks()||[];
     const safe=variants.filter(track=>!track.height||track.height<=1080);
     if(!safe.length&&variants.length){
-     instance.configure({restrictions:{maxHeight:2160,maxBandwidth:18000000}});
+     instance.configure({restrictions:{maxHeight:playerMaxHeight(),maxBandwidth:25000000}});
      const lowest=variants.slice().sort((a,b)=>(a.bandwidth||0)-(b.bandwidth||0))[0];
      instance.configure('abr.enabled',false);
      instance.selectVariantTrack(lowest,true);
      state(lang==='ar'?'المصدر يوفّر 4K فقط؛ تم اختيار أقل معدل متاح لتخفيف الحمل.':'Source only provides 4K; selected its lowest available bitrate.');
     }else{
      instance.configure('abr.enabled',true);
-     state(lang==='ar'?'المشغّل التكيفي جاهز؛ الجودة محددة تلقائياً حتى 1080p لتقليل الحمل.':'Adaptive player ready; automatic quality is capped at 1080p.');
+     state(lang==='ar'?'المشغّل التكيفي جاهز؛ الجودة مضبوطة تلقائياً حسب الشاشة وقدرة الجهاز.':'Adaptive quality is matched to the display and device.');
     }
     qualities();
     await video.play().catch(error=>{if(error?.name==='NotAllowedError'){userPaused=true;state(lang==='ar'?'اضغط تشغيل لبدء المشاهدة.':'Press play to start.')}else{userPaused=false;scheduleRecovery(error?.message||'Playback start failed',generation)}});
@@ -2174,7 +2196,11 @@ async function startPlayback(row,generation,reason='initial'){
     instance.on(Hls.Events.ERROR,(_e,d)=>{
      if(generation!==playbackGeneration||instance!==hlsInstance)return;
      recordPlaybackEvent('خطأ HLS',String(d.details||d.type||'unknown')+(d.fatal?' · fatal':''));
-     if(d.fatal){scheduleRecovery(d.details||'HLS fatal error',generation);return;}
+     if(d.fatal){
+      if(d.type===Hls.ErrorTypes.NETWORK_ERROR){try{instance.startLoad();return}catch(e){}}
+      if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{instance.recoverMediaError();return}catch(e){}}
+      scheduleRecovery(d.details||'HLS fatal error',generation);return;
+     }
      if(d.type===Hls.ErrorTypes.NETWORK_ERROR){try{instance.startLoad()}catch(e){scheduleRecovery(d.details||'HLS network error',generation)}}
      else if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{instance.recoverMediaError()}catch(e){scheduleRecovery(d.details||'HLS media error',generation)}}
     });
