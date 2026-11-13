@@ -1393,6 +1393,7 @@ async function startPlayback(row,generation,reason='initial'){
    }
   });
  }
+ row.streamViaWorker=!!stream.stream_via_worker;
  const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
@@ -1713,7 +1714,7 @@ video.addEventListener('playing',()=>{
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  const refreshVariant=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);
  const refreshType=String(refreshVariant?.stream_type||activeRow?.stream_type||'').toLowerCase();
- if(['file','mpegts','ts'].includes(refreshType)){
+ if(!activeRow?.streamViaWorker&&['file','mpegts','ts'].includes(refreshType)){
   const refreshGeneration=playbackGeneration;
   gatewayRefreshTimer=setTimeout(()=>{
    gatewayRefreshTimer=null;
