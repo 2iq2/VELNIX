@@ -795,6 +795,32 @@ function playbackTuning(){
  if(playbackMode==='balanced')return {bufferingGoal:28,rebufferingGoal:4,backBuffer:18,hlsBuffer:30,hlsMaxBuffer:42,hlsMaxSize:42*1000*1000,mpegStash:10*1024*1024,liveSync:8,liveMax:24};
  return {bufferingGoal:42,rebufferingGoal:6,backBuffer:24,hlsBuffer:44,hlsMaxBuffer:60,hlsMaxSize:64*1000*1000,mpegStash:16*1024*1024,liveSync:10,liveMax:30};
 }
+let adaptiveBufferSeconds=playbackTuning().bufferingGoal,adaptiveLastStallAt=0,adaptiveLastIncreaseAt=0,adaptiveWaiting=false,adaptiveStallCount=0;
+function adaptiveBufferLimit(){
+ const base=playbackTuning().bufferingGoal;
+ return Math.min(base+34,playbackMode==='stable'?76:playbackMode==='balanced'?58:36);
+}
+function applyAdaptiveBuffer(reason='update'){
+ const tuning=playbackTuning(),target=Math.max(tuning.bufferingGoal,Math.min(adaptiveBufferSeconds,adaptiveBufferLimit()));
+ adaptiveBufferSeconds=target;
+ if(shakaPlayer){try{shakaPlayer.configure({streaming:{bufferingGoal:target,rebufferingGoal:Math.min(12,Math.max(tuning.rebufferingGoal,Math.round(target/9)))}})}catch(e){console.warn('Adaptive Shaka buffer update failed',e)}}
+ if(hlsInstance){try{const cfg=hlsInstance.config;if(cfg){cfg.maxBufferLength=target;cfg.maxMaxBufferLength=Math.max(cfg.maxMaxBufferLength||0,Math.min(adaptiveBufferLimit()+8,target+12))}}catch(e){console.warn('Adaptive HLS buffer update failed',e)}}
+ if(diagnosticSession){recordPlaybackEvent('تعديل التخزين المؤقت',target+'s · '+reason);renderDiagnostics()}
+}
+function increaseAdaptiveBuffer(reason){
+ const now=Date.now(),base=playbackTuning().bufferingGoal;
+ if(now-adaptiveLastIncreaseAt<7000)return;
+ adaptiveLastIncreaseAt=now;adaptiveLastStallAt=now;adaptiveStallCount++;
+ const step=diagnosticBandwidthKbps>0&&diagnosticBandwidthKbps<900?12:8;
+ const next=Math.min(adaptiveBufferLimit(),Math.max(base,adaptiveBufferSeconds)+step);
+ if(next>adaptiveBufferSeconds){adaptiveBufferSeconds=next;applyAdaptiveBuffer(reason);if(diagnosticSession)recordPlaybackEvent('رفع التخزين بسبب ضعف الاتصال','المخزون الجديد '+next+'s')}
+}
+function relaxAdaptiveBuffer(){
+ const base=playbackTuning().bufferingGoal,now=Date.now();
+ if(adaptiveBufferSeconds>base&&now-adaptiveLastStallAt>90000&&now-adaptiveLastIncreaseAt>90000){
+  adaptiveBufferSeconds=Math.max(base,adaptiveBufferSeconds-4);adaptiveLastIncreaseAt=now;applyAdaptiveBuffer('اتصال مستقر لمدة 90 ثانية');
+ }
+}
 let hlsInstance=null,mpegtsPlayer=null,shakaPlayer=null,Hls=null,mpegts=null;
 const icons={sports:'⚽',news:'◉',movies:'▣',kids:'✦',documentaries:'◇',variety:'♫'};
 const headers={'apikey':KEY,'Authorization':'Bearer '+KEY};
@@ -1198,6 +1224,7 @@ async function startPlayback(row,generation,reason='initial'){
     shakaPlayer=new shaka.Player(video);
     const instance=shakaPlayer;
     const tuning=playbackTuning();
+    adaptiveBufferSeconds=Math.max(tuning.bufferingGoal,adaptiveBufferSeconds);
     instance.configure({
      abr:{enabled:true,defaultBandwidthEstimate:1800000,bandwidthUpgradeTarget:0.82,bandwidthDowngradeTarget:0.92},
      restrictions:{maxHeight:1080,maxBandwidth:8000000},
@@ -1240,6 +1267,8 @@ async function startPlayback(row,generation,reason='initial'){
    if(generation!==playbackGeneration)return;
    Hls=mod.default||mod;
    if(Hls.isSupported()){
+    const tuning=playbackTuning();
+    adaptiveBufferSeconds=Math.max(tuning.bufferingGoal,adaptiveBufferSeconds);
     hlsInstance=new Hls({
      enableWorker:true,lowLatencyMode:false,
      backBufferLength:tuning.backBuffer,maxBufferLength:tuning.hlsBuffer,maxMaxBufferLength:tuning.hlsMaxBuffer,maxBufferSize:tuning.hlsMaxSize,
@@ -1492,11 +1521,12 @@ playbackModeSelect?.addEventListener('change',async()=>{
 });
 syncCustomControls();
 video.addEventListener('timeupdate',()=>{
- if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now()}
+ if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now();adaptiveWaiting=false}
 });
 video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!userPaused&&!recovering&&!suppressPauseTracking&&!video.ended)scheduleRecovery('Unexpected playback pause')});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
 video.addEventListener('playing',()=>{
+ adaptiveWaiting=false;
  userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;
  candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
@@ -1504,8 +1534,8 @@ video.addEventListener('playing',()=>{
 });
 video.addEventListener('error',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('خطأ عنصر الفيديو',String(video.error?.code||'unknown')+' · '+String(video.error?.message||''));scheduleRecovery('Media element error')}});
 video.addEventListener('ended',()=>{if(activeRow&&!userPaused)scheduleRecovery('Stream ended')});
-video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled');scheduleRecovery('Playback stalled')}});
-video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering&&Date.now()-lastProgressAt>12000){recordPlaybackEvent('انتظار البيانات','waiting > 12s');scheduleRecovery('Waiting for stream data')}});
+video.addEventListener('stalled',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('حدث stalled من عنصر الفيديو')}recordPlaybackEvent('توقف وصول البيانات','HTMLMediaElement stalled');scheduleRecovery('Playback stalled')}});
+video.addEventListener('waiting',()=>{if(activeRow&&!userPaused&&!recovering){if(!adaptiveWaiting){adaptiveWaiting=true;increaseAdaptiveBuffer('انتظار بيانات البث')}if(Date.now()-lastProgressAt>12000){recordPlaybackEvent('انتظار البيانات','waiting > 12s');scheduleRecovery('Waiting for stream data')}}});
 $('#diagnosticsToggle')?.addEventListener('click',()=>{$('#diagnosticsPanel').hidden=!$('#diagnosticsPanel').hidden;renderDiagnostics()});
 $('#diagnosticsExport')?.addEventListener('click',()=>{
  const report={product:'VELNIX',generated_at:new Date().toISOString(),channel:diagnosticSession,source_request_ms:diagnosticLoadMs,first_frame_ms:diagnosticFirstFrameMs,estimated_bandwidth_kbps:diagnosticBandwidthKbps,stalls:diagnosticStalls,retry_count:retryCount,selected_source:activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId)||null,events:diagnosticEvents};
@@ -1514,6 +1544,7 @@ $('#diagnosticsExport')?.addEventListener('click',()=>{
 watchdogTimer=setInterval(()=>{
  if(!activeRow||!playerModal.classList.contains('show')||userPaused||video.ended||recovering)return;
  const now=Date.now();
+ relaxAdaptiveBuffer();
  try{const stats=shakaPlayer?.getStats?.();if(stats?.estimatedBandwidth>0){diagnosticBandwidthKbps=Math.round(stats.estimatedBandwidth/1000);renderDiagnostics()}}catch(e){}
  let ahead=0;
  try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i);if(video.currentTime>=start-0.35&&video.currentTime<=end+0.35){ahead=Math.max(0,end-video.currentTime);break}}}catch(e){}
