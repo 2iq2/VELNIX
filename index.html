@@ -1662,7 +1662,7 @@ function inferMediaKind(type,url,mime=''){
 function playbackTuning(){
  if(playbackMode==='data')return {bufferingGoal:30,rebufferingGoal:8,backBuffer:45,hlsBuffer:36,hlsMaxBuffer:48,hlsMaxSize:48*1000*1000,mpegStash:16*1024*1024,liveSync:8,liveMax:24};
  if(playbackMode==='balanced')return {bufferingGoal:60,rebufferingGoal:15,backBuffer:90,hlsBuffer:68,hlsMaxBuffer:82,hlsMaxSize:96*1000*1000,mpegStash:32*1024*1024,liveSync:10,liveMax:30};
- return {bufferingGoal:90,rebufferingGoal:22,backBuffer:120,hlsBuffer:96,hlsMaxBuffer:110,hlsMaxSize:128*1000*1000,mpegStash:48*1024*1024,liveSync:12,liveMax:36};
+ return {bufferingGoal:90,rebufferingGoal:22,backBuffer:180,hlsBuffer:120,hlsMaxBuffer:140,hlsMaxSize:160*1000*1000,mpegStash:64*1024*1024,liveSync:12,liveMax:36};
 }
 let adaptiveBufferSeconds=playbackTuning().bufferingGoal,adaptiveLastStallAt=0,adaptiveLastIncreaseAt=0,adaptiveWaiting=false,adaptiveStallCount=0;
 function adaptiveBufferLimit(){
