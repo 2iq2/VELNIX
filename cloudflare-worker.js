@@ -279,7 +279,7 @@ export default {
     }));
 
     return new Response(stream, {
-      status: initialResponse.status === 206 ? 200 : initialResponse.status,
+      status: upstream.status === 206 ? 200 : upstream.status,
       headers,
     });
   },
