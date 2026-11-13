@@ -1229,7 +1229,7 @@ async function startPlayback(row,generation,reason='initial'){
      abr:{enabled:true,defaultBandwidthEstimate:1800000,bandwidthUpgradeTarget:0.82,bandwidthDowngradeTarget:0.92},
      restrictions:{maxHeight:1080,maxBandwidth:8000000},
      streaming:{
-      bufferingGoal:tuning.bufferingGoal,rebufferingGoal:tuning.rebufferingGoal,bufferBehind:tuning.backBuffer,
+      bufferingGoal:adaptiveBufferSeconds,rebufferingGoal:Math.min(12,Math.max(tuning.rebufferingGoal,Math.round(adaptiveBufferSeconds/9))),bufferBehind:tuning.backBuffer,
       retryParameters:{maxAttempts:8,baseDelay:700,backoffFactor:1.5,fuzzFactor:0.2,maxDelay:12000,timeout:35000}
      }
     });
@@ -1271,7 +1271,7 @@ async function startPlayback(row,generation,reason='initial'){
     adaptiveBufferSeconds=Math.max(tuning.bufferingGoal,adaptiveBufferSeconds);
     hlsInstance=new Hls({
      enableWorker:true,lowLatencyMode:false,
-     backBufferLength:tuning.backBuffer,maxBufferLength:tuning.hlsBuffer,maxMaxBufferLength:tuning.hlsMaxBuffer,maxBufferSize:tuning.hlsMaxSize,
+     backBufferLength:tuning.backBuffer,maxBufferLength:adaptiveBufferSeconds,maxMaxBufferLength:Math.max(tuning.hlsMaxBuffer,adaptiveBufferSeconds+12),maxBufferSize:tuning.hlsMaxSize,
      maxBufferHole:0.8,highBufferWatchdogPeriod:3,liveSyncDurationCount:tuning.liveSync,liveMaxLatencyDurationCount:tuning.liveMax,
      maxLiveSyncPlaybackRate:1.03,nudgeOffset:0.15,nudgeMaxRetry:12,
      manifestLoadingMaxRetry:8,manifestLoadingRetryDelay:900,manifestLoadingMaxRetryTimeout:20000,
@@ -1508,7 +1508,7 @@ $('#vcQuality').addEventListener('click',()=>{qualitySelect.focus();qualitySelec
 playbackModeSelect?.addEventListener('change',async()=>{
  const next=playbackModeSelect.value;
  if(!['stable','balanced','data'].includes(next))return;
- playbackMode=next;try{localStorage.setItem('velnix:playback-mode',playbackMode)}catch(e){}
+ playbackMode=next;adaptiveBufferSeconds=playbackTuning().bufferingGoal;adaptiveWaiting=false;adaptiveLastStallAt=Date.now();adaptiveLastIncreaseAt=0;try{localStorage.setItem('velnix:playback-mode',playbackMode)}catch(e){}
  showSiteToast(lang==='ar'?'تم حفظ وضع البث.':'Playback mode saved.','success');
  if(activeRow&&playerModal.classList.contains('show')){
   const generation=playbackGeneration,selected=activeRow.selectedVariantId;
