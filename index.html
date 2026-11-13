@@ -1177,6 +1177,11 @@ body[data-theme="light"]:before{background:radial-gradient(ellipse at 12% 8%,rgb
   #claykoIntro .vx-wordmark{animation:none!important;opacity:1!important}
 }
 
+
+/* VELNIX dedication on the opening screen */
+#claykoIntro .vx-dedication{margin-top:18px;color:rgba(240,226,255,.78);font:500 clamp(12px,2.5vw,15px)/1.8 "Tajawal",sans-serif;letter-spacing:.25px;opacity:0;animation:vx-text-in .85s 2.85s ease forwards}
+#claykoIntro .vx-dedication span{display:inline-block;margin-inline-start:4px;color:#f2c8ed;font-weight:800;text-shadow:0 0 18px rgba(213,133,211,.28)}
+@media(max-width:600px){#claykoIntro .vx-dedication{margin-top:14px;font-size:13px}}
 </style>
 <style id="velnix-upgrade-css">
 .admin-dashboard{flex-basis:100%;display:grid;gap:14px;padding:18px;border:1px solid rgba(229,9,20,.25);border-radius:16px;background:linear-gradient(145deg,#171820,#0d0e13)}.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.admin-dashboard h3,.admin-card h4{margin:0 0 12px}.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.admin-stats>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff08}.admin-stats strong{font:700 22px "DM Sans",sans-serif;color:#ff777d}.admin-stats small,.admin-inline-status{font-size:12px;color:var(--muted);line-height:1.7}.admin-card{display:grid;gap:10px;padding:15px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.admin-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.admin-form-row input,.admin-form-row select,.admin-card textarea{min-width:0;flex:1;background:#0a0b10;color:#fff;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}.admin-form-row label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.admin-form-row label input{min-width:170px}.admin-card textarea{width:100%;min-height:65px;resize:vertical}.admin-sub-history{display:grid;gap:5px;margin-top:8px}.admin-sub-history>div{padding:7px;border-radius:8px;background:#ffffff08;font-size:12px;color:var(--muted)}.player-epg-panel{padding:14px 18px;border-top:1px solid var(--line);background:#0a111a}.player-epg-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.player-epg-head span{font-size:11px;color:var(--muted)}.player-epg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:250px;overflow:auto}.player-epg-item{display:grid;gap:5px;padding:11px;border:1px solid var(--line);border-radius:11px;background:#ffffff06}.player-epg-item.current{border-color:#e50914;background:#e5091414}.player-epg-item small{color:#ff888d;font-size:11px}.player-epg-item strong{font-size:13px}.player-epg-item p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.player-epg-item p:empty{display:none}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-row>*{flex-basis:100%}.player-epg-list{grid-template-columns:1fr}.admin-dashboard{padding:12px}.player-epg-panel{padding:12px}}
@@ -1504,12 +1509,12 @@ footer .foot{flex-wrap:wrap}
       <div class="vx-eyebrow">A NEW WAY TO WATCH</div>
       <div class="vx-wordmark">VELNIX</div>
       <div class="vx-rule"></div>
-      <div class="vx-tagline">عالم من الترفيه، بتجربة أكثر سلاسة</div><div class="vx-subline">LIVE TV&nbsp;&nbsp; · &nbsp;&nbsp;SPORTS&nbsp;&nbsp; · &nbsp;&nbsp;MOVIES&nbsp;&nbsp; · &nbsp;&nbsp;SERIES</div>
+      <div class="vx-tagline">عالم من الترفيه، بتجربة أكثر سلاسة</div><div class="vx-subline">LIVE TV&nbsp;&nbsp; · &nbsp;&nbsp;SPORTS&nbsp;&nbsp; · &nbsp;&nbsp;MOVIES&nbsp;&nbsp; · &nbsp;&nbsp;SERIES</div><div class="vx-dedication">إهداء إلى <span>حمودي وجوري</span></div>
     </div>
   </div>
 </div>
 <script>
-(()=>{const intro=document.getElementById('claykoIntro');if(!intro)return;const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),850)},reduced?1000:3600)})();
+(()=>{const intro=document.getElementById('claykoIntro');if(!intro)return;const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;setTimeout(()=>{intro.classList.add('is-leaving');setTimeout(()=>intro.remove(),850)},reduced?1000:4300)})();
 </script>
 <div class="topline"></div>
 <div class="site-toast" id="siteToast" role="status" aria-live="polite" aria-atomic="true"><span class="site-toast-icon" id="siteToastIcon">V</span><span class="site-toast-copy" id="siteToastText"></span></div>
