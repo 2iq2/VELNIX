@@ -2505,10 +2505,16 @@ function cleanChannelName(value){
  .replace(/^\s*\|+\s*/,'').replace(/\s*\|\s*/g,' ').replace(/\s{2,}/g,' ').trim();
 }
 function categoryFor(row){
+ const sourceGroup=String(row.source_group_title||'').toLowerCase();
+ const name=(String(row.name_en||'')+' '+String(row.name_ar||'')).toLowerCase();
+ const categorySlug=String(row.channel_categories?.slug||'').toLowerCase();
+ const beinBrand=/bein|بي\s*ان|بين\s*ان/.test(name);
+ const beinPartner=/\b(baraem|jeem|be\s*junior|bejunior|baby\s*tv|disney\s*channel|disney\s*junior|cartoonito|cartoon\s*network|roya\s*kids|spacetoon|cbeebies|dream\s*works|dreamworks|fatafeat|food\s*network|hgtv|travel\s*channel|discovery|nat\s*geo|national\s*geographic|bbc\s*earth|asharq\s*discovery|asharq\s*documentary)\b/.test(name);
+ const sourceBein=/bein|بي\s*ان|بين\s*ان/.test(sourceGroup);
+ const categoryBein=categorySlug!=='velnix-bein' && /bein/.test(categorySlug);
+ if(beinBrand||beinPartner||sourceBein||categoryBein)return 'bein';
  const group=(String(row.channel_categories?.name_en||row.channel_categories?.name_ar||'')+' '+String(row.source_group_title||'')).toLowerCase();
- const name=String(row.name_en||row.name_ar||'').toLowerCase();
  const both=group+' '+name;
- if(/bein|بي\s*ان|بين\s*ان/.test(both))return 'bein';
  if(/sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event/.test(both))return 'sports';
  if(/quran|koran|islam|relig|prayer|قرآن|قران|ديني|اسلام|إسلام/.test(both))return 'religion';
  if(/news|info|actualité|actualite|inform|اخبار|أخبار/.test(group)||/news|al jazeera|alarabiya|al hadath|sky news|france info|cnn|bbc news|fox news|msnbc/.test(name))return 'news';
@@ -2575,7 +2581,8 @@ function buildChannelGroups(){
   const sourceName=cleanChannelName(row.name_en||row.name_ar);
   const info=qualityInfo(sourceName);
   const category=categoryFor(row);
-  const key=[category,groupTitleFor(row).toLocaleLowerCase(),info.base.toLocaleLowerCase()].join("|");
+  const identity=failoverIdentityFromName(row.name_en||row.name_ar)||info.base.toLocaleLowerCase();
+  const key=[category,groupTitleFor(row).toLocaleLowerCase(),identity].join("|");
   if(!buckets.has(key))buckets.set(key,{base:info.base||sourceName,rows:[]});
   buckets.get(key).rows.push({...row,_quality:info.quality,_qualityRank:info.rank,_base:info.base||sourceName});
  }
@@ -2602,6 +2609,7 @@ function buildChannelGroups(){
  return groups;
 }
 function groupTitleFor(row){
+ if(categoryFor(row)==='bein')return 'باقة beIN';
  const title=String(row.source_group_title||'').trim();
  return title||String(CATEGORY_META[categoryFor(row)]?.en||'Other');
 }
