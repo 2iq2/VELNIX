@@ -2099,7 +2099,7 @@ async function startPlayback(row,generation,reason='initial'){
  const prepared=preparedGatewayStream;
  if(prepared&&prepared.channelId===sourceRow.id&&Date.now()-prepared.preparedAt<90000&&reason!=='initial'&&reason!=='manual source'){
   stream=prepared.stream;preparedGatewayStream=null;
-  recordPlaybackEvent('استخدام اتصال مُجهّز مسبقاً','تم تجهيز رابط المصدر قبل التجديد لتقليل وقت إعادة الاتصال');
+  recordPlaybackEvent('استخدام رابط مُجهّز مسبقاً','تم تجهيز رابط المصدر قبل التجديد لتقليل وقت إعادة الاتصال');
  }else{
   preparedGatewayStream=null;
   stream=await gateway({action:'stream',channel_id:sourceRow.id});
@@ -2464,18 +2464,18 @@ video.addEventListener('playing',()=>{
    const row=activeRow,variant=row?.variants?.find(v=>v.id===row.selectedVariantId);
    if(refreshGeneration!==playbackGeneration||!row||!variant||userPaused||video.paused||recovering)return;
    try{
-    recordPlaybackEvent('تجهيز اتصال بديل','طلب رابط المصدر الجديد مسبقاً قبل موعد التجديد');
+    recordPlaybackEvent('تجهيز رابط التجديد','طلب رابط المصدر الجديد مسبقاً قبل موعد التجديد');
     const fresh=await gateway({action:'stream',channel_id:variant.id});
     if(refreshGeneration===playbackGeneration&&activeRow===row&&!userPaused&&!video.paused){
      preparedGatewayStream={channelId:variant.id,stream:fresh,preparedAt:Date.now()};
-     recordPlaybackEvent('الاتصال البديل جاهز','تم تجهيز رابط المصدر مسبقاً');
+     recordPlaybackEvent('رابط التجديد جاهز','تم تجهيز رابط المصدر مسبقاً');
     }
    }catch(error){recordPlaybackEvent('تعذر التجهيز المسبق',error?.message||String(error))}
   },85000);
   gatewayRefreshTimer=setTimeout(()=>{
    gatewayRefreshTimer=null;
    if(refreshGeneration===playbackGeneration&&activeRow&&playerModal.classList.contains('show')&&!userPaused&&!video.paused&&!recovering){
-    recordPlaybackEvent('تجديد اتصال تلقائي','استخدام الرابط الذي تم تجهيزه مسبقاً لتقليل توقف الصورة');
+    recordPlaybackEvent('تجديد اتصال تلقائي','استخدام رابط المصدر الذي تم تجهيزه مسبقاً لتقليل وقت التجديد');
     scheduleRecovery('Gateway lifetime refresh',refreshGeneration);
    }
   },115000);
