@@ -67,7 +67,7 @@ export default {
       try {
         const probe = await fetch(resolved.resource_url, {
           method: "GET",
-          headers: { ...upstreamHeaders, "Range": "bytes=0-0" },
+          headers: upstreamHeaders,
           redirect: "follow",
           signal: AbortSignal.timeout(5000),
         });
