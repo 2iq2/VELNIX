@@ -414,7 +414,7 @@ footer{margin-top:35px;background:#070c14;border-color:rgba(177,215,235,.1);colo
 .account-trigger{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#151b25;color:var(--text);border-radius:999px;padding:5px 12px 5px 6px;font-weight:700}
 .account-trigger[hidden]{display:none!important}
 .account-avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:linear-gradient(145deg,#263d60,#5b2b83);border:2px solid #a66aff;overflow:hidden;flex:none}.account-avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
-.account-menu{position:absolute;top:calc(100% + 9px);inset-inline-end:0;width:245px;padding:12px;background:#141b28;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 55px #0009;z-index:40}
+.nav-utility{position:relative;isolation:isolate}.account-menu[hidden]{display:none!important}.account-menu:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}.account-menu{position:absolute;top:calc(100% + 9px);inset-inline-end:0;width:min(280px,calc(100vw - 28px));max-height:min(70vh,520px);overflow:auto;padding:12px;background:#141b28;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 55px #0009;z-index:120}
 .nav-utility{position:relative}
 .account-menu-head{display:flex;align-items:center;gap:10px;padding:8px 7px 13px;border-bottom:1px solid var(--line);margin-bottom:8px}
 .account-menu-head strong{display:block}.account-menu-head small{display:block;color:var(--muted);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis}
@@ -1559,8 +1559,10 @@ $('#signOutBtn').addEventListener('click',async()=>{await supabase.auth.signOut(
 refreshAuth().catch(error=>{console.error('VELNIX auth restore failed:',error);const status=$('#authMessage');if(status){status.textContent='تعذر استعادة جلسة الدخول: '+(error?.message||'حاول تسجيل الدخول من جديد');status.classList.add('error')}});
 applyTheme(localStorage.getItem('velnix:theme')||'dark');
 $('#themeToggle').addEventListener('click',toggleTheme);$('#menuThemeBtn').addEventListener('click',toggleTheme);
-$('#accountTrigger').addEventListener('click',()=>{$('#accountMenu').hidden=!$('#accountMenu').hidden});
-$('#openProfileBtn').addEventListener('click',openProfile);
+$('#accountTrigger').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const menu=$('#accountMenu');menu.hidden=!menu.hidden;$('#accountTrigger').setAttribute('aria-expanded',String(!menu.hidden));});
+$('#openProfileBtn').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openProfile().catch(error=>{console.error('VELNIX profile open failed:',error);$('#profileStatus').textContent='تعذر تحميل بعض بيانات الحساب، لكن يمكنك تعديل الملف الشخصي والمحاولة مجدداً.'});});
+document.addEventListener('click',e=>{const menu=$('#accountMenu');if(menu&&!menu.hidden&&!menu.contains(e.target)&&!$('#accountTrigger').contains(e.target)){menu.hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=$('#accountMenu');if(menu&&!menu.hidden){menu.hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false')}}});
 $('#closeProfileBtn').addEventListener('click',()=>$('#profileModal').classList.remove('show'));
 $('#cancelProfileBtn').addEventListener('click',()=>$('#profileModal').classList.remove('show'));
 $('#profileModal').addEventListener('click',e=>{if(e.target===$('#profileModal'))$('#profileModal').classList.remove('show')});
@@ -1644,8 +1646,13 @@ async function loadSubscriptionDetails(){
  }
 }
 async function openProfile(){
- if(!currentSession?.user){$('#authModal').classList.add('show');return}
- $('#accountMenu').hidden=true;$('#profileModal').classList.add('show');$('#profileStatus').textContent='';renderAvatarChoices();await loadUserProfile();await loadSubscriptionDetails();
+ const session=currentSession||await refreshSessionIfNeeded().then(session=>{currentSession=session;return session});
+ if(!session?.user){$('#authModal').classList.add('show');return}
+ $('#accountMenu').hidden=true;$('#accountTrigger').setAttribute('aria-expanded','false');
+ $('#profileModal').classList.add('show');$('#profileModal').setAttribute('aria-hidden','false');
+ $('#profileStatus').textContent='جارٍ تحميل بيانات الحساب…';renderAvatarChoices();
+ await loadUserProfile();await loadSubscriptionDetails();
+ if($('#profileStatus').textContent==='جارٍ تحميل بيانات الحساب…')$('#profileStatus').textContent='';
 }
 async function saveUserProfile(){
  const name=$('#profileNameInput').value.trim();if(name.length<2){$('#profileStatus').textContent='الاسم لازم يكون حرفين على الأقل.';return}
