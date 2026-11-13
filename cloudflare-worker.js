@@ -5,7 +5,7 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
   "Access-Control-Allow-Headers": "Range, Content-Type",
-  "Access-Control-Expose-Headers": "Accept-Ranges, Content-Type",
+  "Access-Control-Expose-Headers": "Accept-Ranges, Content-Type, X-Velnix-Relay-Via",
 };
 
 const upstreamHeaders = {
@@ -19,12 +19,11 @@ const hostOf = (value) => {
 };
 
 const proxyThroughSupabase = (env, channelId, accessToken) => {
-  const url = new URL(env.SUPABASE_RESOLVE_URL);
-  url.searchParams.set("channel_id", channelId);
-  url.searchParams.set("access_token", accessToken);
-  return fetch(url.toString(), {
-    method: "GET",
-    headers: upstreamHeaders,
+  // Keep the signed stream token out of Supabase request URLs and access logs.
+  return fetch(env.SUPABASE_RESOLVE_URL, {
+    method: "POST",
+    headers: { ...upstreamHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "proxy", channel_id: channelId, access_token: accessToken }),
     redirect: "follow",
   });
 };
@@ -62,9 +61,47 @@ export default {
     }
 
     if (request.method === "HEAD") {
+      let viaSupabase = false;
+      try {
+        const probe = await fetch(resolved.resource_url, {
+          method: "GET",
+          headers: { ...upstreamHeaders, "Range": "bytes=0-0" },
+          redirect: "follow",
+          signal: AbortSignal.timeout(5000),
+        });
+        const needsFallback = probe.status === 403 || probe.status === 429 || probe.status >= 500;
+        await probe.body?.cancel().catch(() => {});
+        if (needsFallback) {
+          const fallback = await proxyThroughSupabase(env, channelId, accessToken);
+          if (!fallback.ok && fallback.status !== 206) {
+            await fallback.body?.cancel().catch(() => {});
+            return new Response(null, { status: 502, headers: cors });
+          }
+          await fallback.body?.cancel().catch(() => {});
+          viaSupabase = true;
+        }
+      } catch (error) {
+        console.error("VELNIX_RELAY_PROBE_DIRECT_EXCEPTION", JSON.stringify({
+          name: error?.name, message: error?.message, host: hostOf(resolved.resource_url)
+        }));
+        try {
+          const fallback = await proxyThroughSupabase(env, channelId, accessToken);
+          if (!fallback.ok && fallback.status !== 206) {
+            await fallback.body?.cancel().catch(() => {});
+            return new Response(null, { status: 502, headers: cors });
+          }
+          await fallback.body?.cancel().catch(() => {});
+          viaSupabase = true;
+        } catch (fallbackError) {
+          console.error("VELNIX_RELAY_PROBE_FALLBACK_FAILED", JSON.stringify({
+            name: fallbackError?.name, message: fallbackError?.message
+          }));
+          return new Response(null, { status: 502, headers: cors });
+        }
+      }
       return new Response(null, {
         status: 200,
-        headers: { ...cors, "Content-Type": "video/mp2t", "Cache-Control": "no-store", "Accept-Ranges": "none" },
+        headers: { ...cors, "Cache-Control": "no-store", "X-Velnix-Relay-Via": viaSupabase ? "supabase" : "direct" },
       });
     }
 
@@ -76,8 +113,8 @@ export default {
         headers: upstreamHeaders,
         redirect: "follow",
       });
-      if (upstream.status === 403) {
-        console.error("VELNIX_RELAY_DIRECT_DENIED", JSON.stringify({ status: 403, host: hostOf(resolved.resource_url) }));
+      if (upstream.status === 403 || upstream.status === 429 || upstream.status >= 500) {
+        console.error("VELNIX_RELAY_DIRECT_RETRY", JSON.stringify({ status: upstream.status, host: hostOf(resolved.resource_url) }));
         await upstream.body?.cancel().catch(() => {});
         upstream = await proxyThroughSupabase(env, channelId, accessToken);
         viaSupabase = true;
@@ -123,6 +160,7 @@ export default {
     headers.set("Cache-Control", "no-store, no-transform");
     headers.set("X-Accel-Buffering", "no");
     headers.set("Content-Type", contentType);
+    headers.set("X-Velnix-Relay-Via", viaSupabase ? "supabase" : "direct");
     headers.set("Accept-Ranges", "none");
     headers.set("X-Content-Type-Options", "nosniff");
 
