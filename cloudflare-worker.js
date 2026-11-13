@@ -128,10 +128,10 @@ export default {
 
     const initialViaSupabase = viaSupabase;
     const initialResponse = upstream;
+    let cancelled = false;
+    let activeReader = null;
     const stream = new ReadableStream({
       start(controller) {
-        let cancelled = false;
-        let activeReader = null;
         const run = async () => {
           let response = initialResponse;
           let useSupabase = initialViaSupabase;
@@ -200,12 +200,11 @@ export default {
           if (!cancelled) controller.error(error);
         });
 
-        this.cancel = async () => {
-          cancelled = true;
-          try { await activeReader?.cancel(); } catch {}
-        };
       },
-      cancel() {},
+      async cancel() {
+        cancelled = true;
+        try { await activeReader?.cancel(); } catch {}
+      },
     });
 
     console.log("VELNIX_RELAY_STREAM_STARTED", JSON.stringify({
