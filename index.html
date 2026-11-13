@@ -1349,17 +1349,19 @@ function scheduleRecovery(reason,generation=playbackGeneration){
  recovering=true;retryCount++;
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  const currentId=activeRow.selectedVariantId;
- if(currentId&&!expectedGatewayRefresh)failoverVisited.add(currentId);
- let nextServer=expectedGatewayRefresh?null:(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
- if(!expectedGatewayRefresh&&!nextServer&&(activeRow.variants||[]).length>1){
+ // First recovery attempt retries the current source immediately; only switch
+ // variants after the same source has failed more than once.
+ if(currentId&&!expectedGatewayRefresh&&retryCount>1)failoverVisited.add(currentId);
+ let nextServer=(expectedGatewayRefresh||retryCount===1)?null:(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
+ if(!expectedGatewayRefresh&&retryCount>1&&!nextServer&&(activeRow.variants||[]).length>1){
   failoverVisited=new Set(currentId?[currentId]:[]);
   nextServer=(activeRow.variants||[]).find(v=>v.id&&!failoverVisited.has(v.id));
  }
  if(expectedGatewayRefresh)recordPlaybackEvent('تجديد اتصال البث','إعادة فتح المصدر نفسه قبل حد 150 ثانية للـ Edge Function');
  else if(nextServer){activeRow.selectedVariantId=nextServer.id;recordPlaybackEvent('التحويل إلى نسخة بديلة',nextServer.name_ar||nextServer.name_en||nextServer.id)}
- else recordPlaybackEvent('إعادة المحاولة على المصدر الحالي',reason);
+ else recordPlaybackEvent(retryCount===1?'إعادة اتصال فورية بالمصدر نفسه':'إعادة المحاولة على المصدر الحالي',reason);
  diagnosticStalls++;recordPlaybackEvent(expectedGatewayRefresh?'تجديد اتصال مجدول':'توقف أو تقطيع',reason);
- const delay=expectedGatewayRefresh?350:nextServer?900:Math.min(30000,2500*Math.pow(1.5,Math.min(retryCount-1,8)));
+ const delay=expectedGatewayRefresh?250:retryCount===1?100:nextServer?450:Math.min(8000,700*Math.pow(1.5,Math.min(retryCount-2,6)));
  const message=expectedGatewayRefresh
   ?(lang==='ar'?'تجديد اتصال البث للحفاظ على استمراره…':'Refreshing the stream connection…')
   :nextServer
