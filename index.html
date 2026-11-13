@@ -1395,6 +1395,14 @@ async function startPlayback(row,generation,reason='initial'){
  }
  row.streamViaWorker=!!stream.stream_via_worker;
  const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
+ row.streamViaSupabaseFallback=false;
+ if(row.streamViaWorker&&['file','mpegts','ts'].includes(type)){
+  try{
+   const probe=await fetch(url,{method:'HEAD',cache:'no-store'});
+   row.streamViaSupabaseFallback=probe.headers.get('X-Velnix-Relay-Via')==='supabase'||!probe.ok;
+  }catch(error){row.streamViaSupabaseFallback=true}
+  if(row.streamViaSupabaseFallback)recordPlaybackEvent('مسار احتياطي محدود المدة','سيتم تجديد اتصال البث تلقائياً قبل حد مدة Edge Function');
+ }
  recordPlaybackEvent('مسار البث',(row.streamViaWorker?'Cloudflare Worker':'Supabase Gateway')+' · '+type);
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
@@ -1719,7 +1727,7 @@ video.addEventListener('playing',()=>{
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
  const refreshVariant=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);
  const refreshType=String(refreshVariant?.stream_type||activeRow?.stream_type||'').toLowerCase();
- if(!activeRow?.streamViaWorker&&['file','mpegts','ts'].includes(refreshType)){
+ if((!activeRow?.streamViaWorker||activeRow?.streamViaSupabaseFallback)&&['file','mpegts','ts'].includes(refreshType)){
   const refreshGeneration=playbackGeneration;
   gatewayRefreshTimer=setTimeout(()=>{
    gatewayRefreshTimer=null;
@@ -1727,7 +1735,7 @@ video.addEventListener('playing',()=>{
     recordPlaybackEvent('تجديد اتصال تلقائي','تحديث اتصال المصدر قبل بلوغ حد 150 ثانية');
     scheduleRecovery('Gateway lifetime refresh',refreshGeneration);
    }
-  },132000);
+  },115000);
  }
  candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
