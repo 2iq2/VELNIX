@@ -2455,7 +2455,6 @@ video.addEventListener('playing',()=>{
  preparedGatewayStream=null;
  // Do not force a player teardown on a timer. Keep the live connection open;
  // recover only when the media element or the stream watchdog detects a real failure.
- preparedGatewayStream=null;
  candidateStartedAt=Date.now();candidateLastProgressAt=Date.now();candidateLastCurrentTime=video.currentTime||0;candidateStable=false;
  if(diagnosticSession&&!diagnosticFirstFrameMs){diagnosticFirstFrameMs=Date.now()-diagnosticStartedAt;const chosen=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);recordPlaybackEvent('بدأ عرض الصورة',diagnosticFirstFrameMs+'ms · '+(chosen?.name_ar||chosen?.name_en||chosen?.id||'source'))}
  $('#bufferText').textContent=lang==='ar'?'تم الاتصال؛ التخزين المسبق الموسّع مفعّل (حتى 90 ثانية حسب المصدر والجهاز).':'Connected; extended pre-buffering enabled (up to 90s, source/device dependent).'
