@@ -2435,7 +2435,7 @@ syncCustomControls();
 video.addEventListener('timeupdate',()=>{
  if(video.currentTime>lastCurrentTime+0.15){lastCurrentTime=video.currentTime;lastProgressAt=Date.now();adaptiveWaiting=false}
 });
-video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!userPaused&&!recovering&&!suppressPauseTracking&&!video.ended)scheduleRecovery('Unexpected playback pause')});
+video.addEventListener('pause',()=>{syncCustomControls();if(activeRow&&!userPaused&&!recovering&&!suppressPauseTracking&&!video.ended){lastProgressAt=Date.now();recordPlaybackEvent('توقف مؤقت','سيتم الانتظار حتى 5 دقائق من دون تقدم قبل إعادة الاتصال')}});
 video.addEventListener('play',()=>{userPaused=false;lastProgressAt=Date.now()});
 video.addEventListener('playing',()=>{
  adaptiveWaiting=false;
@@ -2485,7 +2485,7 @@ watchdogTimer=setInterval(()=>{
   if(retryCount&&lastStableAt&&now-lastStableAt>60000){retryCount=0;lastStableAt=now}
  }else{
    const activeType=String(activeRow.variants?.find(v=>v.id===activeRow.selectedVariantId)?.stream_type||activeRow.stream_type||'').toLowerCase();
-   const noProgressLimit=['file','mpegts','ts'].includes(activeType)?32000:14000;
+   const noProgressLimit=300000;
    if(now-lastProgressAt>noProgressLimit){scheduleRecovery(video.paused?'Unexpected playback pause':'No playback progress');return}
   }
  const modeLabel=lang==='ar'?(playbackMode==='stable'?'ثبات أعلى':playbackMode==='balanced'?'متوازن':'توفير البيانات'):(playbackMode==='stable'?'Stability':playbackMode==='balanced'?'Balanced':'Data saver');
