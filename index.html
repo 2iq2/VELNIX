@@ -1273,6 +1273,86 @@ footer .foot{width:min(1180px,calc(100% - 40px));max-width:100%;margin-inline:au
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
+<style id="velnix-all-screens-layout">
+/* Stable layout across phones, tablets, laptops and large displays */
+*,*::before,*::after{box-sizing:border-box}
+html,body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+body{min-height:100vh;min-height:100dvh}
+main{width:100%;min-width:0}
+#categories.section{width:min(1440px,calc(100% - 48px));max-width:100%;min-width:0}
+#categories .catalog-browse-layout{display:grid!important;grid-template-columns:minmax(205px,clamp(205px,19vw,250px)) minmax(0,1fr)!important;gap:clamp(14px,2vw,24px)!important;align-items:start!important;width:100%!important;max-width:100%!important;min-width:0!important;direction:rtl}
+#categories .catalog-browse-layout>*{min-width:0!important;max-width:100%}
+#categories .catalog-sidebar{width:100%;max-width:100%;min-width:0;position:sticky;top:88px}
+#categories .catalog-sidebar .filters{width:100%;max-width:100%;min-width:0}
+#categories .catalog-sidebar .filters .filter{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#categories .catalog-results{width:100%;max-width:100%;min-width:0}
+#categories .catalog-results>*{min-width:0;max-width:100%}
+#categories .admin-tools{display:flex;flex-wrap:wrap;align-items:center;width:100%;max-width:100%;min-width:0;gap:10px}
+#categories #adminTools>*{min-width:0;max-width:100%}
+#categories .admin-dashboard{display:grid;width:100%;max-width:100%;min-width:0;flex:1 1 100%;grid-template-columns:minmax(0,1fr);overflow:hidden}
+#categories .admin-dashboard-head{flex-wrap:wrap;min-width:0}
+#categories .admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));min-width:0}
+#categories .admin-stats>div{min-width:0;overflow-wrap:anywhere}
+#categories .admin-card{width:100%;max-width:100%;min-width:0}
+#categories .admin-form-row{display:flex;flex-wrap:wrap;width:100%;max-width:100%;min-width:0}
+#categories .admin-form-row>*{min-width:0;max-width:100%;flex:1 1 180px}
+#categories .admin-form-row label{min-width:0;flex:1 1 220px;flex-wrap:wrap}
+#categories .admin-form-row label input{min-width:0;width:100%;max-width:100%}
+#categories .admin-card textarea{min-width:0;max-width:100%}
+#categories .bein-admin,#categories .bein-admin-form,#categories .bein-admin-list{min-width:0;max-width:100%;width:100%}
+#categories .bein-admin-form{display:flex;flex-wrap:wrap;gap:9px}
+#categories .bein-admin-form>*{min-width:0;max-width:100%;flex:1 1 160px}
+#categories .channel-toolbar,#categories .catalog-summary,#categories .channels{min-width:0;max-width:100%}
+#categories .channels{grid-template-columns:repeat(3,minmax(0,1fr))}
+.player-modal{overflow-y:auto;overscroll-behavior:contain}
+.player-shell{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+.video-wrap{max-height:min(68vh,calc(100dvh - 230px))}
+@media(max-width:1100px){
+ #categories.section{width:calc(100% - 36px)!important}
+ #categories .catalog-browse-layout{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+ #categories .catalog-sidebar{position:relative!important;top:auto!important;padding:12px!important}
+ #categories .catalog-sidebar-heading{padding-bottom:9px;margin-bottom:9px}
+ #categories .catalog-sidebar .filters{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;gap:7px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:2px 1px 8px!important;scrollbar-width:thin;overscroll-behavior-inline:contain}
+ #categories .catalog-sidebar .filters .filter{flex:0 0 auto!important;width:auto!important;max-width:78vw;white-space:nowrap!important;min-height:38px}
+ #categories .catalog-results{grid-column:1/-1}
+ #categories .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ #categories.section{width:calc(100% - 28px)!important}
+ #categories .catalog-browse-layout{gap:11px!important}
+ #categories .catalog-sidebar{padding:10px!important}
+ #categories .admin-tools{gap:8px}
+ #categories .admin-tools>.filter{flex:1 1 145px;min-width:0;white-space:normal;overflow-wrap:anywhere}
+ #categories .admin-dashboard{padding:12px}
+ #categories .admin-dashboard-head{align-items:flex-start}
+ #categories .admin-dashboard-head h3{font-size:16px}
+ #categories .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #categories .admin-form-row>*{flex:1 1 100%;width:100%}
+ #categories .admin-form-row label{flex:1 1 100%;width:100%}
+ #categories .bein-admin-form>*{flex:1 1 100%;width:100%}
+ #categories .channels{grid-template-columns:minmax(0,1fr)!important}
+ .player-modal{padding:0!important}
+ .player-shell{width:100%!important;max-height:100dvh;border-radius:0!important}
+ .video-wrap{max-height:56vh}
+}
+@media(max-width:420px){
+ #categories .admin-stats{gap:6px}
+ #categories .admin-stats>div{padding:9px}
+ #categories .admin-stats strong{font-size:18px}
+ #categories .admin-card{padding:11px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ header{position:relative}
+ #home.hero{min-height:0;padding-block:28px}
+ .player-modal{align-items:start;padding:6px!important}
+ .player-shell{max-height:calc(100dvh - 12px);border-radius:12px!important}
+ .player-head{min-height:48px!important;padding:7px 12px!important}
+ .video-wrap{max-height:calc(100dvh - 190px);aspect-ratio:16/9}
+ .player-toolbar{padding:8px 12px}
+ .player-state{padding:5px 12px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
