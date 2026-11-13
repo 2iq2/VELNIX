@@ -127,83 +127,148 @@ export default {
     headers.set("X-Content-Type-Options", "nosniff");
 
     const initialViaSupabase = viaSupabase;
-    const initialResponse = upstream;
-    let cancelled = false;
+    let response = upstream;
+    let useSupabase = initialViaSupabase;
     let activeReader = null;
-    const stream = new ReadableStream({
-      start(controller) {
-        const run = async () => {
-          let response = initialResponse;
-          let useSupabase = initialViaSupabase;
-          let reconnects = 0;
-          let failures = 0;
+    let cancelled = false;
+    let reconnects = 0;
+    let failures = 0;
+    let totalBytes = 0;
+    let sourceOpenedAt = Date.now();
 
-          while (!cancelled && reconnects <= 30) {
-            if (!response?.ok && response?.status !== 206) {
-              failures++;
-              console.error("VELNIX_RELAY_RECONNECT_STATUS", JSON.stringify({
-                status: response?.status || 0, via: useSupabase ? "supabase" : "direct",
-                attempt: reconnects
-              }));
-              await response?.body?.cancel().catch(() => {});
-              if (failures >= 4) break;
-            } else if (response.body) {
-              activeReader = response.body.getReader();
+    const openNextResponse = async () => {
+      let next = useSupabase
+        ? await proxyThroughSupabase(env, channelId, accessToken)
+        : await fetch(resolved.resource_url, { method: "GET", headers: upstreamHeaders, redirect: "follow" });
+
+      if (!useSupabase && next.status === 403) {
+        console.error("VELNIX_RELAY_DIRECT_DENIED", JSON.stringify({ status: 403, host: hostOf(resolved.resource_url), phase: "reconnect" }));
+        await next.body?.cancel().catch(() => {});
+        useSupabase = true;
+        next = await proxyThroughSupabase(env, channelId, accessToken);
+      }
+      return next;
+    };
+
+    const stream = new ReadableStream({
+      async pull(controller) {
+        if (cancelled) return;
+
+        while (!cancelled) {
+          if (!activeReader) {
+            if (!response) {
+              if (reconnects >= 30 || failures >= 4) {
+                console.error("VELNIX_RELAY_RECONNECT_LIMIT", JSON.stringify({
+                  reconnects, failures, via: useSupabase ? "supabase" : "direct", totalBytes
+                }));
+                controller.close();
+                return;
+              }
+
+              await new Promise(resolve => setTimeout(resolve, Math.min(1200, 250 + reconnects * 100)));
               try {
-                while (!cancelled) {
-                  const part = await activeReader.read();
-                  if (part.done) break;
-                  if (part.value) controller.enqueue(part.value);
-                }
-                failures = 0;
+                response = await openNextResponse();
+                sourceOpenedAt = Date.now();
               } catch (error) {
                 failures++;
-                console.error("VELNIX_RELAY_STREAM_INTERRUPTED", JSON.stringify({
-                  name: error?.name, message: error?.message, via: useSupabase ? "supabase" : "direct"
+                reconnects++;
+                console.error("VELNIX_RELAY_RECONNECT_EXCEPTION", JSON.stringify({
+                  name: error?.name, message: error?.message, attempt: reconnects,
+                  via: useSupabase ? "supabase" : "direct"
                 }));
-              } finally {
-                try { await activeReader.cancel(); } catch {}
-                activeReader = null;
+                continue;
               }
-            } else {
-              failures++;
             }
 
-            if (cancelled) return;
-            reconnects++;
-            if (reconnects > 30 || failures >= 4) break;
-            await new Promise(resolve => setTimeout(resolve, 350));
-
-            try {
-              response = useSupabase
-                ? await proxyThroughSupabase(env, channelId, accessToken)
-                : await fetch(resolved.resource_url, { method: "GET", headers: upstreamHeaders, redirect: "follow" });
-              if (!response.ok && response.status !== 206 && !useSupabase && response.status === 403) {
-                await response.body?.cancel().catch(() => {});
-                useSupabase = true;
-                response = await proxyThroughSupabase(env, channelId, accessToken);
-              }
-            } catch (error) {
+            if (!response?.ok && response?.status !== 206) {
+              const status = response?.status || 0;
+              console.error("VELNIX_RELAY_RECONNECT_STATUS", JSON.stringify({
+                status, via: useSupabase ? "supabase" : "direct", attempt: reconnects
+              }));
+              await response?.body?.cancel().catch(() => {});
+              response = null;
               failures++;
-              console.error("VELNIX_RELAY_RECONNECT_EXCEPTION", JSON.stringify({
-                name: error?.name, message: error?.message, attempt: reconnects
+              reconnects++;
+              if (failures >= 4 || reconnects >= 30) {
+                controller.error(new Error("Upstream reconnect failed with HTTP " + status));
+                return;
+              }
+              continue;
+            }
+
+            if (!response.body) {
+              console.error("VELNIX_RELAY_RECONNECT_EMPTY_BODY", JSON.stringify({
+                status: response.status, via: useSupabase ? "supabase" : "direct"
               }));
               response = null;
+              failures++;
+              reconnects++;
+              if (failures >= 4 || reconnects >= 30) {
+                controller.error(new Error("Upstream returned an empty stream"));
+                return;
+              }
+              continue;
             }
+
+            activeReader = response.body.getReader();
+            console.log("VELNIX_RELAY_RECONNECTED", JSON.stringify({
+              status: response.status, via: useSupabase ? "supabase" : "direct",
+              attempt: reconnects, contentType: response.headers.get("Content-Type") || ""
+            }));
           }
 
-          if (!cancelled) controller.close();
-        };
+          try {
+            const part = await activeReader.read();
+            if (part.done) {
+              const durationMs = Date.now() - sourceOpenedAt;
+              console.warn("VELNIX_RELAY_STREAM_EOF", JSON.stringify({
+                via: useSupabase ? "supabase" : "direct",
+                duration_ms: durationMs, bytes: totalBytes, next_attempt: reconnects + 1
+              }));
+              try { activeReader.releaseLock(); } catch {}
+              activeReader = null;
+              response = null;
+              reconnects++;
+              if (reconnects >= 30) {
+                console.error("VELNIX_RELAY_RECONNECT_LIMIT", JSON.stringify({
+                  reconnects, failures, via: useSupabase ? "supabase" : "direct", totalBytes
+                }));
+                controller.close();
+                return;
+              }
+              continue;
+            }
 
-        run().catch(error => {
-          console.error("VELNIX_RELAY_STREAM_FATAL", JSON.stringify({ name: error?.name, message: error?.message }));
-          if (!cancelled) controller.error(error);
-        });
-
+            if (part.value) {
+              totalBytes += part.value.byteLength || 0;
+              failures = 0;
+              controller.enqueue(part.value);
+              return;
+            }
+          } catch (error) {
+            failures++;
+            reconnects++;
+            console.error("VELNIX_RELAY_STREAM_INTERRUPTED", JSON.stringify({
+              name: error?.name, message: error?.message,
+              via: useSupabase ? "supabase" : "direct",
+              attempt: reconnects, totalBytes
+            }));
+            try { await activeReader?.cancel(); } catch {}
+            try { activeReader?.releaseLock(); } catch {}
+            activeReader = null;
+            response = null;
+            if (failures >= 4 || reconnects >= 30) {
+              controller.error(error);
+              return;
+            }
+          }
+        }
       },
       async cancel() {
         cancelled = true;
         try { await activeReader?.cancel(); } catch {}
+        try { activeReader?.releaseLock(); } catch {}
+        activeReader = null;
       },
     });
 
