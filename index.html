@@ -1920,7 +1920,7 @@ async function gateway(body){
   return data;
  }catch(error){if(body?.action==='stream')recordPlaybackEvent('فشل طلب المصدر',error?.message||String(error));throw error}
 }
-let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,gatewayRefreshTimer=null,lastPlaybackPlayingAt=0,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateLastCurrentTime=0,candidateStable=false;
+let activeRow=null,playbackGeneration=0,retryCount=0,retryTimer=null,watchdogTimer=null,gatewayRefreshTimer=null,gatewayRefreshPrepareTimer=null,preparedGatewayStream=null,lastPlaybackPlayingAt=0,lastProgressAt=0,lastCurrentTime=0,lastStableAt=0,recovering=false,userPaused=false,suppressPauseTracking=false,failoverVisited=new Set(),candidateStartedAt=0,candidateLastProgressAt=0,candidateLastCurrentTime=0,candidateStable=false;
 let diagnosticSession=null,diagnosticEvents=[],diagnosticLoadMs=0,diagnosticFirstFrameMs=0,diagnosticBandwidthKbps=0,diagnosticStalls=0,diagnosticStartedAt=0;let favorites=new Set(),recentChannels=[],catalogMode='all',catalogSort='name',visibleLimit=90;let selectedGroupKey=null;try{favorites=new Set(JSON.parse(localStorage.getItem('velnix:favorites')||'[]'))}catch(e){}try{recentChannels=JSON.parse(localStorage.getItem('velnix:recent')||'[]').slice(0,30)}catch(e){}
 async function loadPersonalLists(){
  const user=currentSession?.user;if(!user)return;
@@ -1970,6 +1970,8 @@ function stopPlayback(){
  playbackGeneration++;activeRow=null;recovering=false;retryCount=0;lastPlaybackPlayingAt=0;
  if(retryTimer){clearTimeout(retryTimer);retryTimer=null}
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
+ if(gatewayRefreshPrepareTimer){clearTimeout(gatewayRefreshPrepareTimer);gatewayRefreshPrepareTimer=null}
+ preparedGatewayStream=null;
  destroyPlayerEngine();suppressPauseTracking=true;video.pause();suppressPauseTracking=false;video.removeAttribute('src');video.load();
  qualitySelect.innerHTML='<option value="-1">تلقائي / Auto</option>';
 }
@@ -2093,7 +2095,15 @@ async function startPlayback(row,generation,reason='initial'){
  state(lang==='ar'?(reason==='initial'?'جارٍ تجهيز البث...':'جارٍ إعادة تشغيل البث...'):(reason==='initial'?'Preparing stream...':'Restarting stream...'));
  const sourceRow=row.variants?.find(v=>v.id===row.selectedVariantId)||row;
  adaptiveBufferSeconds=playbackTuning().bufferingGoal;adaptiveWaiting=false;adaptiveStallCount=0;adaptiveLastStallAt=0;adaptiveLastIncreaseAt=0;
- const stream=await gateway({action:'stream',channel_id:sourceRow.id});
+ let stream=null;
+ const prepared=preparedGatewayStream;
+ if(prepared&&prepared.channelId===sourceRow.id&&Date.now()-prepared.preparedAt<90000&&reason!=='initial'&&reason!=='manual source'){
+  stream=prepared.stream;preparedGatewayStream=null;
+  recordPlaybackEvent('استخدام اتصال مُجهّز مسبقاً','تم تجهيز رابط المصدر قبل التجديد لتقليل وقت إعادة الاتصال');
+ }else{
+  preparedGatewayStream=null;
+  stream=await gateway({action:'stream',channel_id:sourceRow.id});
+ }
  if(generation!==playbackGeneration)return;
  if(Array.isArray(stream.alternates)&&stream.alternates.length){
   recordPlaybackEvent('نسخ بديلة متاحة',stream.alternates.length+' نسخة');
@@ -2441,16 +2451,31 @@ video.addEventListener('playing',()=>{
  adaptiveWaiting=false;
  userPaused=false;lastProgressAt=Date.now();lastStableAt=Date.now();lastCurrentTime=video.currentTime||0;lastPlaybackPlayingAt=Date.now();
  if(gatewayRefreshTimer){clearTimeout(gatewayRefreshTimer);gatewayRefreshTimer=null}
+ if(gatewayRefreshPrepareTimer){clearTimeout(gatewayRefreshPrepareTimer);gatewayRefreshPrepareTimer=null}
+ preparedGatewayStream=null;
  const refreshVariant=activeRow?.variants?.find(v=>v.id===activeRow.selectedVariantId);
  const refreshType=String(refreshVariant?.stream_type||activeRow?.stream_type||'').toLowerCase();
  // The Cloudflare Worker reconnects its own upstream stream; only direct
  // Supabase streaming still needs the browser-side lifetime refresh.
  if(!activeRow?.streamViaWorker&&['file','mpegts','ts'].includes(refreshType)){
   const refreshGeneration=playbackGeneration;
+  gatewayRefreshPrepareTimer=setTimeout(async()=>{
+   gatewayRefreshPrepareTimer=null;
+   const row=activeRow,variant=row?.variants?.find(v=>v.id===row.selectedVariantId);
+   if(refreshGeneration!==playbackGeneration||!row||!variant||userPaused||video.paused||recovering)return;
+   try{
+    recordPlaybackEvent('تجهيز اتصال بديل','طلب رابط المصدر الجديد مسبقاً قبل موعد التجديد');
+    const fresh=await gateway({action:'stream',channel_id:variant.id});
+    if(refreshGeneration===playbackGeneration&&activeRow===row&&!userPaused&&!video.paused){
+     preparedGatewayStream={channelId:variant.id,stream:fresh,preparedAt:Date.now()};
+     recordPlaybackEvent('الاتصال البديل جاهز','تم تجهيز رابط المصدر مسبقاً');
+    }
+   }catch(error){recordPlaybackEvent('تعذر التجهيز المسبق',error?.message||String(error))}
+  },85000);
   gatewayRefreshTimer=setTimeout(()=>{
    gatewayRefreshTimer=null;
    if(refreshGeneration===playbackGeneration&&activeRow&&playerModal.classList.contains('show')&&!userPaused&&!video.paused&&!recovering){
-    recordPlaybackEvent('تجديد اتصال تلقائي','تحديث اتصال المصدر قبل حد مدة Edge Function');
+    recordPlaybackEvent('تجديد اتصال تلقائي','استخدام الرابط الذي تم تجهيزه مسبقاً لتقليل توقف الصورة');
     scheduleRecovery('Gateway lifetime refresh',refreshGeneration);
    }
   },115000);
