@@ -2084,17 +2084,11 @@ async function startPlayback(row,generation,reason='initial'){
    }
   });
  }
- row.streamViaWorker=!!stream.stream_via_worker;
- const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
+ // Cloudflare relay disabled: use the original Supabase stream gateway for every format.
+ row.streamViaWorker=false;
  row.streamViaSupabaseFallback=false;
- if(row.streamViaWorker&&['file','mpegts','ts'].includes(type)){
-  try{
-   const probe=await fetch(url,{method:'HEAD',cache:'no-store'});
-   row.streamViaSupabaseFallback=probe.headers.get('X-Velnix-Relay-Via')==='supabase'||!probe.ok;
-  }catch(error){row.streamViaSupabaseFallback=true}
-  if(row.streamViaSupabaseFallback)recordPlaybackEvent('مسار احتياطي عبر Worker','سيُعاد فتح اتصال المصدر تلقائياً عند انقطاع البيانات أو انتهاء اتصال Edge Function');
- }
- recordPlaybackEvent('مسار البث',(row.streamViaWorker?'Cloudflare Worker':'Supabase Gateway')+' · '+type);
+ const url=stream.stream_url,type=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
+ recordPlaybackEvent('مسار البث','Supabase Gateway · '+type);
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
  if(type==='hls'||type==='dash'||type==='mpd'){
