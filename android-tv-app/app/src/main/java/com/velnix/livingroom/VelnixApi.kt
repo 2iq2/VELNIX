@@ -660,7 +660,10 @@ class VelnixApi(private val context: Context) {
     }
 }
 
-data class TvProfile(val id:String,val name:String,val avatarId:String,val isKids:Boolean)\ndata class TvMatch(val id:String,val home:String,val away:String,val competition:String,val startsAt:String,val status:String,val homeScore:Int,val awayScore:Int)\n\ndata class DevicePairingInfo(
+data class TvProfile(val id:String,val name:String,val avatarId:String,val isKids:Boolean)
+data class TvMatch(val id:String,val home:String,val away:String,val competition:String,val startsAt:String,val status:String,val homeScore:Int,val awayScore:Int)
+
+data class DevicePairingInfo(
     val code: String,
     val deviceToken: String,
     val pairUrl: String,
