@@ -28,6 +28,8 @@ jobs:
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      - name: Prepare APK download filename
+        run: cp android-app/app/build/outputs/apk/debug/app-debug.apk VELNIX.apk
       - name: Publish APK download
         uses: softprops/action-gh-release@v2
         with:
@@ -37,6 +39,6 @@ jobs:
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: android-app/app/build/outputs/apk/debug/app-debug.apk
+          files: VELNIX.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
