@@ -486,6 +486,24 @@ class VelnixApi(private val context: Context) {
         0L
     }
 
+    fun loadAutoReconnect(): Boolean = prefs.getBoolean("auto_reconnect", true)
+
+    fun saveAutoReconnect(value: Boolean) {
+        prefs.edit().putBoolean("auto_reconnect", value).apply()
+    }
+
+    fun loadDataSaver(): Boolean = prefs.getBoolean("data_saver", false)
+
+    fun saveDataSaver(value: Boolean) {
+        prefs.edit().putBoolean("data_saver", value).apply()
+    }
+
+    fun loadShowLogos(): Boolean = prefs.getBoolean("show_channel_logos", true)
+
+    fun saveShowLogos(value: Boolean) {
+        prefs.edit().putBoolean("show_channel_logos", value).apply()
+    }
+
     fun loadFavorites(): Set<String> =
         prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
 
