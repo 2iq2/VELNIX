@@ -624,7 +624,7 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun addMatchReminder(userId: String, profileId: String?, fixtureId: String, minutes: Int = 15) {
-        val row=JSONObject().put("user_id",userId).put("profile_id",profileId?.let { org.json.JSONObject.quote(it) } ?: JSONObject.NULL)
+        val row=JSONObject().put("user_id",userId).put("profile_id",profileId ?: JSONObject.NULL)
             .put("fixture_id",fixtureId).put("remind_before_minutes",minutes)
         request("tv_match_reminders","POST",row.toString(),rest=true,extraHeaders=mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
     }
