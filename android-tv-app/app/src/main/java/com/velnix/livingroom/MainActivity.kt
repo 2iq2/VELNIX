@@ -104,6 +104,7 @@ private val AvatarOptions = listOf(
 )
 
 private fun avatarUrl(id: String): String {
+    if (id.startsWith("https://")) return id
     val file = AvatarOptions.firstOrNull { it.id == id }?.file ?: AvatarOptions.first().file
     return "https://2iq2.github.io/VELNIX/assets/avatars/" + file
 }
@@ -1243,13 +1244,22 @@ private fun FamilyManagementScreen(
     userId: String,
     channels: List<Channel>,
     onActivate: (TvProfile) -> Unit,
+    onProfileDataChanged: (String) -> Unit,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var profiles by remember { mutableStateOf<List<TvProfile>>(emptyList()) }
     var matches by remember { mutableStateOf<List<TvMatch>>(emptyList()) }
     var selectedProfile by remember { mutableStateOf<String?>(null) }
     var locked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var lockedCategories by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var selectedShareChannel by remember { mutableStateOf(channels.firstOrNull()?.id.orEmpty()) }
+    var shareCode by remember { mutableStateOf("") }
+    var shareCodeInput by remember { mutableStateOf("") }
+    var predictionTarget by remember { mutableStateOf<TvMatch?>(null) }
+    var predictionHome by remember { mutableStateOf("") }
+    var predictionAway by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
     var kids by remember { mutableStateOf(false) }
@@ -1264,14 +1274,18 @@ private fun FamilyManagementScreen(
     LaunchedEffect(userId) {
         try {
             profiles = api.tvProfiles(userId)
+            try { api.syncSportsFeed() } catch (_: Exception) { }
             matches = api.upcomingMatches()
             selectedProfile = profiles.firstOrNull()?.id
-            message = ""
+            message = if (matches.isEmpty()) "تعذر العثور على مباريات منشورة حالياً." else ""
         } catch (e: Exception) { message = e.message ?: "تعذر تحميل البيانات" }
     }
     LaunchedEffect(selectedProfile) {
         val id = selectedProfile ?: return@LaunchedEffect
-        try { locked = api.loadLockedChannels(userId, id) } catch (_: Exception) { locked = emptySet() }
+        try {
+            locked = api.loadLockedChannels(userId, id)
+            lockedCategories = api.loadLockedCategories(userId, id)
+        } catch (_: Exception) { locked = emptySet(); lockedCategories = emptySet() }
     }
     BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().background(AppBg).padding(horizontal = 30.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1280,7 +1294,7 @@ private fun FamilyManagementScreen(
             TextButton(onClick = onBack) { Text("رجوع", color = White) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("profiles" to "الملفات الشخصية", "locks" to "قفل القنوات", "sports" to "المباريات").forEach { (id,label) ->
+            listOf("profiles" to "الملفات الشخصية", "locks" to "قفل القنوات والتصنيفات", "sports" to "المباريات", "share" to "مشاركة قناة").forEach { (id,label) ->
                 FilterChip(selected = tab==id, onClick={tab=id}, label={Text(label)}, colors=FilterChipDefaults.filterChipColors(selectedContainerColor=LocalVelnixAccent.current,selectedLabelColor=White))
             }
         }
@@ -1293,7 +1307,7 @@ private fun FamilyManagementScreen(
                         if(profiles.isEmpty()) Text("ماكو ملفات إضافية. أنشئ أول ملف.",color=Muted)
                         profiles.forEach { p ->
                             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(selectedProfile==p.id) LocalVelnixAccent.current.copy(alpha=.17f) else PanelRaised).clickable { selectedProfile=p.id; activationTarget=p; activationPin=""; activationError="" }.padding(10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
-                                Column { Text(p.name,color=White,fontWeight=FontWeight.Bold); Text(if(p.isKids) "ملف أطفال" else "ملف عادي",color=Muted,fontSize=10.sp) }
+                                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(9.dp)) { AsyncImage(model=avatarUrl(p.avatarId),contentDescription=null,modifier=Modifier.size(38.dp).clip(CircleShape)); Column { Text(p.name,color=White,fontWeight=FontWeight.Bold); Text(if(p.isKids) "ملف أطفال" else "ملف عادي",color=Muted,fontSize=10.sp) } }
                                 TextButton(onClick={scope.launch { try { api.removeTvProfile(userId,p.id); profiles=api.tvProfiles(userId); selectedProfile=profiles.firstOrNull()?.id } catch(e:Exception){message=e.message ?: "تعذر الحذف"} }}) { Text("حذف",color=Color(0xFFFF9292)) }
                             }
                         }
@@ -1344,15 +1358,28 @@ private fun FamilyManagementScreen(
             }
             "locks" -> {
                 Row(Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(14.dp)) {
-                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).verticalScroll(rememberScrollState()).padding(12.dp)) {
                         Text("اختَر الملف",color=White,fontWeight=FontWeight.Bold)
                         profiles.forEach { p -> FilterChip(selected=selectedProfile==p.id,onClick={selectedProfile=p.id},label={Text(p.name)}) }
+                        HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=8.dp))
+                        Text("قفل التصنيفات بالكامل",color=White,fontWeight=FontWeight.Bold,fontSize=13.sp)
+                        Text("أي تصنيف مقفل لن تظهر قنواته ولن يعمل عند محاولة فتحه.",color=Muted,fontSize=10.sp)
+                        CATEGORIES.filter { it.id != "all" }.forEach { cat ->
+                            Row(Modifier.fillMaxWidth().padding(vertical=2.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Text(cat.title,color=White,fontSize=11.sp)
+                                Checkbox(checked=cat.id in lockedCategories,onCheckedChange={v->
+                                    val id=selectedProfile ?: return@Checkbox
+                                    lockedCategories=if(v) lockedCategories+cat.id else lockedCategories-cat.id
+                                    scope.launch { try { api.setCategoryLocked(userId,id,cat.id,v) } catch(e:Exception){message=e.message ?: "تعذر حفظ قفل التصنيف"} }
+                                })
+                            }
+                        }
                     }
                     LazyColumn(Modifier.weight(2f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
-                        item { Text("قفل القنوات",color=White,fontWeight=FontWeight.Bold) }
-                        items(channels.take(300),key={it.id}) { c ->
+                        item { Text("قفل القنوات الفردية",color=White,fontWeight=FontWeight.Bold) }
+                        items(channels.take(500),key={it.id}) { c ->
                             Row(Modifier.fillMaxWidth().clickable { val id=selectedProfile ?: return@clickable; val next=c.id !in locked; locked=if(next) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,next) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } }.padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
-                                Text(c.name,color=White,fontSize=11.sp,maxLines=1)
+                                Column(Modifier.weight(1f)) { Text(c.name,color=White,fontSize=11.sp,maxLines=1); Text(c.categoryLabel,color=Muted,fontSize=9.sp) }
                                 Checkbox(checked=c.id in locked,onCheckedChange={v-> val id=selectedProfile ?: return@Checkbox; locked=if(v) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,v) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } })
                             }
                         }
