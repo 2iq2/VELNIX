@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
     private fun disableTextSelection() {
         webView.evaluateJavascript(
             """(function() {
-                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }';
+                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } #velnixInstallApp { display: none !important; }';
                 var style = document.getElementById('velnix-no-text-selection');
                 if (!style) {
                     style = document.createElement('style');
