@@ -356,6 +356,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     familyVisible && session != null -> FamilyManagementScreen(
                         api = api, userId = session!!.userId, channels = channels,
                         onActivate = { p -> activeTvProfile = p; api.saveActiveTvProfile(session!!.userId, p.id); familyVisible = false },
+                        onProfileDataChanged = { id -> scope.launch { try { profileFavorites=api.profileFavorites(session!!.userId,id); profileRecent=api.profileHistory(session!!.userId,id); profileLocks=api.loadLockedChannels(session!!.userId,id); profileCategoryLocks=api.loadLockedCategories(session!!.userId,id) } catch(e:Exception) { status=e.message ?: "تعذر تحديث بيانات الملف" } } },
                         onBack = { familyVisible = false }
                     )
                     settingsVisible && session != null -> SettingsScreen(
@@ -1388,17 +1389,127 @@ private fun FamilyManagementScreen(
             }
             "sports" -> {
                 Column(Modifier.fillMaxWidth().weight(1f).background(Panel,RoundedCornerShape(16.dp)).padding(14.dp)) {
-                    Text("المباريات القادمة",color=White,fontSize=17.sp,fontWeight=FontWeight.Bold)
-                    if(matches.isEmpty()) Text("لا توجد مباريات مجدولة في قاعدة البيانات حالياً. يلزم تزويد جدول المباريات بمصدر بيانات قبل تشغيل التنبيهات.",color=Muted,fontSize=12.sp)
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                        Column {
+                            Text("المباريات والنتائج",color=White,fontSize=17.sp,fontWeight=FontWeight.Bold)
+                            Text("المصدر الرياضي يتحدث تلقائياً مع تخزين مؤقت.",color=Muted,fontSize=10.sp)
+                        }
+                        TextButton(onClick={scope.launch {
+                            busy=true
+                            try { api.syncSportsFeed(); matches=api.upcomingMatches(); message="تم تحديث جدول المباريات." }
+                            catch(e:Exception){message=e.message ?: "تعذر تحديث المباريات"}
+                            finally{busy=false}
+                        }},enabled=!busy) { Text(if(busy) "يتم التحديث…" else "تحديث",color=LocalVelnixAccent.current) }
+                    }
+                    if(matches.isEmpty()) Text("لا توجد مباريات متاحة من المصدر حالياً. جرّب التحديث لاحقاً.",color=Muted,fontSize=12.sp)
                     LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         items(matches,key={it.id}) { match ->
-                            Row(Modifier.fillMaxWidth().background(PanelRaised,RoundedCornerShape(10.dp)).padding(12.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) { Text(match.home+"  ×  "+match.away,color=White,fontWeight=FontWeight.Bold); Text(match.competition+" · "+match.startsAt,color=Muted,fontSize=10.sp) }
-                                TextButton(onClick={scope.launch { try { api.addMatchReminder(userId,selectedProfile,match.id); message="تم حفظ تذكير المباراة." } catch(e:Exception){message=e.message ?: "تعذر حفظ التذكير"} }}) { Text("ذكّرني",color=LocalVelnixAccent.current) }
+                            Row(Modifier.fillMaxWidth().background(PanelRaised,RoundedCornerShape(10.dp)).padding(12.dp),
+                                horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                                    Text(match.home+"  "+match.homeScore+" : "+match.awayScore+"  "+match.away,color=White,fontWeight=FontWeight.Bold)
+                                    Text(match.competition+" · "+match.startsAt,color=Muted,fontSize=10.sp)
+                                    Text(when(match.status) { "live" -> "مباشرة"; "finished" -> "انتهت"; "postponed" -> "مؤجلة"; else -> "قادمة" },color=if(match.status=="live") Color(0xFF49D99A) else Muted,fontSize=10.sp)
+                                }
+                                Column(horizontalAlignment=Alignment.End) {
+                                    TextButton(onClick={
+                                        predictionTarget=match
+                                        predictionHome=""
+                                        predictionAway=""
+                                    }) { Text("توقّع",color=LocalVelnixAccent.current) }
+                                    TextButton(onClick={
+                                        if(android.os.Build.VERSION.SDK_INT>=33 && context.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                            (context as? android.app.Activity)?.requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"),731)
+                                        }
+                                        scope.launch {
+                                            try {
+                                                api.addMatchReminder(userId,selectedProfile,match.id,15)
+                                                SportsReminderScheduler.schedule(context,match,15)
+                                                message="تم حفظ تذكير قبل المباراة بـ 15 دقيقة."
+                                            } catch(e:Exception){message=e.message ?: "تعذر حفظ التذكير"}
+                                        }
+                                    }) { Text("ذكّرني",color=White) }
+                                }
                             }
                         }
                     }
                 }
+                predictionTarget?.let { target ->
+                    AlertDialog(
+                        onDismissRequest={predictionTarget=null},
+                        containerColor=Panel,
+                        title={Text("توقع نتيجة المباراة",color=White,fontWeight=FontWeight.Bold)},
+                        text={
+                            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                                Text(target.home+" × "+target.away,color=Muted)
+                                Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                                    OutlinedTextField(value=predictionHome,onValueChange={predictionHome=it.filter(Char::isDigit).take(2)},label={Text(target.home.take(10))},singleLine=true,modifier=Modifier.weight(1f),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
+                                    OutlinedTextField(value=predictionAway,onValueChange={predictionAway=it.filter(Char::isDigit).take(2)},label={Text(target.away.take(10))},singleLine=true,modifier=Modifier.weight(1f),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
+                                }
+                                Text("التوقع يُحفظ لحسابك ولا يغيّر نتيجة المباراة الرسمية.",color=Muted,fontSize=10.sp)
+                            }
+                        },
+                        confirmButton={
+                            TextButton(onClick={
+                                val h=predictionHome.toIntOrNull()
+                                val a=predictionAway.toIntOrNull()
+                                if(h==null||a==null||h !in 0..30||a !in 0..30) message="أدخل نتيجة متوقعة من 0 إلى 30 لكل فريق."
+                                else scope.launch {
+                                    try { api.saveMatchPrediction(userId,target.id,selectedProfile,h,a); message="تم حفظ توقعك."; predictionTarget=null }
+                                    catch(e:Exception){message=e.message ?: "تعذر حفظ التوقع"}
+                                }
+                            }) { Text("حفظ التوقع",color=LocalVelnixAccent.current) }
+                        },
+                        dismissButton={TextButton(onClick={predictionTarget=null}) { Text("إلغاء",color=White) }}
+                    )
+                }
+            }
+            "share" -> {
+                Row(Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.weight(1.2f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp)) {
+                        Text("اختر القناة للمشاركة",color=White,fontWeight=FontWeight.Bold)
+                        LazyColumn(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                            items(channels.take(250),key={it.id}) { c ->
+                                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp))
+                                    .background(if(selectedShareChannel==c.id) LocalVelnixAccent.current.copy(alpha=.18f) else PanelRaised)
+                                    .clickable { selectedShareChannel=c.id }.padding(9.dp),
+                                    horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                                    Text(c.name,color=White,fontSize=11.sp,maxLines=1)
+                                    if(selectedShareChannel==c.id) Text("✓",color=LocalVelnixAccent.current)
+                                }
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                        Text("مشاركة قناة",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        Text("أنشئ رمزاً صالحاً لمدة 24 ساعة، ثم أرسله إلى الشخص الآخر.",color=Muted,fontSize=11.sp)
+                        Button(onClick={scope.launch {
+                            try {
+                                if(selectedShareChannel.isBlank()) throw IllegalStateException("اختَر قناة أولاً.")
+                                shareCode=api.shareChannel(userId,selectedShareChannel)
+                                message="تم إنشاء رمز المشاركة."
+                            } catch(e:Exception){message=e.message ?: "تعذر إنشاء رمز المشاركة"}
+                        }},enabled=selectedProfile!=null && selectedShareChannel.isNotBlank()) { Text("إنشاء رمز للقناة") }
+                        if(shareCode.isNotBlank()) {
+                            Text(shareCode,color=LocalVelnixAccent.current,fontSize=25.sp,fontWeight=FontWeight.Black)
+                            Text("صالح لمدة 24 ساعة ولمرة واحدة.",color=Muted,fontSize=10.sp)
+                        }
+                        HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=5.dp))
+                        Text("استلام قناة برمز",color=White,fontWeight=FontWeight.Bold)
+                        OutlinedTextField(value=shareCodeInput,onValueChange={shareCodeInput=it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8)},label={Text("رمز المشاركة")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Button(onClick={scope.launch {
+                            val profileId=selectedProfile
+                            try {
+                                if(profileId==null) throw IllegalStateException("أنشئ أو اختر ملفاً شخصياً أولاً.")
+                                api.redeemChannelShare(shareCodeInput,profileId)
+                                onProfileDataChanged(profileId)
+                                shareCodeInput=""
+                                message="تم استلام القناة وإضافتها إلى مفضلة الملف."
+                            } catch(e:Exception){message=e.message ?: "تعذر استلام القناة"}
+                        }},enabled=selectedProfile!=null && shareCodeInput.length==8) { Text("استلام القناة") }
+                    }
+                }
+            }
             }
         }
     }
