@@ -1,74 +1,101 @@
 package com.velnix.livingroom
 
 import android.content.pm.ActivityInfo
-import android.view.View
-import android.view.WindowManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.KeyEvent
+import android.view.View
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.rotate
-import androidx.compose.animation.core.*
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.C
-import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TrackSelectionDialogBuilder
-import kotlinx.coroutines.launch
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import android.view.LayoutInflater
 
-private val Navy = Color(0xFF080D16)
-private val Panel = Color(0xFF111B29)
-private val Gold = Color(0xFFC9A96E)
-private val Muted = Color(0xFF9BA8B8)
+private val AppBg = Color(0xFF08090D)
+private val Panel = Color(0xFF14151B)
+private val PanelRaised = Color(0xFF1B1C24)
+private val Accent = Color(0xFFE50914)
+private val Muted = Color(0xFFA4A5AD)
+private val Line = Color(0x24FFFFFF)
+private val White = Color(0xFFF7F7F8)
+
+private val AvatarOptions = listOf(
+    AvatarOption("anime1", "المحقق الهادئ", "anime1-detective.svg"),
+    AvatarOption("anime2", "الفتاة الغامضة", "anime2-mystery.svg"),
+    AvatarOption("anime3", "المقاتل القوي", "anime3-warrior.svg"),
+    AvatarOption("anime4", "الفتاة المرحة", "anime4-cheerful.svg"),
+    AvatarOption("anime5", "القرصان الإلكتروني", "anime5-cyber-pirate.svg"),
+    AvatarOption("anime6", "الفارس الأنيق", "anime6-knight.svg"),
+    AvatarOption("anime7", "العالم العبقري", "anime7-scholar.svg"),
+    AvatarOption("anime8", "القائد", "anime8-leader.svg")
+)
+
+private fun avatarUrl(id: String): String {
+    val file = AvatarOptions.firstOrNull { it.id == id }?.file ?: AvatarOptions.first().file
+    return "https://2iq2.github.io/VELNIX/assets/avatars/" + file
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        window.statusBarColor = android.graphics.Color.rgb(8,13,22)
-        window.navigationBarColor = android.graphics.Color.rgb(8,13,22)
+        window.statusBarColor = android.graphics.Color.rgb(8, 9, 13)
+        window.navigationBarColor = android.graphics.Color.rgb(8, 9, 13)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_FULLSCREEN or
@@ -85,6 +112,14 @@ class MainActivity : ComponentActivity() {
 private fun VelnixApp(activity: ComponentActivity) {
     val api = remember { VelnixApi(activity) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components { add(SvgDecoder.Factory()) }
+            .crossfade(220)
+            .build()
+    }
+
     var session by remember { mutableStateOf(api.session()) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -101,272 +136,755 @@ private fun VelnixApp(activity: ComponentActivity) {
     var streamUrl by remember { mutableStateOf<String?>(null) }
     var beinAccess by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("جارٍ الاتصال بدليل القنوات…") }
-    var introVisible by remember { mutableStateOf(true) }
-    val config = LocalConfiguration.current
-    val wide = config.screenWidthDp >= 700
-    val tv = activity.packageManager.hasSystemFeature("android.software.leanback")
+    var splashVisible by remember { mutableStateOf(true) }
+    var profileVisible by remember { mutableStateOf(false) }
+    var exitPrompt by remember { mutableStateOf(false) }
+    var profile by remember {
+        mutableStateOf(ProfileInfo(session?.userEmail?.substringBefore("@") ?: "مستخدم VELNIX", "anime1"))
+    }
+    var profileSaving by remember { mutableStateOf(false) }
+    var profileError by remember { mutableStateOf("") }
+    var busyChannel by remember { mutableStateOf<String?>(null) }
 
     fun refreshCatalog() {
         scope.launch {
             busy = true
             try {
                 channels = api.channels()
-                status = "تم تحميل ${channels.size} قناة فعالة"
+                status = "تم تحميل " + channels.size + " قناة"
                 if (session != null) beinAccess = api.checkBein()
-            } catch (e: Exception) { status = e.message ?: "تعذر تحميل القنوات" }
-            busy = false
+            } catch (e: Exception) {
+                status = e.message ?: "تعذر تحميل القنوات. تحقق من الاتصال ثم أعد المحاولة."
+            } finally {
+                busy = false
+            }
         }
     }
+
     LaunchedEffect(Unit) {
-        delay(2400)
-        introVisible = false
+        delay(1700)
+        splashVisible = false
         refreshCatalog()
     }
 
-    MaterialTheme(colorScheme = darkColorScheme(
-        primary = Gold, background = Navy, surface = Panel,
-        onBackground = Color.White, onSurface = Color.White
-    )) {
-        Surface(Modifier.fillMaxSize(), color = Navy) {
-            if (introVisible) {
-                IntroScreen()
-            } else if (selected != null && streamUrl != null) {
-                NativePlayer(api, selected!!, streamUrl!!, streamType, onBack = { selected = null; streamUrl = null })
-            } else if (session == null) {
-                AuthScreen(email, { email = it }, password, { password = it }, signup,
-                    { signup = !signup; error = "" }, busy, error,
-                    onSubmit = {
-                        scope.launch {
-                            busy = true; error = ""
-                            try {
-                                session = if (signup) api.signUp(email.trim(), password) else api.signIn(email.trim(), password)
-                                beinAccess = api.checkBein()
-                                refreshCatalog()
-                            } catch (e: Exception) { error = e.message ?: "تعذر تسجيل الدخول" }
-                            busy = false
+    LaunchedEffect(session?.userId) {
+        val active = session
+        if (active != null) {
+            profile = ProfileInfo(active.userEmail.substringBefore("@"), "anime1")
+            try {
+                profile = api.loadProfile(active.userId, active.userEmail.substringBefore("@"))
+                beinAccess = api.checkBein()
+            } catch (_: Exception) {
+                // Keep the locally available account identity if the profile service is temporarily unreachable.
+            }
+        }
+    }
+
+    BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
+        exitPrompt = true
+    }
+
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = Accent,
+            onPrimary = White,
+            secondary = Accent,
+            background = AppBg,
+            onBackground = White,
+            surface = Panel,
+            onSurface = White,
+            surfaceVariant = PanelRaised,
+            onSurfaceVariant = Muted
+        )
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            Surface(Modifier.fillMaxSize(), color = AppBg) {
+                when {
+                    splashVisible -> SplashScreen()
+                    selected != null && streamUrl != null -> NativePlayer(
+                        api = api,
+                        channel = selected!!,
+                        url = streamUrl!!,
+                        streamType = streamType,
+                        imageLoader = imageLoader,
+                        onBack = {
+                            selected = null
+                            streamUrl = null
                         }
-                    })
-            } else {
-                Column(Modifier.fillMaxSize()) {
-                    Row(
-                        Modifier.fillMaxWidth().background(Panel).padding(horizontal = 22.dp, vertical = 15.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    )
+                    profileVisible && session != null -> ProfileScreen(
+                        current = profile,
+                        imageLoader = imageLoader,
+                        saving = profileSaving,
+                        saveError = profileError,
+                        onBack = { profileVisible = false },
+                        onSave = { name, avatar ->
+                            val active = session
+                            if (active != null) {
+                                scope.launch {
+                                    profileSaving = true
+                                    profileError = ""
+                                    try {
+                                        api.saveProfile(active.userId, name, avatar)
+                                        profile = ProfileInfo(name, avatar)
+                                        profileVisible = false
+                                    } catch (e: Exception) {
+                                        profileError = e.message ?: "تعذر حفظ الملف الشخصي"
+                                    } finally {
+                                        profileSaving = false
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    session == null -> WelcomeAuthScreen(
+                        email = email,
+                        onEmail = { email = it },
+                        password = password,
+                        onPassword = { password = it },
+                        signup = signup,
+                        onSwitch = {
+                            signup = !signup
+                            error = ""
+                        },
+                        busy = busy,
+                        error = error,
+                        onSubmit = {
+                            scope.launch {
+                                busy = true
+                                error = ""
+                                try {
+                                    session = if (signup) {
+                                        api.signUp(email.trim(), password)
+                                    } else {
+                                        api.signIn(email.trim(), password)
+                                    }
+                                    beinAccess = api.checkBein()
+                                    refreshCatalog()
+                                } catch (e: Exception) {
+                                    error = e.message ?: "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور."
+                                } finally {
+                                    busy = false
+                                }
+                            }
+                        }
+                    )
+                    else -> HomeScreen(
+                        session = session!!,
+                        profile = profile,
+                        channels = channels,
+                        category = category,
+                        onCategory = { category = it },
+                        query = query,
+                        onQuery = { query = it },
+                        favorites = favorites,
+                        recent = recent,
+                        beinAccess = beinAccess,
+                        status = status,
+                        busy = busy,
+                        busyChannel = busyChannel,
+                        imageLoader = imageLoader,
+                        onProfile = { profileVisible = true },
+                        onRefresh = { refreshCatalog() },
+                        onSignOut = {
+                            api.signOut()
+                            session = null
+                            profileVisible = false
+                            password = ""
+                        },
+                        onFavorite = { channel ->
+                            favorites = if (channel.id in favorites) favorites - channel.id else favorites + channel.id
+                            api.saveFavorites(favorites)
+                        },
+                        onPlay = { channel ->
+                            scope.launch {
+                                busyChannel = channel.id
+                                error = ""
+                                try {
+                                    if (channel.category == "bein" && !beinAccess) {
+                                        throw IllegalStateException("قسم beIN SPORTS غير مفعّل على هذا الحساب.")
+                                    }
+                                    val source = api.stream(channel.streamIds.firstOrNull() ?: channel.id, channel.streamType)
+                                    streamUrl = source.url
+                                    streamType = source.type
+                                    selected = channel
+                                    recent = (listOf(channel.id) + recent.filterNot { it == channel.id }).take(30)
+                                    api.saveRecent(recent)
+                                } catch (e: Exception) {
+                                    error = e.message ?: "تعذر تجهيز البث"
+                                } finally {
+                                    busyChannel = null
+                                }
+                            }
+                        },
+                        error = error
+                    )
+                }
+            }
+
+            if (exitPrompt) {
+                AlertDialog(
+                    onDismissRequest = { exitPrompt = false },
+                    containerColor = Panel,
+                    title = { Text("الخروج من VELNIX؟", color = White, fontWeight = FontWeight.Bold) },
+                    text = { Text("اضغط خروج مرة ثانية للتأكيد. حسابك يبقى محفوظاً ولن يتم تسجيل خروجك.", color = Muted) },
+                    confirmButton = {
+                        TextButton(onClick = { exitPrompt = false; activity.finish() }) {
+                            Text("خروج", color = Accent, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { exitPrompt = false }) { Text("البقاء في التطبيق", color = White) }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BrandMark(size: Int, imageLoader: ImageLoader? = null) {
+    Box(
+        Modifier.size(size.dp)
+            .clip(CircleShape)
+            .background(Accent)
+            .border(2.dp, Color.White.copy(alpha = 0.82f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("V", color = White, fontSize = (size * 0.56f).sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+private fun SplashScreen() {
+    val transition = rememberInfiniteTransition(label = "velnix-splash")
+    val pulse by transition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(tween(1100), repeatMode = RepeatMode.Reverse),
+        label = "logo-pulse"
+    )
+    Box(
+        Modifier.fillMaxSize().background(AppBg),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                Modifier.size((112 * pulse).dp)
+                    .clip(CircleShape)
+                    .background(Accent),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("V", color = White, fontSize = 64.sp, fontWeight = FontWeight.Black)
+            }
+            Spacer(Modifier.height(22.dp))
+            Text("VELNIX", color = White, fontSize = 43.sp, fontWeight = FontWeight.Black, letterSpacing = 5.sp)
+            Spacer(Modifier.height(8.dp))
+            Text("كل الترفيه، بمكان واحد", color = Muted, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(22.dp))
+            Box(Modifier.width(150.dp).height(3.dp).clip(CircleShape).background(Accent))
+            Spacer(Modifier.height(12.dp))
+            Text("LIVE TV  ·  MOVIES  ·  SPORTS", color = Muted, fontSize = 10.sp, letterSpacing = 2.sp)
+        }
+    }
+}
+
+@Composable
+private fun WelcomeAuthScreen(
+    email: String,
+    onEmail: (String) -> Unit,
+    password: String,
+    onPassword: (String) -> Unit,
+    signup: Boolean,
+    onSwitch: () -> Unit,
+    busy: Boolean,
+    error: String,
+    onSubmit: () -> Unit
+) {
+    Box(Modifier.fillMaxSize().background(AppBg), contentAlignment = Alignment.Center) {
+        Row(
+            Modifier.fillMaxWidth().widthIn(max = 1120.dp).padding(34.dp),
+            horizontalArrangement = Arrangement.spacedBy(40.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                BrandMark(88)
+                Text("أهلاً بك في VELNIX", color = White, fontSize = 34.sp, fontWeight = FontWeight.Black)
+                Text(
+                    "منصة مشاهدة تجمع القنوات المباشرة والرياضة والأفلام في تجربة واحدة.",
+                    color = Muted,
+                    fontSize = 17.sp,
+                    lineHeight = 27.sp
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FeaturePill("قنوات مباشرة")
+                    FeaturePill("جودة متكيّفة")
+                    FeaturePill("تحكم بالريموت")
+                }
+            }
+            Column(
+                Modifier.weight(1f)
+                    .border(1.dp, Line, RoundedCornerShape(24.dp))
+                    .background(Panel, RoundedCornerShape(24.dp))
+                    .padding(28.dp),
+                verticalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                Text(if (signup) "إنشاء حساب" else "تسجيل الدخول", color = White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (signup) "أنشئ حساب VELNIX للبدء بالمشاهدة." else "سجّل الدخول للمتابعة إلى القنوات.",
+                    color = Muted,
+                    fontSize = 13.sp
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = onEmail,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("البريد الإلكتروني") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = onPassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("كلمة المرور") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                if (error.isNotBlank()) {
+                    Text(error, color = Color(0xFFFF8A8A), fontSize = 12.sp, lineHeight = 19.sp)
+                }
+                Button(
+                    onClick = onSubmit,
+                    enabled = !busy && email.contains("@") && password.length >= 6,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+                ) {
+                    if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                    else Text(if (signup) "إنشاء الحساب والمتابعة" else "دخول إلى VELNIX", fontWeight = FontWeight.Bold)
+                }
+                TextButton(onClick = onSwitch, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text(if (signup) "عندي حساب بالفعل" else "مستخدم جديد؟ إنشاء حساب", color = White)
+                }
+                Text("بمتابعة الدخول، أنت تستخدم حساب VELNIX نفسه الموجود على الموقع.", color = Muted, fontSize = 10.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturePill(label: String) {
+    Box(
+        Modifier.background(PanelRaised, RoundedCornerShape(50))
+            .border(1.dp, Line, RoundedCornerShape(50))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Text(label, color = White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun HomeScreen(
+    session: UserSession,
+    profile: ProfileInfo,
+    channels: List<Channel>,
+    category: String,
+    onCategory: (String) -> Unit,
+    query: String,
+    onQuery: (String) -> Unit,
+    favorites: Set<String>,
+    recent: List<String>,
+    beinAccess: Boolean,
+    status: String,
+    busy: Boolean,
+    busyChannel: String?,
+    imageLoader: ImageLoader,
+    onProfile: () -> Unit,
+    onRefresh: () -> Unit,
+    onSignOut: () -> Unit,
+    onFavorite: (Channel) -> Unit,
+    onPlay: (Channel) -> Unit,
+    error: String
+) {
+    val config = LocalConfiguration.current
+    val tvLayout = config.screenWidthDp >= 700
+    val visibleChannels = remember(channels, category, query, favorites, recent, beinAccess) {
+        channels.filter { channel ->
+            val categoryMatch = category == "all" || channel.category == category ||
+                (category == "favorites" && channel.id in favorites) ||
+                (category == "recent" && channel.id in recent)
+            val accessMatch = channel.category != "bein" || beinAccess
+            categoryMatch && accessMatch &&
+                (query.isBlank() || channel.name.contains(query, true) || channel.english.contains(query, true))
+        }.sortedBy { it.name.lowercase() }
+    }
+
+    Column(Modifier.fillMaxSize().background(AppBg)) {
+        Row(
+            Modifier.fillMaxWidth().background(Panel).padding(horizontal = 28.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                BrandMark(46)
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("VELNIX", color = White, fontSize = 25.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                    Text("LIVE ENTERTAINMENT", color = Muted, fontSize = 9.sp, letterSpacing = 2.sp)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(profile.displayName, color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(if (beinAccess) "الوصول الرياضي مفعّل" else "حساب VELNIX", color = Muted, fontSize = 10.sp)
+                }
+                AsyncImage(
+                    model = avatarUrl(profile.avatarId),
+                    imageLoader = imageLoader,
+                    contentDescription = "صورة الملف الشخصي",
+                    modifier = Modifier.size(48.dp).clip(CircleShape).border(2.dp, Accent, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+                TextButton(onClick = onProfile) { Text("ملفي الشخصي", color = White) }
+                TextButton(onClick = onRefresh) { Text("تحديث", color = White) }
+                TextButton(onClick = onSignOut) { Text("خروج", color = Muted) }
+            }
+        }
+
+        Row(Modifier.fillMaxSize()) {
+            LazyColumn(
+                Modifier.width(if (tvLayout) 226.dp else 180.dp)
+                    .fillMaxHeight()
+                    .background(Panel)
+                    .padding(horizontal = 14.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                item {
+                    Text("التصنيفات", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+                }
+                items(CATEGORIES) { item ->
+                    CategoryButton(item, category == item.id, onClick = { onCategory(item.id) })
+                }
+                item { Spacer(Modifier.height(5.dp)); HorizontalDivider(color = Line) }
+                item {
+                    CategoryButton(Category("favorites", "المفضلة"), category == "favorites") {
+                        onCategory("favorites")
+                    }
+                }
+                item {
+                    CategoryButton(Category("recent", "شوهدت مؤخراً"), category == "recent") {
+                        onCategory("recent")
+                    }
+                }
+                item { Spacer(Modifier.height(12.dp)) }
+                item {
+                    Text(
+                        "VELNIX  ·  TV 2.1",
+                        color = Muted.copy(alpha = 0.65f),
+                        fontSize = 9.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp)
+                    )
+                }
+            }
+
+            Column(
+                Modifier.weight(1f).fillMaxHeight().padding(horizontal = 22.dp, vertical = 18.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("مرحباً، " + profile.displayName, color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text("اختر قناتك وابدأ المشاهدة", color = Muted, fontSize = 12.sp)
+                    }
+                    Text(status, color = Muted, fontSize = 11.sp)
+                }
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQuery,
+                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
+                    placeholder = { Text("ابحث عن قناة بالاسم…", color = Muted) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SummaryCard("القنوات", channels.size.toString(), Modifier.weight(1f))
+                    SummaryCard("المفضلة", favorites.size.toString(), Modifier.weight(1f))
+                    SummaryCard("آخر مشاهدة", recent.size.toString(), Modifier.weight(1f))
+                }
+                when {
+                    busy && channels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Accent)
+                    }
+                    category == "bein" && !beinAccess -> EmptyState("قسم beIN SPORTS يحتاج إلى تفعيل على الحساب.")
+                    visibleChannels.isEmpty() -> EmptyState(if (query.isBlank()) "ماكو قنوات ضمن هذا القسم حالياً." else "ما لقينا قناة تطابق البحث.")
+                    else -> LazyVerticalGrid(
+                        columns = GridCells.Adaptive(if (tvLayout) 245.dp else 210.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column {
-                            Text("VELNIX", color = Gold, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-                            Text("PREMIUM LIVE TV", color = Muted, fontSize = 10.sp, letterSpacing = 2.sp)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(horizontalAlignment=Alignment.End) {
-                                Text(session?.userEmail ?: "", color = Muted, fontSize = 11.sp)
-                                Text(if (beinAccess) "beIN SPORTS مفعّل" else "beIN SPORTS غير مفعّل", color = if(beinAccess) Gold else Muted, fontSize = 10.sp)
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            TextButton(onClick = { refreshCatalog() }) { Text("تحديث", color = Gold) }
-                            TextButton(onClick = { api.signOut(); session = null }) { Text("خروج") }
-                        }
-                    }
-                    Row(Modifier.fillMaxSize()) {
-                        if (wide || tv) {
-                            LazyColumn(Modifier.width(if (tv) 230.dp else 205.dp).fillMaxHeight().background(Panel).padding(12.dp)) {
-                                item { Text("الأقسام", color = Gold, fontWeight = FontWeight.Bold, modifier = Modifier.padding(10.dp)) }
-                                items(CATEGORIES) { item ->
-                                    CategoryButton(item, category == item.id) { category = item.id }
-                                }
-                                item { Divider(color = Muted.copy(alpha=.2f), modifier = Modifier.padding(vertical=8.dp)) }
-                                item { CategoryButton(Category("favorites","☆ المفضلة"), category=="favorites") { category="favorites" } }
-                                item { CategoryButton(Category("recent","◷ شوهدت مؤخراً"), category=="recent") { category="recent" } }
-                            }
-                        }
-                        Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal=if(wide) 20.dp else 12.dp)) {
-                            if (!wide && !tv) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("الأقسام", color = Gold, fontWeight = FontWeight.Bold)
-                                    TextButton(onClick = { category = "favorites" }) { Text("☆ المفضلة") }
-                                    TextButton(onClick = { category = "recent" }) { Text("◷ الأخيرة") }
-                                }
-                                Row(Modifier.fillMaxWidth().heightIn(max=54.dp)) {
-                                    LazyRowCategories(category) { category = it }
-                                }
-                            }
-                            OutlinedTextField(
-                                value = query, onValueChange = { query = it },
-                                modifier = Modifier.fillMaxWidth().padding(vertical=10.dp),
-                                placeholder = { Text("ابحث عن قناة…", color = Muted) },
-                                singleLine = true, shape = RoundedCornerShape(14.dp)
+                        items(visibleChannels, key = { it.id }) { channel ->
+                            ChannelTile(
+                                channel = channel,
+                                favorite = channel.id in favorites,
+                                imageLoader = imageLoader,
+                                loading = busyChannel == channel.id,
+                                onFavorite = { onFavorite(channel) },
+                                onClick = { onPlay(channel) }
                             )
-                            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                StatCard("القنوات", channels.size.toString(), Modifier.weight(1f))
-                                StatCard("المفضلة", favorites.size.toString(), Modifier.weight(1f))
-                                StatCard("آخر مشاهدة", recent.size.toString(), Modifier.weight(1f))
-                            }
-                            Text(status, color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom=8.dp))
-                            val grouped = remember(channels, category, query, favorites, recent, beinAccess) {
-                                channels.filter { c ->
-                                    val catOk = category == "all" || c.category == category ||
-                                        (category == "favorites" && c.id in favorites) ||
-                                        (category == "recent" && c.id in recent)
-                                    val gateOk = c.category != "bein" || beinAccess
-                                    catOk && gateOk && (query.isBlank() || c.name.contains(query, true) || c.english.contains(query, true))
-                                }.sortedBy { it.name.lowercase() }
-                            }
-                            if (category == "bein" && !beinAccess) {
-                                Box(Modifier.fillMaxSize(), contentAlignment=Alignment.Center) {
-                                    Text("قسم beIN SPORTS مقفول. يلزم كود تفعيل مرتبط بحسابك.", color=Gold)
-                                }
-                            } else if (busy && channels.isEmpty()) {
-                                Box(Modifier.fillMaxSize(), contentAlignment=Alignment.Center) { CircularProgressIndicator(color=Gold) }
-                            } else if (wide || tv) {
-                                LazyVerticalGrid(columns=GridCells.Adaptive(if(tv) 260.dp else 220.dp), contentPadding=PaddingValues(bottom=24.dp), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                                    items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
-                                            scope.launch {
-                                                busy=true
-                                                try {
-                                                    if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id, c.streamType)
-                                                    streamUrl = source.url; streamType = source.type; selected=c
-                                                    recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
-                                                    api.saveRecent(recent)
-                                                } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
-                                                busy=false
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                LazyColumn(contentPadding=PaddingValues(bottom=24.dp), verticalArrangement=Arrangement.spacedBy(9.dp)) {
-                                    items(grouped) { c ->
-                                        ChannelTile(c, c.id in favorites, { favorites = if(c.id in favorites) favorites-c.id else favorites+c.id; api.saveFavorites(favorites) }) {
-                                            scope.launch {
-                                                busy=true
-                                                try {
-                                                    if (c.category == "bein" && !beinAccess) throw Exception("قسم beIN SPORTS مقفول")
-                                                    val source = api.stream(c.streamIds.firstOrNull() ?: c.id)
-                                                    streamUrl = source.url; streamType = source.type; selected=c
-                                                    recent = (listOf(c.id)+recent.filterNot { it==c.id }).take(30)
-                                                    api.saveRecent(recent)
-                                                } catch(e:Exception) { error=e.message ?: "تعذر تجهيز البث" }
-                                                busy=false
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (error.isNotBlank()) Text(error, color=Color(0xFFFF8A80), modifier=Modifier.padding(8.dp))
                         }
                     }
+                }
+                if (error.isNotBlank()) {
+                    Text(error, color = Color(0xFFFF8A8A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
                 }
             }
         }
     }
 }
 
-
 @Composable
-private fun IntroScreen() {
-    val transition = rememberInfiniteTransition(label = "intro")
-    val pulse by transition.animateFloat(initialValue = 0.92f, targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(tween(1500), repeatMode = RepeatMode.Reverse), label = "pulse")
-    Column(Modifier.fillMaxSize().background(Navy), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
-        Box(Modifier.size((86*pulse).dp), contentAlignment=Alignment.Center) {
-            Surface(Modifier.size(82.dp).rotate(45f), color=Color.Transparent, border=androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha=.85f)), shape=RoundedCornerShape(2.dp)) {}
-            Surface(Modifier.size(66.dp).rotate(45f), color=Color.Transparent, border=androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha=.25f)), shape=RoundedCornerShape(2.dp)) {}
-            Text("V", color=Color(0xFFF0D9AD), fontSize=43.sp, fontWeight=FontWeight.Black)
-        }
-        Spacer(Modifier.height(28.dp))
-        Text("THE NEXT DIMENSION", color=Gold.copy(alpha=.85f), fontSize=10.sp, letterSpacing=4.sp)
-        Spacer(Modifier.height(8.dp))
-        Text("VELNIX", color=Color(0xFFF4E6CA), fontSize=42.sp, fontWeight=FontWeight.Black, letterSpacing=8.sp)
-        Spacer(Modifier.height(18.dp))
-        Box(Modifier.width(180.dp).height(1.dp).background(Gold.copy(alpha=.7f)))
-        Spacer(Modifier.height(13.dp))
-        Text("ENTERTAINMENT · REDEFINED", color=Muted, fontSize=10.sp, letterSpacing=2.sp)
-    }
-}
-
-@Composable private fun LazyRowCategories(selected: String, onSelect:(String)->Unit) {
-    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-        items(CATEGORIES) { c -> CategoryButton(c, selected==c.id) { onSelect(c.id) } }
-    }
-}
-@Composable private fun CategoryButton(c: Category, active:Boolean, onClick:()->Unit) {
-    TextButton(onClick=onClick, modifier=Modifier.padding(vertical=2.dp), colors=ButtonDefaults.textButtonColors(contentColor=if(active) Gold else Color.White)) {
-        Text(c.title, fontWeight=if(active) FontWeight.Bold else FontWeight.Normal)
-    }
-}
-@Composable private fun ChannelTile(c:Channel, favorite:Boolean, onFavorite:()->Unit, onClick:()->Unit) {
-    var focused by remember(c.id) { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth()
-            .onFocusChanged { focused = it.isFocused }
-            .border(
-                if (focused) BorderStroke(2.dp, Gold)
-                else BorderStroke(1.dp, Muted.copy(alpha = .18f)),
-                RoundedCornerShape(15.dp)
-            )
-            .background(Panel, RoundedCornerShape(15.dp))
-            .clickable(onClick=onClick)
-            .padding(16.dp)
-            .heightIn(min = 82.dp),
-        verticalAlignment=Alignment.CenterVertically
+private fun SummaryCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier.background(Panel, RoundedCornerShape(14.dp))
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .padding(horizontal = 15.dp, vertical = 11.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Box(Modifier.size(48.dp).background(Navy, RoundedCornerShape(12.dp)), contentAlignment=Alignment.Center) {
-            if (c.logo != null) {
-                AsyncImage(model=c.logo, contentDescription=c.name, modifier=Modifier.fillMaxSize().padding(5.dp), contentScale=ContentScale.Fit)
-            } else {
-                Text(c.name.take(2).uppercase(), color=Gold, fontWeight=FontWeight.Bold)
-            }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(c.name, color=Color.White, fontWeight=FontWeight.SemiBold, maxLines=1)
-            Text(c.quality.ifBlank { c.categoryLabel }, color=Muted, fontSize=11.sp)
-        }
-        TextButton(onClick=onFavorite) { Text(if(favorite) "★" else "☆", color=Gold, fontSize=20.sp) }
-    }
-}
-@Composable private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier.background(Panel, RoundedCornerShape(13.dp)).padding(horizontal = 12.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(value, color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(value, color = White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
         Text(label, color = Muted, fontSize = 10.sp)
     }
 }
 
-@Composable private fun AuthScreen(email:String,onEmail:(String)->Unit,password:String,onPassword:(String)->Unit,signup:Boolean,onSwitch:()->Unit,busy:Boolean,error:String,onSubmit:()->Unit) {
-    Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
-        Text("VELNIX", color=Gold, fontSize=36.sp, fontWeight=FontWeight.Black, letterSpacing=4.sp)
-        Text("PREMIUM LIVE TV", color=Muted, fontSize=11.sp, letterSpacing=3.sp, modifier=Modifier.padding(bottom=30.dp))
-        Text(if(signup) "إنشاء حساب جديد" else "مرحباً بعودتك", color=Color.White, fontSize=23.sp, fontWeight=FontWeight.Bold)
-        Spacer(Modifier.height(20.dp))
-        OutlinedTextField(email,onEmail,modifier=Modifier.fillMaxWidth(0.9f),label={Text("البريد الإلكتروني")},singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email))
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(password,onPassword,modifier=Modifier.fillMaxWidth(0.9f),label={Text("كلمة المرور")},singleLine=true,visualTransformation=PasswordVisualTransformation())
-        if(error.isNotBlank()) Text(error,color=Color(0xFFFF8A80),modifier=Modifier.padding(10.dp))
-        Button(onClick=onSubmit,enabled=!busy && email.isNotBlank() && password.length>=6,modifier=Modifier.fillMaxWidth(0.9f).padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Navy)) {
-            Text(if(busy) "يرجى الانتظار…" else if(signup) "إنشاء الحساب" else "تسجيل الدخول")
+@Composable
+private fun EmptyState(message: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            BrandMark(44)
+            Text(message, color = Muted, fontSize = 14.sp)
         }
-        TextButton(onClick=onSwitch) { Text(if(signup) "لدي حساب بالفعل" else "إنشاء حساب جديد",color=Gold) }
     }
 }
-@Composable private fun NativePlayer(api:VelnixApi,channel:Channel,url:String,streamType:String,onBack:()->Unit) {
-    val context=androidx.compose.ui.platform.LocalContext.current
+
+@Composable
+private fun CategoryButton(category: Category, active: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 43.dp),
+        shape = RoundedCornerShape(11.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (active) Accent else PanelRaised,
+            contentColor = if (active) White else Muted
+        )
+    ) {
+        Text(category.title, modifier = Modifier.fillMaxWidth(), fontSize = 12.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun ChannelTile(
+    channel: Channel,
+    favorite: Boolean,
+    imageLoader: ImageLoader,
+    loading: Boolean,
+    onFavorite: () -> Unit,
+    onClick: () -> Unit
+) {
+    var focused by remember(channel.id) { mutableStateOf(false) }
+    var imageFailed by remember(channel.id, channel.logo) { mutableStateOf(false) }
+
+    Row(
+        Modifier.fillMaxWidth()
+            .heightIn(min = 100.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .border(
+                if (focused) BorderStroke(2.dp, Accent) else BorderStroke(1.dp, Line),
+                RoundedCornerShape(16.dp)
+            )
+            .background(Panel, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .focusable()
+            .padding(horizontal = 13.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            Modifier.size(66.dp).clip(CircleShape)
+                .background(PanelRaised)
+                .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!channel.logo.isNullOrBlank() && !imageFailed) {
+                AsyncImage(
+                    model = channel.logo,
+                    imageLoader = imageLoader,
+                    contentDescription = channel.name,
+                    modifier = Modifier.fillMaxSize().padding(7.dp).clip(CircleShape),
+                    contentScale = ContentScale.Fit,
+                    onError = { imageFailed = true }
+                )
+            } else {
+                Text(channel.name.take(2).uppercase(), color = White, fontSize = 19.sp, fontWeight = FontWeight.Black)
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(channel.name, color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(channel.quality.ifBlank { channel.categoryLabel }, color = Muted, fontSize = 10.sp, maxLines = 1)
+            Text("مشاهدة مباشرة", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TextButton(onClick = onFavorite) {
+                Text(if (favorite) "★" else "☆", color = if (favorite) Accent else Muted, fontSize = 23.sp)
+            }
+            if (loading) CircularProgressIndicator(Modifier.size(15.dp), color = Accent, strokeWidth = 2.dp)
+        }
+    }
+}
+
+@Composable
+private fun ProfileScreen(
+    current: ProfileInfo,
+    imageLoader: ImageLoader,
+    saving: Boolean,
+    saveError: String,
+    onBack: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var displayName by remember(current.displayName) { mutableStateOf(current.displayName) }
+    var avatar by remember(current.avatarId) { mutableStateOf(current.avatarId) }
+    BackHandler(onBack = onBack)
+
+    Column(Modifier.fillMaxSize().background(AppBg).padding(horizontal = 36.dp, vertical = 22.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BrandMark(42)
+                Column {
+                    Text("ملفي الشخصي", color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("إدارة الاسم والصورة المرتبطين بحساب VELNIX", color = Muted, fontSize = 11.sp)
+                }
+            }
+            TextButton(onClick = onBack) { Text("رجوع", color = White) }
+        }
+        Spacer(Modifier.height(17.dp))
+        Row(
+            Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(18.dp)).border(1.dp, Line, RoundedCornerShape(18.dp)).padding(17.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AsyncImage(
+                model = avatarUrl(avatar),
+                imageLoader = imageLoader,
+                contentDescription = "الصورة المختارة",
+                modifier = Modifier.size(78.dp).clip(CircleShape).border(3.dp, Accent, CircleShape),
+                contentScale = ContentScale.Crop
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(displayName.ifBlank { "مستخدم VELNIX" }, color = White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("الصورة الشخصية تظهر بجانب اسم حسابك", color = Muted, fontSize = 11.sp)
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        OutlinedTextField(
+            value = displayName,
+            onValueChange = { displayName = it.take(40) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("اسم العرض") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(Modifier.height(13.dp))
+        Text("اختَر صورة من مكتبة VELNIX", color = White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(9.dp))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            items(AvatarOptions, key = { it.id }) { item ->
+                val active = avatar == item.id
+                Column(
+                    Modifier.fillMaxWidth()
+                        .border(if (active) 2.dp else 1.dp, if (active) Accent else Line, RoundedCornerShape(15.dp))
+                        .background(if (active) Accent.copy(alpha = 0.12f) else Panel, RoundedCornerShape(15.dp))
+                        .clickable { avatar = item.id }
+                        .focusable()
+                        .padding(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    AsyncImage(
+                        model = avatarUrl(item.id),
+                        imageLoader = imageLoader,
+                        contentDescription = item.label,
+                        modifier = Modifier.size(62.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(item.label, color = if (active) White else Muted, fontSize = 10.sp, maxLines = 1)
+                }
+            }
+        }
+        if (saveError.isNotBlank()) {
+            Text(saveError, color = Color(0xFFFF8A8A), fontSize = 12.sp)
+        }
+        Button(
+            onClick = { onSave(displayName.trim(), avatar) },
+            enabled = !saving && displayName.trim().length >= 2,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+        ) {
+            if (saving) CircularProgressIndicator(Modifier.size(19.dp), color = White, strokeWidth = 2.dp)
+            else Text("حفظ التغييرات", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun NativePlayer(
+    api: VelnixApi,
+    channel: Channel,
+    url: String,
+    streamType: String,
+    imageLoader: ImageLoader,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var epg by remember { mutableStateOf<List<EpgProgram>>(emptyList()) }
     var epgLoading by remember { mutableStateOf(false) }
     var epgVisible by remember { mutableStateOf(false) }
     var epgMessage by remember { mutableStateOf("") }
-    BackHandler(onBack = onBack)
     var playbackStatus by remember(url, streamType) { mutableStateOf("جارٍ تجهيز البث…") }
+    var playing by remember(url, streamType) { mutableStateOf(true) }
+    var cropVideo by remember(url, streamType) { mutableStateOf(false) }
     val retryHandler = remember { Handler(Looper.getMainLooper()) }
-    val player= remember(url, streamType) {
-        // Moderate live-TV buffering: quicker startup while retaining headroom for short network dips.
+    BackHandler(onBack = onBack)
+
+    val player = remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(20_000, 50_000, 2_500, 6_000)
+            .setBufferDurationsMs(25_000, 60_000, 3_500, 8_500)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
-        // DefaultTrackSelector keeps adaptive bitrate selection enabled for multi-variant HLS/DASH sources.
         val trackSelector = DefaultTrackSelector(context)
         val renderersFactory = DefaultRenderersFactory(context).setEnableDecoderFallback(true)
         val mediaItem = MediaItem.Builder().setUri(url).apply {
@@ -375,127 +893,241 @@ private fun IntroScreen() {
                 streamType.contains("hls", true) || streamType.contains("m3u8", true) || url.contains(".m3u8", true) -> setMimeType(MimeTypes.APPLICATION_M3U8)
             }
         }.build()
-        ExoPlayer.Builder(context, renderersFactory).setTrackSelector(trackSelector).setLoadControl(loadControl).build().apply {
-            val exo = this
-            var retryCount = 0
-            addListener(object : Player.Listener {
-                override fun onPlayerError(error: PlaybackException) {
-                    if (retryCount >= 5) {
-                        playbackStatus = "تعذر استمرار البث. جرّب إعادة الاتصال."
-                        return
-                    }
-                    playbackStatus = "انقطع الاتصال، جارٍ إعادة محاولة التشغيل…"
-                    val delayMs = minOf(2_000L * (1L shl retryCount.coerceAtMost(3)), 15_000L)
-                    retryCount++
-                    retryHandler.postDelayed({
-                        exo.seekToDefaultPosition()
-                        exo.prepare()
-                        exo.playWhenReady = true
-                    }, delayMs)
-                }
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    when (playbackState) {
-                        Player.STATE_BUFFERING -> playbackStatus = "جارٍ تحميل البث…"
-                        Player.STATE_READY -> {
-                            retryCount = 0
-                            playbackStatus = ""
+
+        ExoPlayer.Builder(context, renderersFactory)
+            .setTrackSelector(trackSelector)
+            .setLoadControl(loadControl)
+            .build()
+            .apply {
+                val exo = this
+                var retryCount = 0
+                setHandleAudioBecomingNoisy(true)
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        if (retryCount >= 5) {
+                            playbackStatus = "تعذر استمرار البث. افحص الاتصال ثم اضغط إعادة الاتصال."
+                            return
                         }
-                        else -> Unit
+                        playbackStatus = "انقطع الاتصال، جارٍ استرجاع البث…"
+                        val delayMs = minOf(2_000L * (1L shl retryCount.coerceAtMost(3)), 15_000L)
+                        retryCount++
+                        retryHandler.postDelayed({
+                            exo.seekToDefaultPosition()
+                            exo.prepare()
+                            exo.playWhenReady = true
+                        }, delayMs)
                     }
-                }
-            })
-            setMediaItem(mediaItem)
-            playWhenReady=true
-            prepare()
-        }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        when (playbackState) {
+                            Player.STATE_BUFFERING -> playbackStatus = "جارٍ تحميل البث…"
+                            Player.STATE_READY -> {
+                                retryCount = 0
+                                playbackStatus = ""
+                            }
+                            Player.STATE_ENDED -> playbackStatus = "انتهى مصدر البث."
+                        }
+                    }
+
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        playing = isPlaying
+                    }
+                })
+                setMediaItem(mediaItem)
+                playWhenReady = true
+                prepare()
+            }
     }
+
     DisposableEffect(player) {
         onDispose {
             retryHandler.removeCallbacksAndMessages(null)
             player.release()
         }
     }
-    Column(Modifier.fillMaxSize().background(Color.Black)) {
-        Row(Modifier.fillMaxWidth().background(Panel).padding(12.dp), verticalAlignment=Alignment.CenterVertically) {
-            TextButton(onClick=onBack) { Text("رجوع",color=Gold) }
-            Text(channel.name,color=Color.White,fontWeight=FontWeight.Bold)
+
+    Column(Modifier.fillMaxSize().background(AppBg)) {
+        Row(
+            Modifier.fillMaxWidth().background(Panel).padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BrandMark(42)
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(channel.name, color = White, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("بث مباشر  ·  VELNIX PLAYER", color = Muted, fontSize = 9.sp, letterSpacing = 1.sp)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(if (playbackStatus.isBlank()) Color(0xFF42D392) else Accent))
+                TextButton(onClick = onBack) { Text("إغلاق المشغّل", color = White) }
+            }
         }
-        Box(Modifier.fillMaxWidth().weight(1f)) {
-            AndroidView(factory={ ctx ->
-                (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as android.view.LayoutInflater)
-                    .inflate(R.layout.velnix_player_view, null) as PlayerView
-            }, update={ view ->
-                view.player = player
-                view.keepScreenOn = true
-                view.isFocusable = true
-                view.isFocusableInTouchMode = true
-                view.controllerShowTimeoutMs = 6500
-                view.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-            }, modifier=Modifier.fillMaxSize())
+
+        Box(Modifier.fillMaxWidth().weight(1f).background(Color.Black), contentAlignment = Alignment.Center) {
+            AndroidView(
+                factory = { ctx ->
+                    (ctx.getSystemService(android.content.Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater)
+                        .inflate(R.layout.velnix_player_view, null) as PlayerView
+                },
+                update = { view ->
+                    view.player = player
+                    view.keepScreenOn = true
+                    view.isFocusable = true
+                    view.isFocusableInTouchMode = true
+                    view.controllerShowTimeoutMs = 6000
+                    view.setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    view.useController = true
+                },
+                modifier = Modifier.fillMaxSize()
+            )
             if (playbackStatus.isNotBlank()) {
                 Text(
                     playbackStatus,
-                    color = Color.White,
-                    fontSize = 16.sp,
+                    color = White,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center)
-                        .background(Panel.copy(alpha = .92f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 22.dp, vertical = 14.dp)
+                        .background(Panel.copy(alpha = 0.96f), RoundedCornerShape(13.dp))
+                        .border(1.dp, Line, RoundedCornerShape(13.dp))
+                        .padding(horizontal = 22.dp, vertical = 15.dp)
                 )
             }
-            Text("VELNIX", color=Gold.copy(alpha=.42f), fontSize=11.sp, fontWeight=FontWeight.Black, letterSpacing=2.sp, modifier=Modifier.align(Alignment.BottomEnd).padding(16.dp))
         }
-        Row(Modifier.fillMaxWidth().background(Panel).padding(horizontal=4.dp, vertical=5.dp), horizontalArrangement=Arrangement.SpaceEvenly, verticalAlignment=Alignment.CenterVertically) {
-            TextButton(onClick={
+
+        Row(
+            Modifier.fillMaxWidth().background(Panel).padding(horizontal = 14.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PlayerAction(if (playing) "إيقاف مؤقت" else "استمرار", true) {
+                if (player.isPlaying) player.pause() else player.play()
+            }
+            PlayerAction("دليل البرامج", epgVisible) {
                 epgVisible = !epgVisible
-                if (epgVisible && epg.isEmpty()) scope.launch {
-                    epgLoading = true
-                    try { epg = api.epg(channel); epgMessage = if (epg.isEmpty()) "لا توجد بيانات برامج متاحة لهذه القناة حالياً" else "" }
-                    catch (e: Exception) { epgMessage = e.message ?: "تعذر تحميل دليل البرامج" }
-                    epgLoading = false
+                if (epgVisible && epg.isEmpty() && !epgLoading) {
+                    scope.launch {
+                        epgLoading = true
+                        try {
+                            epg = api.epg(channel)
+                            epgMessage = if (epg.isEmpty()) "لا توجد بيانات برامج متاحة لهذه القناة حالياً." else ""
+                        } catch (e: Exception) {
+                            epgMessage = e.message ?: "تعذر تحميل دليل البرامج"
+                        } finally {
+                            epgLoading = false
+                        }
+                    }
                 }
-            }) { Text("دليل البرامج", color=Gold) }
-            TextButton(onClick={ TrackSelectionDialogBuilder(context, "جودة الصورة", player, C.TRACK_TYPE_VIDEO).build().show() }) { Text("الجودة", color=Gold) }
-            TextButton(onClick={ TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show() }) { Text("الصوت", color=Gold) }
-            TextButton(onClick={ TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show() }) { Text("الترجمة", color=Gold) }
-            TextButton(onClick={
+            }
+            PlayerAction("جودة الصورة", false) {
+                TrackSelectionDialogBuilder(context, "جودة الصورة", player, C.TRACK_TYPE_VIDEO).build().show()
+            }
+            PlayerAction("الصوت", false) {
+                TrackSelectionDialogBuilder(context, "مسار الصوت", player, C.TRACK_TYPE_AUDIO).build().show()
+            }
+            PlayerAction("الترجمة", false) {
+                TrackSelectionDialogBuilder(context, "الترجمة", player, C.TRACK_TYPE_TEXT).build().show()
+            }
+            PlayerAction(if (cropVideo) "ملاءمة الشاشة" else "ملء الشاشة", false) {
+                cropVideo = !cropVideo
+                player.videoScalingMode = if (cropVideo) C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING else C.VIDEO_SCALING_MODE_SCALE_TO_FIT
+            }
+            PlayerAction("إعادة الاتصال", false) {
                 playbackStatus = "جارٍ إعادة الاتصال…"
+                retryHandler.removeCallbacksAndMessages(null)
                 player.seekToDefaultPosition()
                 player.prepare()
                 player.playWhenReady = true
-            }) { Text("إعادة الاتصال", color=Gold) }
+            }
         }
+
         if (epgVisible) {
-            Column(Modifier.fillMaxWidth().heightIn(max=220.dp).background(Panel).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                Text("دليل البرامج · EPG", color=Gold, fontWeight=FontWeight.Bold)
-                if (epgLoading) CircularProgressIndicator(color=Gold, modifier=Modifier.size(24.dp))
-                else if (epg.isEmpty()) Text(epgMessage.ifBlank { "لا توجد برامج مدرجة حالياً" }, color=Muted, fontSize=12.sp)
-                else epg.take(12).forEach { item ->
-                    val active = System.currentTimeMillis() in item.startsAt until item.endsAt
-                    Column(Modifier.fillMaxWidth().background(if (active) Gold.copy(alpha=.12f) else Navy, RoundedCornerShape(10.dp)).padding(10.dp), verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                        Text(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.startsAt)) + " – " + java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.endsAt)), color=Gold, fontSize=10.sp)
-                        Text(item.title, color=Color.White, fontWeight=FontWeight.SemiBold, fontSize=13.sp)
-                        if (item.description.isNotBlank()) Text(item.description, color=Muted, fontSize=11.sp, maxLines=2)
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 205.dp)
+                    .background(Panel).verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("دليل البرامج · EPG", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                if (epgLoading) {
+                    CircularProgressIndicator(Modifier.size(22.dp), color = Accent, strokeWidth = 2.dp)
+                } else if (epg.isEmpty()) {
+                    Text(epgMessage.ifBlank { "لا توجد برامج مدرجة حالياً." }, color = Muted, fontSize = 11.sp)
+                } else {
+                    epg.take(10).forEach { item ->
+                        val active = System.currentTimeMillis() in item.startsAt until item.endsAt
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .background(if (active) Accent.copy(alpha = 0.13f) else PanelRaised, RoundedCornerShape(10.dp))
+                                .border(1.dp, if (active) Accent.copy(alpha = 0.55f) else Line, RoundedCornerShape(10.dp))
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.startsAt)) +
+                                    " – " +
+                                    java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.endsAt)),
+                                color = Accent,
+                                fontSize = 10.sp
+                            )
+                            Text(item.title, color = White, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            if (item.description.isNotBlank()) Text(item.description, color = Muted, fontSize = 10.sp, maxLines = 2)
+                        }
                     }
                 }
             }
         }
-        Text("مشغل VELNIX المحسّن · استعادة تلقائية عند انقطاع البث",color=Muted,fontSize=10.sp,modifier=Modifier.padding(10.dp))
     }
 }
 
-data class Category(val id:String,val title:String)
-val CATEGORIES = listOf(
-    Category("all","كل القنوات"), Category("sports","الرياضة"), Category("bein","beIN SPORTS"),
-    Category("arabic","القنوات العربية"), Category("movies","أفلام ومسلسلات"), Category("news","الأخبار"),
-    Category("kids","الأطفال"), Category("documentaries","وثائقيات"), Category("music","موسيقى وراديو"),
-    Category("variety","منوعات"), Category("world","قنوات عالمية")
-)
-data class Channel(val id:String,val name:String,val english:String,val category:String,val categoryLabel:String,val logo:String?,val provider:String?,val quality:String="",val streamIds:List<String> = listOf(id),val externalId:String? = null,val streamType:String = "hls")
-data class UserSession(val accessToken:String,val refreshToken:String,val userEmail:String)
+@Composable
+private fun PlayerAction(label: String, active: Boolean, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = if (active) Accent else White),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Text(label, fontSize = 11.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+    }
+}
 
-fun categoryFor(group:String,name:String):String {
-    val both=(group+" "+name).lowercase()
+private data class AvatarOption(val id: String, val label: String, val file: String)
+
+data class Category(val id: String, val title: String)
+
+val CATEGORIES = listOf(
+    Category("all", "كل القنوات"),
+    Category("sports", "الرياضة"),
+    Category("bein", "beIN SPORTS"),
+    Category("arabic", "القنوات العربية"),
+    Category("movies", "أفلام ومسلسلات"),
+    Category("news", "الأخبار"),
+    Category("kids", "الأطفال"),
+    Category("documentaries", "وثائقيات"),
+    Category("music", "موسيقى وراديو"),
+    Category("variety", "منوعات"),
+    Category("world", "قنوات عالمية")
+)
+
+data class Channel(
+    val id: String,
+    val name: String,
+    val english: String,
+    val category: String,
+    val categoryLabel: String,
+    val logo: String?,
+    val provider: String?,
+    val quality: String = "",
+    val streamIds: List<String> = listOf(id),
+    val externalId: String? = null,
+    val streamType: String = "hls"
+)
+
+data class ProfileInfo(val displayName: String, val avatarId: String)
+
+fun categoryFor(group: String, name: String): String {
+    val both = (group + " " + name).lowercase()
     return when {
         Regex("bein[\\s._-]*sp.{0,3}rts|بي\\s*ان\\s*سبورت|بين\\s*سبورت").containsMatchIn(both) -> "bein"
         Regex("sport|deport|dazn|espn|eurosport|football|soccer|nba|tennis|ufc|boxing|champions league|premier league|sport event").containsMatchIn(both) -> "sports"

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/tv-native-media3
+      - feature/tv-redesign-v2
     paths:
       - "android-tv-app/**"
       - ".github/workflows/android-tv-native-validation.yml"
