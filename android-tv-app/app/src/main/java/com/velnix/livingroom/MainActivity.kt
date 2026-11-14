@@ -42,6 +42,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,10 +80,11 @@ import android.view.LayoutInflater
 private val AppBg = Color(0xFF08090D)
 private val Panel = Color(0xFF14151B)
 private val PanelRaised = Color(0xFF1B1C24)
-private val Accent = Color(0xFFE50914)
+private val LocalVelnixAccent.current = Color(0xFFE50914)
 private val Muted = Color(0xFFA4A5AD)
 private val Line = Color(0x24FFFFFF)
 private val White = Color(0xFFF7F7F8)
+private val LocalVelnixAccent = compositionLocalOf { Accent }
 
 private val AvatarOptions = listOf(
     AvatarOption("anime1", "المحقق الهادئ", "anime1-detective.svg"),
@@ -147,6 +149,8 @@ private fun VelnixApp(activity: ComponentActivity) {
             .build()
     }
 
+    var accentArgb by remember { mutableIntStateOf(context.getSharedPreferences("velnix_ui", android.content.Context.MODE_PRIVATE).getInt("accent_argb", android.graphics.Color.rgb(229, 9, 20))) }
+    val activeAccent = Color(accentArgb)
     var session by remember { mutableStateOf(api.session()) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -240,9 +244,9 @@ private fun VelnixApp(activity: ComponentActivity) {
 
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Accent,
+            primary = activeAccent,
             onPrimary = White,
-            secondary = Accent,
+            secondary = activeAccent,
             background = AppBg,
             onBackground = White,
             surface = Panel,
@@ -251,7 +255,7 @@ private fun VelnixApp(activity: ComponentActivity) {
             onSurfaceVariant = Muted
         )
     ) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl, LocalVelnixAccent provides activeAccent) {
             Surface(Modifier.fillMaxSize(), color = AppBg) {
                 when {
                     splashVisible -> SplashScreen()
@@ -270,6 +274,11 @@ private fun VelnixApp(activity: ComponentActivity) {
                         }
                     )
                     settingsVisible && session != null -> SettingsScreen(
+                        accentArgb = accentArgb,
+                        onAccentArgb = { value ->
+                            accentArgb = value
+                            context.getSharedPreferences("velnix_ui", android.content.Context.MODE_PRIVATE).edit().putInt("accent_argb", value).apply()
+                        },
                         autoReconnect = autoReconnect,
                         onAutoReconnect = {
                             autoReconnect = it
@@ -1002,6 +1011,8 @@ private fun ChannelTile(
 
 @Composable
 private fun SettingsScreen(
+    accentArgb: Int,
+    onAccentArgb: (Int) -> Unit,
     autoReconnect: Boolean,
     onAutoReconnect: (Boolean) -> Unit,
     dataSaver: Boolean,
@@ -1037,6 +1048,32 @@ private fun SettingsScreen(
                 Text("تحكم بالتشغيل والأداء ومساحة التخزين", color = Muted, fontSize = 12.sp)
             }
             TextButton(onClick = onBack) { Text("رجوع", color = White) }
+        }
+
+
+
+        Column(
+            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.045f), RoundedCornerShape(16.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(16.dp)).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("لون واجهة VELNIX", color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("اختَر لون التحديد والإضاءة للقوائم والبطاقات.", color = Muted, fontSize = 10.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf(
+                    0xFFE50914.toInt(), 0xFF20B8E8.toInt(), 0xFF8B5CF6.toInt(),
+                    0xFF16A878.toInt(), 0xFFE49B32.toInt(), 0xFFE45D9B.toInt(), 0xFF6485FF.toInt()
+                ).forEach { colorValue ->
+                    val selectedColor = accentArgb == colorValue
+                    Box(
+                        Modifier.size(if (selectedColor) 34.dp else 29.dp).clip(CircleShape)
+                            .background(Color(colorValue))
+                            .border(if (selectedColor) 3.dp else 1.dp, if (selectedColor) White else Color.White.copy(alpha = 0.35f), CircleShape)
+                            .clickable { onAccentArgb(colorValue) }
+                            .focusable()
+                    )
+                }
+            }
         }
 
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
