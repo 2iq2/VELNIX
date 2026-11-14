@@ -2373,12 +2373,12 @@ async function startPlayback(row,generation,reason='initial'){
    }
   });
  }
- // Cloudflare relay disabled: use the original Supabase stream gateway for every format.
- row.streamViaWorker=false;
+ // Route playback through the Cloudflare relay; its server-side fallback remains Supabase.
+ row.streamViaWorker=!!stream.stream_via_worker;
  row.streamViaSupabaseFallback=false;
  const url=stream.stream_url,rawType=(stream.stream_type||sourceRow.stream_type||row.stream_type||'hls').toLowerCase();
  const type=inferMediaKind(rawType,url,stream.mime_type||stream.content_type||'');
- recordPlaybackEvent('مسار البث','Supabase Gateway · '+type+' (source: '+rawType+')');
+ recordPlaybackEvent('مسار البث',(row.streamViaWorker?'Cloudflare Worker':'Supabase Gateway')+' · '+type+' (source: '+rawType+')');
  if(!url)throw new Error(lang==='ar'?'مصدر البث غير مربوط لهذه القناة.':'No stream source is configured.');
  lastProgressAt=Date.now();lastCurrentTime=video.currentTime||0;
  if(type==='native'){
