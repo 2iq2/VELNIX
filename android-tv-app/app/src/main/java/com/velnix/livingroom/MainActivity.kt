@@ -1161,7 +1161,7 @@ private fun FamilyManagementScreen(
     var locked by remember { mutableStateOf<Set<String>>(emptySet()) }
     var name by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
-    var kids by remember { mutableStateOf(false) }
+    var kids by remember { mutableStateOf(false) }\n    var avatar by remember { mutableStateOf("anime1") }
     var message by remember { mutableStateOf("جارٍ تحميل بيانات العائلة…") }
     var busy by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf("profiles") }
@@ -1206,10 +1206,10 @@ private fun FamilyManagementScreen(
                         Text("إضافة ملف شخصي",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
                         OutlinedTextField(value=name,onValueChange={name=it.take(32)},label={Text("اسم الملف")},singleLine=true,modifier=Modifier.fillMaxWidth())
                         Text("الافتار",color=White,fontSize=12.sp)
-                        Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) { (1..8).forEach { n -> FilterChip(selected=false,onClick={kids=kids},label={Text("A$n")}) } }
+                        Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) { (1..8).forEach { n -> FilterChip(selected=avatar=="anime$n",onClick={avatar="anime$n"},label={Text("A$n")}) } }
                         OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(6)},label={Text("PIN اختياري (4–6 أرقام)")},singleLine=true,modifier=Modifier.fillMaxWidth())
                         Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
-                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,"anime1",kids,pin); profiles=api.tvProfiles(userId); name="";pin="";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
+                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
                         Text("كل ملف له سجل مفضلة ومشاهدة مستقل في قاعدة البيانات. ربط واجهة التبديل النشط ما زال مطلوباً قبل اعتبارها مكتملة.",color=Muted,fontSize=10.sp)
                     }
                 }
