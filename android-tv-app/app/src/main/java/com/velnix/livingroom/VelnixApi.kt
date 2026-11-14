@@ -588,7 +588,14 @@ class VelnixApi(private val context: Context) {
     }
 }
 
-data class DevicePairingInfo(\n    val code: String,\n    val deviceToken: String,\n    val pairUrl: String,\n    val expiresAt: Long\n)\n\ndata class UserSession(
+data class DevicePairingInfo(
+    val code: String,
+    val deviceToken: String,
+    val pairUrl: String,
+    val expiresAt: Long
+)
+
+data class UserSession(
     val accessToken: String,
     val refreshToken: String,
     val userEmail: String,
