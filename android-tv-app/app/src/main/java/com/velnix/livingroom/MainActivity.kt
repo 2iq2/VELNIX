@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
@@ -116,7 +117,14 @@ private fun VelnixApp(activity: ComponentActivity) {
     val imageLoader = remember {
         ImageLoader.Builder(context)
             .components { add(SvgDecoder.Factory()) }
-            .crossfade(220)
+            .crossfade(false)
+            .memoryCache { coil.memory.MemoryCache.Builder(context).maxSizePercent(0.12).build() }
+            .diskCache {
+                coil.disk.DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("velnix_channel_images"))
+                    .maxSizeBytes(120L * 1024L * 1024L)
+                    .build()
+            }
             .build()
     }
 
@@ -127,6 +135,9 @@ private fun VelnixApp(activity: ComponentActivity) {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    var catalogOffset by remember { mutableIntStateOf(0) }
+    var hasMoreChannels by remember { mutableStateOf(false) }
+    var loadingMoreChannels by remember { mutableStateOf(false) }
     var category by remember { mutableStateOf("all") }
     var query by remember { mutableStateOf("") }
     var favorites by remember { mutableStateOf(api.loadFavorites()) }
@@ -150,9 +161,11 @@ private fun VelnixApp(activity: ComponentActivity) {
         scope.launch {
             busy = true
             try {
-                channels = api.channels()
+                val page = api.channels(offset = 0)
+                channels = page.channels
+                catalogOffset = page.nextOffset
+                hasMoreChannels = page.hasMore
                 status = "تم تحميل " + channels.size + " قناة"
-                if (session != null) beinAccess = api.checkBein()
             } catch (e: Exception) {
                 status = e.message ?: "تعذر تحميل القنوات. تحقق من الاتصال ثم أعد المحاولة."
             } finally {
@@ -161,8 +174,26 @@ private fun VelnixApp(activity: ComponentActivity) {
         }
     }
 
+    fun loadMoreCatalog() {
+        if (loadingMoreChannels || !hasMoreChannels) return
+        scope.launch {
+            loadingMoreChannels = true
+            try {
+                val page = api.channels(offset = catalogOffset)
+                channels = (channels + page.channels).distinctBy { it.id }
+                catalogOffset = page.nextOffset
+                hasMoreChannels = page.hasMore
+                status = "تم تحميل " + channels.size + " قناة"
+            } catch (e: Exception) {
+                status = e.message ?: "تعذر تحميل بقية القنوات"
+            } finally {
+                loadingMoreChannels = false
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
-        delay(1700)
+        delay(900)
         splashVisible = false
         refreshCatalog()
     }
@@ -273,6 +304,9 @@ private fun VelnixApp(activity: ComponentActivity) {
                         session = session!!,
                         profile = profile,
                         channels = channels,
+                        hasMoreChannels = hasMoreChannels,
+                        loadingMoreChannels = loadingMoreChannels,
+                        onLoadMore = { loadMoreCatalog() },
                         category = category,
                         onCategory = { category = it },
                         query = query,
@@ -495,6 +529,9 @@ private fun HomeScreen(
     session: UserSession,
     profile: ProfileInfo,
     channels: List<Channel>,
+    hasMoreChannels: Boolean,
+    loadingMoreChannels: Boolean,
+    onLoadMore: () -> Unit,
     category: String,
     onCategory: (String) -> Unit,
     query: String,
@@ -645,6 +682,19 @@ private fun HomeScreen(
                                 onFavorite = { onFavorite(channel) },
                                 onClick = { onPlay(channel) }
                             )
+                        }
+                        if (hasMoreChannels) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Button(
+                                    onClick = onLoadMore,
+                                    enabled = !loadingMoreChannels,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+                                ) {
+                                    if (loadingMoreChannels) CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
+                                    else Text("تحميل المزيد من القنوات")
+                                }
+                            }
                         }
                     }
                 }

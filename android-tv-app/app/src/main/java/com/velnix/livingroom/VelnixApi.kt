@@ -260,17 +260,17 @@ class VelnixApi(private val context: Context) {
         clearSession()
     }
 
-    suspend fun channels(): List<Channel> {
-        val all = mutableListOf<JSONObject>()
-        var offset = 0
-        while (offset < 10000) {
-            val path = "channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=" + offset
-            val page = JSONArray(request(path, rest = true))
-            for (i in 0 until page.length()) all.add(page.getJSONObject(i))
-            if (page.length() < 500) break
-            offset += page.length()
-        }
-        return groupRows(all)
+    suspend fun channels(offset: Int = 0, pageSize: Int = 250): ChannelPage {
+        val safeLimit = pageSize.coerceIn(100, 300)
+        val safeOffset = offset.coerceAtLeast(0)
+        val path = "channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=" + safeLimit + "&offset=" + safeOffset
+        val rows = JSONArray(request(path, rest = true))
+        val all = (0 until rows.length()).map { rows.getJSONObject(it) }
+        return ChannelPage(
+            channels = groupRows(all),
+            nextOffset = safeOffset + rows.length(),
+            hasMore = rows.length() == safeLimit
+        )
     }
 
     private fun groupRows(rows: List<JSONObject>): List<Channel> {
@@ -509,5 +509,6 @@ data class UserSession(
     val expiresAt: Long
 )
 
+data class ChannelPage(val channels: List<Channel>, val nextOffset: Int, val hasMore: Boolean)
 data class StreamInfo(val url: String, val type: String)
 data class EpgProgram(val title: String, val description: String, val startsAt: Long, val endsAt: Long)
