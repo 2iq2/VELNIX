@@ -1161,7 +1161,8 @@ private fun FamilyManagementScreen(
     var locked by remember { mutableStateOf<Set<String>>(emptySet()) }
     var name by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
-    var kids by remember { mutableStateOf(false) }\n    var avatar by remember { mutableStateOf("anime1") }
+    var kids by remember { mutableStateOf(false) }
+    var avatar by remember { mutableStateOf("anime1") }
     var message by remember { mutableStateOf("جارٍ تحميل بيانات العائلة…") }
     var busy by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf("profiles") }
