@@ -498,7 +498,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 try {
                                     val active = activeTvProfile
                                     if (active != null && channel.id in profileLocks) throw IllegalStateException("هذه القناة مقفلة لهذا الملف.")
-                                    if (active?.isKids == true && channel.category in setOf("adult", "mature", "xxx")) throw IllegalStateException("هذه القناة غير متاحة في ملف الأطفال.")
+                                    if (active?.isKids == true && channel.category != "kids") throw IllegalStateException("ملف الأطفال يسمح بقنوات الأطفال فقط.")
                                     if (channel.category == "bein" && !beinAccess) {
                                         throw IllegalStateException("قسم beIN SPORTS غير مفعّل على هذا الحساب.")
                                     }
@@ -1207,6 +1207,7 @@ private fun FamilyManagementScreen(
     var activationTarget by remember { mutableStateOf<TvProfile?>(null) }
     var activationPin by remember { mutableStateOf("") }
     var activationError by remember { mutableStateOf("") }
+    var newProfilePin by remember { mutableStateOf("") }
     LaunchedEffect(userId) {
         try {
             profiles = api.tvProfiles(userId)
@@ -1253,6 +1254,13 @@ private fun FamilyManagementScreen(
                         Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
                         Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
                         Text("اضغط على ملف لتفعيله. الملفات المحمية تطلب PIN قبل التبديل.",color=Muted,fontSize=10.sp)
+                        if (selectedProfile != null) {
+                            OutlinedTextField(value=newProfilePin,onValueChange={newProfilePin=it.filter(Char::isDigit).take(6)},label={Text("تعيين أو تغيير PIN (4–6 أرقام)")},singleLine=true,visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
+                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick={scope.launch { try { api.setTvProfilePin(userId,selectedProfile!!,newProfilePin); profiles=api.tvProfiles(userId); newProfilePin=""; message="تم تحديث PIN الملف." } catch(e:Exception){message=e.message ?: "تعذر تحديث PIN"} }}) { Text("حفظ PIN") }
+                                TextButton(onClick={scope.launch { try { api.setTvProfilePin(userId,selectedProfile!!,""); profiles=api.tvProfiles(userId); newProfilePin=""; message="تم إزالة PIN الملف." } catch(e:Exception){message=e.message ?: "تعذر إزالة PIN"} }}) { Text("إزالة PIN") }
+                            }
+                        }
                         activationTarget?.let { target ->
                             AlertDialog(
                                 onDismissRequest = { activationTarget = null },
