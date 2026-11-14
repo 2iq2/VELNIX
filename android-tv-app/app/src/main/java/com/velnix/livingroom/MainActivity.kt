@@ -11,6 +11,12 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.WindowManager
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -151,6 +157,9 @@ private fun VelnixApp(activity: ComponentActivity) {
 
     var accentArgb by remember { mutableIntStateOf(context.getSharedPreferences("velnix_ui", android.content.Context.MODE_PRIVATE).getInt("accent_argb", android.graphics.Color.rgb(229, 9, 20))) }
     val activeAccent = Color(accentArgb)
+    var pairingInfo by remember { mutableStateOf<DevicePairingInfo?>(null) }
+    var pairingError by remember { mutableStateOf("") }
+    var pairingBusy by remember { mutableStateOf(false) }
     var session by remember { mutableStateOf(api.session()) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -236,6 +245,31 @@ private fun VelnixApp(activity: ComponentActivity) {
                 // Keep the locally available account identity if the profile service is temporarily unreachable.
             }
         }
+    }
+
+    LaunchedEffect(pairingInfo?.deviceToken) {
+        val pendingPair = pairingInfo ?: return@LaunchedEffect
+        pairingError = ""
+        while (System.currentTimeMillis() < pendingPair.expiresAt) {
+            try {
+                val tokenHash = api.pollDevicePairing(pendingPair.deviceToken)
+                if (!tokenHash.isNullOrBlank()) {
+                    val linkedSession = api.verifyDeviceMagicLink(tokenHash)
+                    session = linkedSession
+                    beinAccess = api.checkBein()
+                    pairingInfo = null
+                    refreshCatalog()
+                    return@LaunchedEffect
+                }
+            } catch (e: Exception) {
+                pairingError = e.message ?: "تعذر إكمال ربط التلفزيون."
+                pairingInfo = null
+                return@LaunchedEffect
+            }
+            delay(2200)
+        }
+        pairingInfo = null
+        pairingError = "انتهت صلاحية رمز الربط. أنشئ رمزاً جديداً."
     }
 
     BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
@@ -337,6 +371,24 @@ private fun VelnixApp(activity: ComponentActivity) {
                         }
                     )
                     session == null -> WelcomeAuthScreen(
+                        pairing = pairingInfo,
+                        pairingError = pairingError,
+                        pairingBusy = pairingBusy,
+                        onPair = {
+                            scope.launch {
+                                pairingBusy = true
+                                pairingError = ""
+                                try {
+                                    pairingInfo = api.createDevicePairing("VELNIX TV · " + Build.MODEL)
+                                } catch (e: Exception) {
+                                    pairingError = e.message ?: "تعذر إنشاء رمز الربط."
+                                } finally {
+                                    pairingBusy = false
+                                }
+                            }
+                        },
+                        onCancelPair = { pairingInfo = null },
+
                         email = email,
                         onEmail = { email = it },
                         password = password,
@@ -498,6 +550,11 @@ private fun SplashScreen() {
 
 @Composable
 private fun WelcomeAuthScreen(
+    pairing: DevicePairingInfo?,
+    pairingError: String,
+    pairingBusy: Boolean,
+    onPair: () -> Unit,
+    onCancelPair: () -> Unit,
     email: String,
     onEmail: (String) -> Unit,
     password: String,
@@ -542,6 +599,41 @@ private fun WelcomeAuthScreen(
                     color = Muted,
                     fontSize = 13.sp
                 )
+                if (pairing == null) {
+                    OutlinedButton(
+                        onClick = onPair,
+                        enabled = !pairingBusy,
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LocalVelnixAccent.current.copy(alpha = 0.65f))
+                    ) {
+                        if (pairingBusy) CircularProgressIndicator(Modifier.size(17.dp), color = LocalVelnixAccent.current, strokeWidth = 2.dp)
+                        else Text("ربط التلفزيون عبر QR أو رمز يدوي", color = White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .background(Color.White.copy(alpha = 0.055f), RoundedCornerShape(14.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.13f), RoundedCornerShape(14.dp))
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        PairingQr(pairing.pairUrl)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("امسح QR أو أدخل الرمز يدوياً", color = White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("افتح الرابط على الهاتف ثم وافق على ربط التلفزيون بحسابك.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                            Text(pairing.code.chunked(4).joinToString("-"), color = LocalVelnixAccent.current, fontSize = 19.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                            Text("الرمز صالح لمدة 3 دقائق", color = Muted, fontSize = 9.sp)
+                            TextButton(onClick = onCancelPair, contentPadding = PaddingValues(0.dp)) {
+                                Text("إلغاء الرمز", color = Color(0xFFFFA0A0), fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+                if (pairingError.isNotBlank()) {
+                    Text(pairingError, color = Color(0xFFFF9A9A), fontSize = 11.sp, lineHeight = 16.sp)
+                }
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmail,
@@ -579,6 +671,44 @@ private fun WelcomeAuthScreen(
                 }
                 Text("بمتابعة الدخول، أنت تستخدم حساب VELNIX نفسه الموجود على الموقع.", color = Muted, fontSize = 10.sp)
             }
+        }
+    }
+}
+
+@Composable
+private fun PairingQr(pairUrl: String) {
+    val bitmap = remember(pairUrl) {
+        try {
+            val matrix = QRCodeWriter().encode(
+                pairUrl,
+                BarcodeFormat.QR_CODE,
+                360,
+                360,
+                mapOf(EncodeHintType.MARGIN to 1)
+            )
+            val pixels = IntArray(matrix.width * matrix.height)
+            for (y in 0 until matrix.height) {
+                for (x in 0 until matrix.width) {
+                    pixels[y * matrix.width + x] =
+                        if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                }
+            }
+            Bitmap.createBitmap(matrix.width, matrix.height, Bitmap.Config.ARGB_8888).apply {
+                setPixels(pixels, 0, matrix.width, 0, 0, matrix.width, matrix.height)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "رمز QR لربط تلفزيون VELNIX",
+            modifier = Modifier.size(132.dp).clip(RoundedCornerShape(10.dp)).background(Color.White).padding(5.dp)
+        )
+    } else {
+        Box(Modifier.size(132.dp).background(Color.White, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+            Text("QR", color = Color.Black, fontWeight = FontWeight.Black)
         }
     }
 }
