@@ -231,7 +231,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 
     BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
-        exitPrompt = true
+        if (settingsVisible) settingsVisible = false else exitPrompt = true
     }
 
     MaterialTheme(
@@ -918,7 +918,7 @@ private fun SettingsScreen(
             TextButton(onClick = onBack) { Text("رجوع", color = White) }
         }
 
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(
                 Modifier.weight(1f).fillMaxHeight().background(Panel, RoundedCornerShape(18.dp)).padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
