@@ -1,0 +1,62 @@
+name: Build VELNIX Android TV APK
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "android-tv-app/**"
+      - ".github/workflows/android-tv-apk.yml"
+
+jobs:
+  build:
+    name: Build Android TV APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build TV APK
+        run: gradle -p android-tv-app :app:assembleDebug
+
+      - name: Verify APK
+        run: |
+          test -s android-tv-app/app/build/outputs/apk/debug/app-debug.apk
+          cp android-tv-app/app/build/outputs/apk/debug/app-debug.apk VELNIX-TV.apk
+          ls -lh VELNIX-TV.apk
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VELNIX-Android-TV
+          path: VELNIX-TV.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish TV APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-tv-latest
+          name: VELNIX Android TV
+          body: Official VELNIX app for Android TV and Google TV. Supports remote control navigation.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: VELNIX-TV.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
