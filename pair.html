@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080e18">
+<title>ربط جهاز VELNIX</title>
+<style>
+:root{color-scheme:dark;--bg:#080e18;--panel:#111d2d;--line:#ffffff20;--text:#f4f8fc;--muted:#9db0c4;--aqua:#78ead8}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 0%,#22425888,transparent 44%),radial-gradient(ellipse at 95% 35%,#54408b55,transparent 36%),var(--bg);color:var(--text);font-family:Tajawal,system-ui,sans-serif;display:grid;place-items:center;padding:22px}
+.card{width:min(480px,100%);border:1px solid #a9d3e326;border-radius:25px;background:#101c2beF;box-shadow:0 25px 90px #0009,inset 0 1px #ffffff12;padding:28px}
+.brand{font:900 27px system-ui,sans-serif;letter-spacing:4px;color:#b7fff4;text-align:center}.tag{color:var(--muted);text-align:center;font-size:13px;margin:8px 0 22px}
+h1{font-size:23px;margin:0 0 9px;text-align:center}.desc{color:var(--muted);line-height:1.8;text-align:center;font-size:14px;margin:0 0 19px}
+.code{direction:ltr;text-align:center;letter-spacing:7px;font:900 29px ui-monospace,monospace;background:#071321;border:1px solid #75e7d733;border-radius:15px;padding:16px;margin:14px 0 20px;color:#b5fff4}
+.field{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;background:#091422;color:#fff;font:inherit;margin:6px 0 11px;outline:0}.field:focus{border-color:var(--aqua)}
+.btn{width:100%;border:0;border-radius:12px;padding:14px 16px;background:linear-gradient(120deg,#78ead8,#79b8e8);color:#08151c;font:800 15px inherit;cursor:pointer;margin-top:8px}.btn:disabled{opacity:.5;cursor:wait}.mutedbtn{background:#ffffff0a;border:1px solid var(--line);color:#e8f3fa}
+.panel{padding:16px;border:1px solid var(--line);background:#ffffff06;border-radius:15px;margin-top:15px}
+.status{min-height:22px;color:var(--muted);font-size:13px;line-height:1.7;text-align:center;margin-top:13px}.status.error{color:#ff9c9c}.status.ok{color:#8ef0be}
+.small{font-size:11px;color:#8296aa;line-height:1.7;text-align:center;margin-top:17px}
+.hidden{display:none!important}.user{display:flex;align-items:center;justify-content:center;gap:9px;color:#b8fff4;font-size:13px;margin:13px 0}
+button:focus-visible,input:focus-visible{outline:2px solid #9df5e8;outline-offset:3px}
+</style>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
+const SUPABASE_URL = "https://shungcjflcjwubdlhyzq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+const $ = (id) => document.getElementById(id);
+const code = (new URLSearchParams(location.search).get("code") || "").toUpperCase().replace(/[^A-Z2-9]/g,"");
+$("code").textContent = code.length === 8 ? code : "--------";
+const status = (message, type="") => { $("status").textContent=message; $("status").className="status "+type; };
+let user = null;
+
+async function showSession() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  user = data.session?.user || null;
+  $("authPanel").classList.toggle("hidden", !!user);
+  $("approvePanel").classList.toggle("hidden", !user);
+  $("signedEmail").textContent = user?.email || "";
+}
+$("login").addEventListener("click", async () => {
+  const email=$("email").value.trim(), password=$("password").value;
+  if(!email.includes("@") || password.length < 6){status("أدخل البريد وكلمة المرور بشكل صحيح.","error");return;}
+  $("login").disabled=true;status("جارٍ تسجيل الدخول…");
+  try{
+    const {error}=await supabase.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    await showSession();status("تم تسجيل الدخول. راجع الحساب ثم وافق على الربط.","ok");
+  }catch(e){status(e.message || "تعذر تسجيل الدخول.","error");}
+  finally{$("login").disabled=false;}
+});
+$("approve").addEventListener("click", async () => {
+  if(code.length!==8){status("رمز QR غير صالح. افتح الرابط الذي يظهر على التلفزيون مجدداً.","error");return;}
+  $("approve").disabled=true;status("جارٍ تأكيد ربط التلفزيون…");
+  try{
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session){await showSession();throw new Error("انتهت جلسة الدخول. سجّل الدخول مجدداً.");}
+    const {data,error}=await supabase.functions.invoke("device-pairing",{
+      body:{action:"approve",code}
+    });
+    if(error) throw error;
+    status("تم ربط "+(data.device_name || "التلفزيون")+" بحسابك بنجاح. يمكنك الرجوع إلى التلفزيون.","ok");
+    $("approve").textContent="تم الربط ✓";
+    $("approve").disabled=true;
+  }catch(e){status(e.message || "تعذر تأكيد الربط. حاول مرة أخرى.","error");$("approve").disabled=false;}
+});
+$("switchAccount").addEventListener("click",async()=>{
+  await supabase.auth.signOut();user=null;await showSession();status("سجّل الدخول بالحساب الذي تريد ربطه.");
+});
+try{
+  if(code.length!==8) status("افتح هذا الرابط من رمز QR الظاهر على تلفزيون VELNIX.","error");
+  await showSession();
+}catch(e){status("تعذر التحقق من جلسة الحساب. حدّث الصفحة.","error");}
+</script>
+</head>
+<body>
+<main class="card">
+  <div class="brand">VELNIX</div>
+  <div class="tag">SECURE DEVICE LINKING</div>
+  <h1>ربط جهاز التلفزيون</h1>
+  <p class="desc">تأكد أن الرمز أدناه يطابق الرمز الظاهر على تلفزيونك قبل الموافقة.</p>
+  <div class="code" id="code">--------</div>
+  <section id="authPanel" class="panel">
+    <p class="desc">سجّل الدخول بحساب VELNIX الذي تريد استخدامه على التلفزيون.</p>
+    <input class="field" id="email" type="email" autocomplete="username" placeholder="البريد الإلكتروني">
+    <input class="field" id="password" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+    <button class="btn" id="login">تسجيل الدخول</button>
+  </section>
+  <section id="approvePanel" class="panel hidden">
+    <div class="user"><span>●</span><span id="signedEmail"></span></div>
+    <p class="desc">هل توافق على تسجيل هذا التلفزيون بهذا الحساب؟</p>
+    <button class="btn" id="approve">موافقة وربط التلفزيون</button>
+    <button class="btn mutedbtn" id="switchAccount">تبديل الحساب</button>
+  </section>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <p class="small">رمز الربط صالح لمدة 3 دقائق ويُستخدم مرة واحدة. لا تشارك الرمز مع أي شخص غير موثوق.</p>
+</main>
+</body>
+</html>
