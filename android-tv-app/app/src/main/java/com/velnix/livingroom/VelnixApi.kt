@@ -260,10 +260,10 @@ class VelnixApi(private val context: Context) {
         clearSession()
     }
 
-    suspend fun channels(offset: Int = 0, pageSize: Int = 250): ChannelPage {
-        val safeLimit = pageSize.coerceIn(100, 300)
+    suspend fun channels(offset: Int = 0, pageSize: Int = 100): ChannelPage {
+        val safeLimit = pageSize.coerceIn(50, 100)
         val safeOffset = offset.coerceAtLeast(0)
-        val path = "channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=" + safeLimit + "&offset=" + safeOffset
+        val path = "channels?select=id,name_ar,name_en,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=" + safeLimit + "&offset=" + safeOffset
         val rows = JSONArray(request(path, rest = true))
         val all = (0 until rows.length()).map { rows.getJSONObject(it) }
         return ChannelPage(
