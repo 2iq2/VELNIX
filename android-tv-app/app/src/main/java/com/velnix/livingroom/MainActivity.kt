@@ -190,6 +190,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     var profileError by remember { mutableStateOf("") }
     var settingsVisible by remember { mutableStateOf(false) }
     var familyVisible by remember { mutableStateOf(false) }
+    var multiViewVisible by remember { mutableStateOf(false) }
     var activeTvProfile by remember { mutableStateOf<TvProfile?>(null) }
     var profileLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
     var profileCategoryLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -319,7 +320,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 
     BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
-        if (settingsPinPrompt) settingsPinPrompt = false else if (settingsVisible) settingsVisible = false else exitPrompt = true
+        if (settingsPinPrompt) settingsPinPrompt = false else if (multiViewVisible) multiViewVisible = false else if (settingsVisible) settingsVisible = false else exitPrompt = true
     }
 
     MaterialTheme(
@@ -352,6 +353,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                             selected = null
                             streamUrl = null
                         }
+                    )
+                    multiViewVisible && session != null -> MultiViewScreen(
+                        api = api,
+                        channels = if (activeTvProfile?.isKids == true) channels.filter { it.category == "kids" } else channels.filterNot { it.category in profileCategoryLocks || it.id in profileLocks },
+                        lowRamDevice = lowRamDevice,
+                        onBack = { multiViewVisible = false }
                     )
                     familyVisible && session != null -> FamilyManagementScreen(
                         api = api, userId = session!!.userId, channels = channels,
@@ -478,7 +485,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     else -> HomeScreen(
                         session = session!!,
                         profile = profile,
-                        channels = if (activeTvProfile != null) channels.filterNot { it.category in profileCategoryLocks } else channels,
+                        channels = when { activeTvProfile?.isKids == true -> channels.filter { it.category == "kids" }; activeTvProfile != null -> channels.filterNot { it.category in profileCategoryLocks }; else -> channels },
                         hasMoreChannels = hasMoreChannels,
                         loadingMoreChannels = loadingMoreChannels,
                         onLoadMore = { loadMoreCatalog() },
@@ -500,6 +507,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                             else settingsVisible = true
                         },
                         onFamily = { familyVisible = true },
+                        onMultiView = { multiViewVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
                             api.signOut()
@@ -848,6 +856,7 @@ private fun HomeScreen(
     onProfile: () -> Unit,
     onSettings: () -> Unit,
     onFamily: () -> Unit,
+    onMultiView: () -> Unit,
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
     onFavorite: (Channel) -> Unit,
@@ -1027,6 +1036,7 @@ private fun HomeScreen(
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.10f), modifier = Modifier.padding(vertical = 9.dp))
             MenuFooterAction("◎", "ملفات العائلة والحماية", menuExpanded, onFamily)
+            MenuFooterAction("▣", "مشاهدة قناتين", menuExpanded, onMultiView)
             MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
             MenuFooterAction("⟳", "تحديث القنوات", menuExpanded, onRefresh)
             MenuFooterAction("⇥", "تسجيل الخروج", menuExpanded, onSignOut)
@@ -2057,6 +2067,137 @@ private fun NativePlayer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MultiViewScreen(
+    api: VelnixApi,
+    channels: List<Channel>,
+    lowRamDevice: Boolean,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var first by remember { mutableStateOf(channels.firstOrNull()) }
+    var second by remember { mutableStateOf(channels.getOrNull(1)) }
+    var selectingSlot by remember { mutableIntStateOf(1) }
+    var firstUrl by remember { mutableStateOf<String?>(null) }
+    var secondUrl by remember { mutableStateOf<String?>(null) }
+    var firstType by remember { mutableStateOf("hls") }
+    var secondType by remember { mutableStateOf("hls") }
+    var loading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+
+    LaunchedEffect(first?.id, second?.id, lowRamDevice) {
+        firstUrl = null
+        secondUrl = null
+        if (lowRamDevice) return@LaunchedEffect
+        loading = true
+        message = ""
+        try {
+            first?.let { channel ->
+                val stream = api.stream(channel.streamIds.firstOrNull() ?: channel.id, channel.streamType)
+                firstUrl = stream.url
+                firstType = stream.type
+            }
+            second?.let { channel ->
+                val stream = api.stream(channel.streamIds.firstOrNull() ?: channel.id, channel.streamType)
+                secondUrl = stream.url
+                secondType = stream.type
+            }
+            if (first == null || second == null) message = "اختَر قناتين لبدء العرض المتعدد."
+        } catch (e: Exception) {
+            message = e.message ?: "تعذر تجهيز إحدى القناتين."
+        } finally {
+            loading = false
+        }
+    }
+    BackHandler(onBack = onBack)
+    Column(Modifier.fillMaxSize().background(Color(0xFF070A12)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+            Column {
+                Text("Multi-view · مشاهدة قناتين",color=White,fontSize=22.sp,fontWeight=FontWeight.Black)
+                Text("تجربة اختيارية؛ قد يختلف الأداء حسب معالج الفيديو وعدد مفككات الجهاز.",color=Muted,fontSize=10.sp)
+            }
+            TextButton(onClick=onBack) { Text("رجوع",color=White) }
+        }
+        if (lowRamDevice) {
+            Box(Modifier.fillMaxSize().background(Panel,RoundedCornerShape(18.dp)).padding(28.dp),contentAlignment=Alignment.Center) {
+                Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Text("الجهاز لا يملك ذاكرة كافية",color=White,fontSize=20.sp,fontWeight=FontWeight.Bold)
+                    Text("أوقفنا تشغيل قناتين معاً لحماية سلاسة التطبيق. استخدم مشغّل قناة واحدة على هذا الجهاز.",color=Muted,fontSize=13.sp)
+                }
+            }
+        } else {
+            Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.width(240.dp).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(10.dp)) {
+                    Text("تحديد القناة",color=White,fontWeight=FontWeight.Bold,fontSize=14.sp)
+                    Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {
+                        FilterChip(selected=selectingSlot==1,onClick={selectingSlot=1},label={Text("الشاشة 1")})
+                        FilterChip(selected=selectingSlot==2,onClick={selectingSlot=2},label={Text("الشاشة 2")})
+                    }
+                    Text("اضغط على قناة لتعيينها في الشاشة المختارة.",color=Muted,fontSize=9.sp)
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                        items(channels.take(500),key={it.id}) { channel ->
+                            val chosen = if(selectingSlot==1) first?.id==channel.id else second?.id==channel.id
+                            TextButton(onClick={
+                                if(selectingSlot==1) first=channel else second=channel
+                                selectingSlot=if(selectingSlot==1) 2 else 1
+                            },modifier=Modifier.fillMaxWidth()) {
+                                Text((if(chosen) "✓ " else "")+channel.name,color=if(chosen) LocalVelnixAccent.current else White,fontSize=10.sp,maxLines=1)
+                            }
+                        }
+                    }
+                }
+                Row(Modifier.weight(1f).fillMaxHeight(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Color.Black,RoundedCornerShape(14.dp)).border(1.dp,Color.White.copy(alpha=.16f),RoundedCornerShape(14.dp))) {
+                        Text(first?.name ?: "القناة الأولى",color=White,fontSize=11.sp,maxLines=1,modifier=Modifier.padding(8.dp))
+                        Box(Modifier.fillMaxWidth().weight(1f),contentAlignment=Alignment.Center) {
+                            if(firstUrl!=null) MultiViewPlayerSurface(firstUrl!!,firstType,false)
+                            else Text(if(loading) "جارٍ التحميل…" else "اختر القناة الأولى",color=Muted,fontSize=12.sp)
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Color.Black,RoundedCornerShape(14.dp)).border(1.dp,Color.White.copy(alpha=.16f),RoundedCornerShape(14.dp))) {
+                        Text(second?.name ?: "القناة الثانية",color=White,fontSize=11.sp,maxLines=1,modifier=Modifier.padding(8.dp))
+                        Box(Modifier.fillMaxWidth().weight(1f),contentAlignment=Alignment.Center) {
+                            if(secondUrl!=null) MultiViewPlayerSurface(secondUrl!!,secondType,true)
+                            else Text(if(loading) "جارٍ التحميل…" else "اختر القناة الثانية",color=Muted,fontSize=12.sp)
+                        }
+                    }
+                }
+            }
+            if(message.isNotBlank()) Text(message,color=LocalVelnixAccent.current,fontSize=10.sp)
+        }
+    }
+}
+
+@Composable
+private fun MultiViewPlayerSurface(url: String, streamType: String, muted: Boolean) {
+    val context = LocalContext.current
+    val player = remember(url,streamType,muted) {
+        runCatching {
+            val load = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(4000,12000,1000,2000)
+                .setTargetBufferBytes(8*1024*1024)
+                .setPrioritizeTimeOverSizeThresholds(false)
+                .build()
+            androidx.media3.exoplayer.ExoPlayer.Builder(context).setLoadControl(load).build().apply {
+                volume = if(muted) 0f else 1f
+                setMediaItem(MediaItem.fromUri(url))
+                playWhenReady = true
+                prepare()
+            }
+        }.getOrNull()
+    }
+    DisposableEffect(player) { onDispose { player?.release() } }
+    if(player!=null) {
+        AndroidView(factory={ctx -> PlayerView(ctx).apply { useController=false; keepScreenOn=true; player=player } },
+            update={view->view.player=player},modifier=Modifier.fillMaxSize())
+    } else {
+        Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center) {
+            Text("تعذر تشغيل البث الثاني على هذا الجهاز.",color=Muted,fontSize=11.sp)
         }
     }
 }
