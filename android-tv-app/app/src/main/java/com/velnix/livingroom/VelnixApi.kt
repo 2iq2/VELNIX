@@ -19,92 +19,252 @@ class VelnixApi(private val context: Context) {
         private const val KEY = "sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo"
         private const val SESSION = "auth_session"
     }
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(25, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .callTimeout(100, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
+
+    private val sessionLock = Any()
+
     private val prefs by lazy {
-        val master = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
+        val master = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
         EncryptedSharedPreferences.create(
-            context, "velnix_secure", master,
+            context,
+            "velnix_secure",
+            master,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
+
+    @Volatile
     private var current: UserSession? = null
 
-    fun session(): UserSession? {
-        if (current != null) return current
-        val raw = prefs.getString(SESSION, null) ?: return null
-        return try {
-            val j = JSONObject(raw)
-            UserSession(j.getString("access_token"), j.getString("refresh_token"), j.optJSONObject("user")?.optString("email").orEmpty()).also { current = it }
-        } catch (_: Exception) { null }
-    }
+    private data class HttpResult(val code: Int, val body: String)
 
-    private fun saveSession(json: JSONObject): UserSession {
-        val value = UserSession(json.getString("access_token"), json.getString("refresh_token"), json.optJSONObject("user")?.optString("email").orEmpty())
-        prefs.edit().putString(SESSION, json.toString()).apply()
-        current = value
-        return value
-    }
-
-    private suspend fun request(path: String, method: String = "GET", body: String? = null, token: String? = null, rest: Boolean = false): String = withContext(Dispatchers.IO) {
-        val url = if (rest) "$API/rest/v1/$path" else "$API/$path"
-        val builder = Request.Builder().url(url)
-            .header("apikey", KEY)
-            .header("Accept", "application/json")
-        builder.header("Authorization", "Bearer ${token ?: session()?.accessToken ?: KEY}")
-        if (body != null) builder.method(method, body.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()))
-        else builder.method(method, if (method == "GET" || method == "HEAD") null else ByteArray(0).toRequestBody(null))
-        client.newCall(builder.build()).execute().use { response ->
-            val text = response.body?.string().orEmpty()
-            if (!response.isSuccessful) {
-                val message = try { JSONObject(text).optString("msg").ifBlank { JSONObject(text).optString("message").ifBlank { JSONObject(text).optString("error").ifBlank { "HTTP ${response.code}" } } } } catch (_: Exception) { "HTTP ${response.code}" }
-                throw IllegalStateException(message)
-            }
-            text
+    fun session(): UserSession? = synchronized(sessionLock) {
+        current?.let { return@synchronized it }
+        val raw = prefs.getString(SESSION, null) ?: return@synchronized null
+        try {
+            val json = JSONObject(raw)
+            val user = json.optJSONObject("user")
+            UserSession(
+                accessToken = json.optString("access_token"),
+                refreshToken = json.optString("refresh_token"),
+                userEmail = user?.optString("email").orEmpty(),
+                userId = user?.optString("id").orEmpty(),
+                expiresAt = json.optLong("expires_at", 0L)
+            ).also { current = it }
+        } catch (_: Exception) {
+            null
         }
     }
 
+    private fun saveSession(json: JSONObject): UserSession = synchronized(sessionLock) {
+        val saved = JSONObject(json.toString())
+        val now = System.currentTimeMillis() / 1000L
+        val expiresAt = saved.optLong("expires_at", 0L).let { value ->
+            if (value > now) value else now + saved.optLong("expires_in", 3600L).coerceAtLeast(60L)
+        }
+        saved.put("expires_at", expiresAt)
+
+        val previous = current
+        val user = saved.optJSONObject("user")
+        val value = UserSession(
+            accessToken = saved.optString("access_token"),
+            refreshToken = saved.optString("refresh_token").ifBlank { previous?.refreshToken.orEmpty() },
+            userEmail = user?.optString("email").orEmpty().ifBlank { previous?.userEmail.orEmpty() },
+            userId = user?.optString("id").orEmpty().ifBlank { previous?.userId.orEmpty() },
+            expiresAt = expiresAt
+        )
+        prefs.edit().putString(SESSION, saved.toString()).apply()
+        current = value
+        value
+    }
+
+    private fun clearSession() = synchronized(sessionLock) {
+        prefs.edit().remove(SESSION).apply()
+        current = null
+    }
+
+    private fun perform(
+        path: String,
+        method: String,
+        body: String?,
+        bearer: String,
+        rest: Boolean,
+        extraHeaders: Map<String, String>
+    ): HttpResult {
+        val url = (if (rest) API + "/rest/v1/" else API + "/") + path
+        val builder = Request.Builder()
+            .url(url)
+            .header("apikey", KEY)
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer " + bearer)
+
+        extraHeaders.forEach { (name, value) -> builder.header(name, value) }
+
+        val requestBody = if (body != null) {
+            body.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        } else if (method != "GET" && method != "HEAD") {
+            ByteArray(0).toRequestBody(null)
+        } else null
+
+        builder.method(method, requestBody)
+        return client.newCall(builder.build()).execute().use { response ->
+            HttpResult(response.code, response.body?.string().orEmpty())
+        }
+    }
+
+    private fun responseMessage(body: String, code: Int): String {
+        return try {
+            val json = JSONObject(body)
+            json.optString("msg").ifBlank {
+                json.optString("message").ifBlank {
+                    json.optString("error_description").ifBlank {
+                        json.optString("error").ifBlank { "HTTP " + code }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            "HTTP " + code
+        }
+    }
+
+    // Refresh the persisted Supabase session before expiry. A network failure never deletes the saved login.
+    private fun refreshSessionBlocking(base: UserSession, force: Boolean = false): UserSession {
+        return synchronized(sessionLock) {
+        val latest = session() ?: base
+        val now = System.currentTimeMillis() / 1000L
+        if (!force && latest.expiresAt > now + 90L) return@synchronized latest
+        if (force && latest.accessToken != base.accessToken && latest.expiresAt > now + 90L) {
+            return@synchronized latest
+        }
+        if (latest.refreshToken.isBlank()) {
+            throw IllegalStateException("جلسة الدخول تحتاج إلى تسجيل دخول جديد.")
+        }
+
+        val payload = JSONObject().put("refresh_token", latest.refreshToken).toString()
+        val response = try {
+            perform(
+                "auth/v1/token?grant_type=refresh_token",
+                "POST",
+                payload,
+                KEY,
+                false,
+                emptyMap()
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException("تعذر تجديد جلسة VELNIX بسبب الاتصال. حسابك محفوظ؛ افحص الإنترنت وأعد المحاولة.", e)
+        }
+
+        if (response.code !in 200..299) {
+            val invalidGrant = response.code == 400 &&
+                (response.body.contains("invalid_grant", true) ||
+                    response.body.contains("refresh_token_not_found", true) ||
+                    response.body.contains("Invalid Refresh Token", true))
+            if (invalidGrant) clearSession()
+            throw IllegalStateException(
+                if (invalidGrant) "انتهت صلاحية جلسة الدخول. سجّل الدخول مرة ثانية."
+                else "تعذر تجديد جلسة الدخول: " + responseMessage(response.body, response.code)
+            )
+        }
+
+        saveSession(JSONObject(response.body))
+        }
+    }
+
+    private suspend fun request(
+        path: String,
+        method: String = "GET",
+        body: String? = null,
+        token: String? = null,
+        rest: Boolean = false,
+        extraHeaders: Map<String, String> = emptyMap()
+    ): String = withContext(Dispatchers.IO) {
+        val originalSession = if (token == null) session() else null
+        val bearer = if (token != null) {
+            token
+        } else if (originalSession != null) {
+            refreshSessionBlocking(originalSession).accessToken
+        } else {
+            KEY
+        }
+
+        var response = perform(path, method, body, bearer, rest, extraHeaders)
+
+        if (response.code == 401 && token == null && originalSession != null) {
+            val fresh = refreshSessionBlocking(session() ?: originalSession, force = true)
+            response = perform(path, method, body, fresh.accessToken, rest, extraHeaders)
+        }
+
+        if (response.code !in 200..299) {
+            throw IllegalStateException(responseMessage(response.body, response.code))
+        }
+        response.body
+    }
+
     suspend fun signIn(email: String, password: String): UserSession {
+        if (!email.contains("@") || password.length < 6) {
+            throw IllegalArgumentException("أدخل بريداً إلكترونياً صحيحاً وكلمة مرور لا تقل عن 6 أحرف.")
+        }
         val payload = JSONObject().put("email", email).put("password", password).toString()
-        return saveSession(JSONObject(request("auth/v1/token?grant_type=password", "POST", payload, token = KEY)))
+        return saveSession(
+            JSONObject(
+                request(
+                    "auth/v1/token?grant_type=password",
+                    method = "POST",
+                    body = payload,
+                    token = KEY
+                )
+            )
+        )
     }
 
     suspend fun signUp(email: String, password: String): UserSession {
-        val payload = JSONObject().put("action", "register_user").put("email", email).put("password", password).toString()
+        if (!email.contains("@") || password.length < 6) {
+            throw IllegalArgumentException("أدخل بريداً إلكترونياً صحيحاً وكلمة مرور لا تقل عن 6 أحرف.")
+        }
+        val payload = JSONObject()
+            .put("action", "register_user")
+            .put("email", email)
+            .put("password", password)
+            .toString()
         request("functions/v1/xtream-gateway", "POST", payload, token = KEY)
         return signIn(email, password)
     }
 
     fun signOut() {
-        val token = session()?.accessToken
-        if (token != null) {
+        val active = session()
+        if (active != null) {
             Thread {
                 try {
-                    val req = Request.Builder().url("$API/auth/v1/logout").post(ByteArray(0).toRequestBody())
-                        .header("apikey", KEY).header("Authorization", "Bearer $token").build()
-                    client.newCall(req).execute().close()
-                } catch (_: Exception) {}
+                    perform(
+                        "auth/v1/logout",
+                        "POST",
+                        null,
+                        active.accessToken,
+                        false,
+                        emptyMap()
+                    )
+                } catch (_: Exception) {
+                    // Local sign-out must still complete when the network is unavailable.
+                }
             }.start()
         }
-        prefs.edit().remove(SESSION).apply()
-        current = null
-    }
-
-    private suspend fun refreshIfNeeded(): String {
-        val s = session() ?: return KEY
-        // Supabase tokens are refreshed on a 401 response; the API request is retried once.
-        return s.accessToken
+        clearSession()
     }
 
     suspend fun channels(): List<Channel> {
         val all = mutableListOf<JSONObject>()
         var offset = 0
         while (offset < 10000) {
-            val path = "channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=$offset"
+            val path = "channels?select=id,name_ar,name_en,description,logo_url,stream_type,source_provider,source_external_id,channel_categories(slug,name_ar,name_en)&is_active=eq.true&order=name_ar.asc&limit=500&offset=" + offset
             val page = JSONArray(request(path, rest = true))
             for (i in 0 until page.length()) all.add(page.getJSONObject(i))
             if (page.length() < 500) break
@@ -114,19 +274,29 @@ class VelnixApi(private val context: Context) {
     }
 
     private fun groupRows(rows: List<JSONObject>): List<Channel> {
-        data class Part(val row: JSONObject, val category: String, val base: String, val quality: String, val rank: Int)
+        data class Part(
+            val row: JSONObject,
+            val category: String,
+            val base: String,
+            val quality: String,
+            val rank: Int
+        )
+
         val parts = rows.mapNotNull { row ->
             val names = row.optJSONObject("channel_categories")
-            val group = names?.optString("name_en").orEmpty().ifBlank { names?.optString("name_ar").orEmpty() }
+            val group = names?.optString("name_en").orEmpty()
+                .ifBlank { names?.optString("name_ar").orEmpty() }
             val ar = row.optString("name_ar").ifBlank { row.optString("name_en") }
             val en = row.optString("name_en").ifBlank { ar }
             val clean = cleanName(en)
             val q = quality(clean)
             Part(row, categoryFor(group, en), q.first, q.second, q.third)
         }
-        val grouped = parts.groupBy { p ->
-            "${p.row.optString("source_provider")}|${p.category}|${p.base.lowercase()}"
+
+        val grouped = parts.groupBy { part ->
+            part.row.optString("source_provider") + "|" + part.category + "|" + part.base.lowercase()
         }
+
         return grouped.values.flatMap { variants ->
             val sorted = variants.sortedByDescending { it.rank }
             val distinctQualities = sorted.map { it.quality.ifBlank { "SOURCE" } }.distinct()
@@ -134,46 +304,56 @@ class VelnixApi(private val context: Context) {
             val sets = if (combine) listOf(sorted) else sorted.map { listOf(it) }
             sets.map { set ->
                 val best = set.first()
-                val r = best.row
-                val cat = best.category
-                val ar = quality(cleanName(r.optString("name_ar").ifBlank { r.optString("name_en") })).first
-                val en = quality(cleanName(r.optString("name_en").ifBlank { r.optString("name_ar") })).first
+                val row = best.row
+                val category = best.category
+                val ar = quality(cleanName(row.optString("name_ar").ifBlank { row.optString("name_en") })).first
+                val en = quality(cleanName(row.optString("name_en").ifBlank { row.optString("name_ar") })).first
                 Channel(
-                    id = r.getString("id"),
+                    id = row.getString("id"),
                     name = ar.ifBlank { en },
                     english = en.ifBlank { ar },
-                    category = cat,
-                    categoryLabel = CATEGORIES.firstOrNull { it.id == cat }?.title ?: "منوعات",
-                    logo = r.optString("logo_url").takeIf { it.isNotBlank() && it != "null" },
-                    provider = r.optString("source_provider"),
+                    category = category,
+                    categoryLabel = CATEGORIES.firstOrNull { it.id == category }?.title ?: "منوعات",
+                    logo = row.optString("logo_url").takeIf { it.isNotBlank() && it != "null" },
+                    provider = row.optString("source_provider"),
                     quality = best.quality.ifBlank { if (combine) "مصادر متعددة" else "" },
                     streamIds = set.map { it.row.getString("id") },
-                    externalId = r.optString("source_external_id").takeIf { it.isNotBlank() && it != "null" },
-                    streamType = r.optString("stream_type").ifBlank { "hls" }
+                    externalId = row.optString("source_external_id").takeIf { it.isNotBlank() && it != "null" },
+                    streamType = row.optString("stream_type").ifBlank { "hls" }
                 )
             }
         }.sortedBy { it.name.lowercase() }
     }
 
     private fun cleanName(value: String): String = value
-        .replace(Regex("^\\s*(?:\\|\\s*)?(?:AR|TR|FR|UK|US|USA|CA|CAN|DE|ES|ITA|IT|NL|PT|PL|EU|LAT|SP|AF|NEWS|SPORT|DEPORTE)(?:\\s*\\|+\\s*|\\s*\\|\\s*)", RegexOption.IGNORE_CASE), "")
+        .replace(
+            Regex("^\\s*(?:\\|\\s*)?(?:AR|TR|FR|UK|US|USA|CA|CAN|DE|ES|ITA|IT|NL|PT|PL|EU|LAT|SP|AF|NEWS|SPORT|DEPORTE)(?:\\s*\\|+\\s*|\\s*\\|\\s*)", RegexOption.IGNORE_CASE),
+            ""
+        )
         .replace(Regex("^\\s*\\|+\\s*"), "")
         .replace(Regex("\\s*\\|\\s*"), " ")
-        .replace(Regex("\\s{2,}"), " ").trim()
+        .replace(Regex("\\s{2,}"), " ")
+        .trim()
 
     private fun quality(value: String): Triple<String, String, Int> {
-        val match = Regex("(?:\\s+|[-_.])(FULL\\s*HD|ULTRA\\s*HD|FHD|UHD|4K|8K|1080P|720P|576P|480P|SD|HD)$", RegexOption.IGNORE_CASE).find(value)
-            ?: return Triple(value, "", 0)
+        val match = Regex(
+            "(?:\\s+|[-_.])(FULL\\s*HD|ULTRA\\s*HD|FHD|UHD|4K|8K|1080P|720P|576P|480P|SD|HD)$",
+            RegexOption.IGNORE_CASE
+        ).find(value) ?: return Triple(value, "", 0)
+
         val token = match.groupValues[1].replace(" ", "").uppercase()
-        val rank = if (token in listOf("FHD","UHD","4K","8K","1080P","ULTRAHD")) 4 else if (token in listOf("HD","720P")) 3 else if (token in listOf("SD","576P","480P")) 2 else 1
-        val label = when(token) {
+        val rank = if (token in listOf("FHD", "UHD", "4K", "8K", "1080P", "ULTRAHD")) 4
+            else if (token in listOf("HD", "720P")) 3
+            else if (token in listOf("SD", "576P", "480P")) 2
+            else 1
+        val label = when (token) {
             "ULTRAHD" -> "UHD"
             "1080P" -> "FHD"
             "720P" -> "HD"
-            "576P","480P" -> "SD"
+            "576P", "480P" -> "SD"
             else -> token
         }
-        return Triple(value.substring(0, match.range.first).trimEnd(' ','.','_','-'), label, rank)
+        return Triple(value.substring(0, match.range.first).trimEnd(' ', '.', '_', '-'), label, rank)
     }
 
     suspend fun stream(channelId: String, fallbackType: String = "hls"): StreamInfo {
@@ -181,14 +361,22 @@ class VelnixApi(private val context: Context) {
         val result = JSONObject(request("functions/v1/xtream-gateway", "POST", payload))
         val url = result.optString("stream_url").takeIf { it.isNotBlank() && it != "null" }
             ?: throw IllegalStateException("مصدر البث غير مربوط لهذه القناة")
-        return StreamInfo(url, result.optString("stream_type").ifBlank { fallbackType.ifBlank { "hls" } })
+        return StreamInfo(
+            url,
+            result.optString("stream_type").ifBlank { fallbackType.ifBlank { "hls" } }
+        )
     }
 
     suspend fun epg(channel: Channel): List<EpgProgram> {
         if (channel.provider == "xtream" && channel.externalId?.matches(Regex("\\d+")) == true) {
             try {
-                val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
-                    JSONObject().put("action", "epg").put("stream_id", channel.externalId).toString()))
+                val response = JSONObject(
+                    request(
+                        "functions/v1/xtream-gateway",
+                        "POST",
+                        JSONObject().put("action", "epg").put("stream_id", channel.externalId).toString()
+                    )
+                )
                 val rows = response.optJSONArray("epg_listings") ?: JSONArray()
                 val result = (0 until rows.length()).mapNotNull { index ->
                     val row = rows.optJSONObject(index) ?: return@mapNotNull null
@@ -199,10 +387,18 @@ class VelnixApi(private val context: Context) {
                     else EpgProgram(title, decodeEpg(row.optString("description")), start, end)
                 }
                 if (result.isNotEmpty()) return result.sortedBy { it.startsAt }
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+                // Fall through to the local programme guide.
+            }
         }
-        val response = JSONObject(request("functions/v1/xtream-gateway", "POST",
-            JSONObject().put("action", "epg_database").put("channel_id", channel.id).toString()))
+
+        val response = JSONObject(
+            request(
+                "functions/v1/xtream-gateway",
+                "POST",
+                JSONObject().put("action", "epg_database").put("channel_id", channel.id).toString()
+            )
+        )
         val rows = response.optJSONArray("programs") ?: JSONArray()
         return (0 until rows.length()).mapNotNull { index ->
             val row = rows.optJSONObject(index) ?: return@mapNotNull null
@@ -214,9 +410,66 @@ class VelnixApi(private val context: Context) {
         }.sortedBy { it.startsAt }
     }
 
+    suspend fun checkBein(): Boolean {
+        return try {
+            JSONObject(
+                request(
+                    "functions/v1/xtream-gateway",
+                    "POST",
+                    JSONObject().put("action", "check_bein_access").toString()
+                )
+            ).optBoolean("has_access", false)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun loadProfile(userId: String, fallbackName: String): ProfileInfo {
+        if (userId.isBlank()) return ProfileInfo(fallbackName, "anime1")
+        val rows = JSONArray(
+            request(
+                "profiles?select=id,display_name,avatar_url&id=eq." + userId + "&limit=1",
+                rest = true
+            )
+        )
+        if (rows.length() == 0) return ProfileInfo(fallbackName, "anime1")
+        val row = rows.getJSONObject(0)
+        val displayName = row.optString("display_name").ifBlank { fallbackName }
+        val storedAvatar = row.optString("avatar_url")
+            .removePrefix("velnix-avatar:")
+            .ifBlank { "anime1" }
+        val validAvatar = storedAvatar.takeIf {
+            it.matches(Regex("anime[1-8]"))
+        } ?: "anime1"
+        return ProfileInfo(displayName, validAvatar)
+    }
+
+    suspend fun saveProfile(userId: String, displayName: String, avatarId: String) {
+        if (userId.isBlank()) throw IllegalStateException("تعذر تحديد الحساب الحالي.")
+        if (displayName.trim().length < 2) throw IllegalArgumentException("الاسم لازم يكون حرفين على الأقل.")
+        val validAvatar = avatarId.takeIf { it.matches(Regex("anime[1-8]")) } ?: "anime1"
+        val row = JSONObject()
+            .put("id", userId)
+            .put("display_name", displayName.trim())
+            .put("avatar_url", "velnix-avatar:" + validAvatar)
+            .put("updated_at", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()))
+        request(
+            "profiles?on_conflict=id",
+            method = "POST",
+            body = row.toString(),
+            rest = true,
+            extraHeaders = mapOf(
+                "Content-Type" to "application/json",
+                "Prefer" to "resolution=merge-duplicates,return=minimal"
+            )
+        )
+    }
+
     private fun decodeEpg(value: String): String = try {
         String(android.util.Base64.decode(value, android.util.Base64.DEFAULT), Charsets.UTF_8)
-    } catch (_: Exception) { value }
+    } catch (_: Exception) {
+        value
+    }
 
     private fun epochMillis(timestamp: String, fallback: String): Long {
         val number = timestamp.toLongOrNull()
@@ -229,18 +482,16 @@ class VelnixApi(private val context: Context) {
         java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
             timeZone = java.util.TimeZone.getTimeZone("UTC")
         }.parse(clean)?.time ?: 0L
-    } catch (_: Exception) { 0L }
-
-    suspend fun checkBein(): Boolean {
-        return try {
-            JSONObject(request("functions/v1/xtream-gateway", "POST", JSONObject().put("action","check_bein_access").toString()))
-                .optBoolean("has_access", false)
-        } catch (_: Exception) { false }
+    } catch (_: Exception) {
+        0L
     }
 
-    fun loadFavorites(): Set<String> = prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
+    fun loadFavorites(): Set<String> =
+        prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
 
-    fun saveFavorites(ids: Set<String>) { prefs.edit().putString("favorites", ids.joinToString(",")).apply() }
+    fun saveFavorites(ids: Set<String>) {
+        prefs.edit().putString("favorites", ids.joinToString(",")).apply()
+    }
 
     fun loadRecent(): List<String> = prefs.getString("recent_channels", "").orEmpty()
         .split(",").filter { it.isNotBlank() }.distinct().take(30)
@@ -249,6 +500,14 @@ class VelnixApi(private val context: Context) {
         prefs.edit().putString("recent_channels", ids.distinct().take(30).joinToString(",")).apply()
     }
 }
+
+data class UserSession(
+    val accessToken: String,
+    val refreshToken: String,
+    val userEmail: String,
+    val userId: String,
+    val expiresAt: Long
+)
 
 data class StreamInfo(val url: String, val type: String)
 data class EpgProgram(val title: String, val description: String, val startsAt: Long, val endsAt: Long)
