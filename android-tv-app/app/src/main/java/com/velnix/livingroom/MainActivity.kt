@@ -191,6 +191,10 @@ private fun VelnixApp(activity: ComponentActivity) {
     var familyVisible by remember { mutableStateOf(false) }
     var activeTvProfile by remember { mutableStateOf<TvProfile?>(null) }
     var profileLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var profileCategoryLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var settingsPinPrompt by remember { mutableStateOf(false) }
+    var settingsPinEntry by remember { mutableStateOf("") }
+    var settingsPinError by remember { mutableStateOf("") }
     var profileFavorites by remember { mutableStateOf<Set<String>>(emptySet()) }
     var profileRecent by remember { mutableStateOf<List<String>>(emptyList()) }
     var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
@@ -268,9 +272,24 @@ private fun VelnixApp(activity: ComponentActivity) {
         val userId = session?.userId ?: return@LaunchedEffect
         try {
             profileLocks = api.loadLockedChannels(userId, p.id)
+            profileCategoryLocks = api.loadLockedCategories(userId, p.id)
             profileFavorites = api.profileFavorites(userId, p.id)
             profileRecent = api.profileHistory(userId, p.id)
         } catch (e: Exception) { status = e.message ?: "تعذر تحميل إعدادات الملف" }
+    }
+
+    LaunchedEffect(session?.userId) {
+        if (session != null) {
+            val work = androidx.work.PeriodicWorkRequestBuilder<SportsScoreWorker>(15, java.util.concurrent.TimeUnit.MINUTES)
+                .setConstraints(androidx.work.Constraints.Builder()
+                    .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build())
+                .build()
+            androidx.work.WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "velnix-sports-score-updates", androidx.work.ExistingPeriodicWorkPolicy.UPDATE, work
+            )
+        } else {
+            androidx.work.WorkManager.getInstance(context).cancelUniqueWork("velnix-sports-score-updates")
+        }
     }
 
     LaunchedEffect(pairingInfo?.deviceToken) {
@@ -454,7 +473,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     else -> HomeScreen(
                         session = session!!,
                         profile = profile,
-                        channels = channels,
+                        channels = if (activeTvProfile != null) channels.filterNot { it.category in profileCategoryLocks } else channels,
                         hasMoreChannels = hasMoreChannels,
                         loadingMoreChannels = loadingMoreChannels,
                         onLoadMore = { loadMoreCatalog() },
@@ -471,7 +490,10 @@ private fun VelnixApp(activity: ComponentActivity) {
                         imageLoader = imageLoader,
                         showLogos = showLogos,
                         onProfile = { profileVisible = true },
-                        onSettings = { settingsVisible = true },
+                        onSettings = {
+                            if (api.hasSettingsPin()) { settingsPinPrompt = true; settingsPinEntry = ""; settingsPinError = "" }
+                            else settingsVisible = true
+                        },
                         onFamily = { familyVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
@@ -498,6 +520,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                 try {
                                     val active = activeTvProfile
                                     if (active != null && channel.id in profileLocks) throw IllegalStateException("هذه القناة مقفلة لهذا الملف.")
+                                    if (active != null && channel.category in profileCategoryLocks) throw IllegalStateException("هذا التصنيف مقفل لهذا الملف.")
                                     if (active?.isKids == true && channel.category != "kids") throw IllegalStateException("ملف الأطفال يسمح بقنوات الأطفال فقط.")
                                     if (channel.category == "bein" && !beinAccess) {
                                         throw IllegalStateException("قسم beIN SPORTS غير مفعّل على هذا الحساب.")
@@ -519,6 +542,36 @@ private fun VelnixApp(activity: ComponentActivity) {
                         error = error
                     )
                 }
+            }
+
+            if (settingsPinPrompt) {
+                AlertDialog(
+                    onDismissRequest = { settingsPinPrompt = false; settingsPinEntry = ""; settingsPinError = "" },
+                    containerColor = Panel,
+                    title = { Text("حماية الإعدادات", color = White, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("أدخل رمز PIN لفتح إعدادات التطبيق.", color = Muted)
+                            OutlinedTextField(
+                                value = settingsPinEntry,
+                                onValueChange = { settingsPinEntry = it.filter(Char::isDigit).take(8) },
+                                label = { Text("رمز PIN") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                            )
+                            if (settingsPinError.isNotBlank()) Text(settingsPinError, color = Color(0xFFFF9292))
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            if (api.verifySettingsPin(settingsPinEntry)) {
+                                settingsPinPrompt = false; settingsPinEntry = ""; settingsPinError = ""; settingsVisible = true
+                            } else settingsPinError = "رمز PIN غير صحيح."
+                        }) { Text("فتح الإعدادات", color = LocalVelnixAccent.current) }
+                    },
+                    dismissButton = { TextButton(onClick = { settingsPinPrompt = false }) { Text("إلغاء", color = White) } }
+                )
             }
 
             if (exitPrompt) {
