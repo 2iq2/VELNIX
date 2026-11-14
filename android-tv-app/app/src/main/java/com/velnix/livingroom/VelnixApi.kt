@@ -137,7 +137,8 @@ class VelnixApi(private val context: Context) {
     }
 
     // Refresh the persisted Supabase session before expiry. A network failure never deletes the saved login.
-    private fun refreshSessionBlocking(base: UserSession, force: Boolean = false): UserSession = synchronized(sessionLock) {
+    private fun refreshSessionBlocking(base: UserSession, force: Boolean = false): UserSession {
+        return synchronized(sessionLock) {
         val latest = session() ?: base
         val now = System.currentTimeMillis() / 1000L
         if (!force && latest.expiresAt > now + 90L) return@synchronized latest
@@ -175,6 +176,7 @@ class VelnixApi(private val context: Context) {
         }
 
         saveSession(JSONObject(response.body))
+        }
     }
 
     private suspend fun request(
