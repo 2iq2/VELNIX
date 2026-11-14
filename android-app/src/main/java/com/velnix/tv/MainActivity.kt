@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
     private fun disableTextSelection() {
         webView.evaluateJavascript(
             """(function() {
-                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } #velnixInstallApp, #velnix-install-app, .velnix-install-app, .app-download-section, .app-download-card { display: none !important; }';
+                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } #velnixInstallApp, #velnix-install-app, .velnix-install-app, .app-download-section, .app-download-card, #appDownloadTitle { display: none !important; }';
                 var style = document.getElementById('velnix-no-text-selection');
                 if (!style) {
                     style = document.createElement('style');
@@ -198,11 +198,34 @@ class MainActivity : ComponentActivity() {
                     (document.head || document.documentElement).appendChild(style);
                 }
                 style.textContent = css;
-                ['contextmenu', 'selectstart', 'copy', 'cut', 'dragstart'].forEach(function(name) {
-                    document.addEventListener(name, function(event) {
-                        event.preventDefault();
-                    }, true);
-                });
+
+                function hideAppDownloadCard() {
+                    document.querySelectorAll('#velnixInstallApp, #velnix-install-app, .velnix-install-app, .app-download-section, .app-download-card').forEach(function(node) {
+                        node.style.setProperty('display', 'none', 'important');
+                    });
+                    var title = document.getElementById('appDownloadTitle');
+                    if (title) {
+                        var section = title.closest('section');
+                        var card = title.closest('.app-download-card');
+                        if (section) section.style.setProperty('display', 'none', 'important');
+                        if (card) card.style.setProperty('display', 'none', 'important');
+                    }
+                }
+
+                hideAppDownloadCard();
+                if (!window.__velnixHideDownloadObserver && document.documentElement) {
+                    window.__velnixHideDownloadObserver = new MutationObserver(hideAppDownloadCard);
+                    window.__velnixHideDownloadObserver.observe(document.documentElement, { childList: true, subtree: true });
+                }
+
+                if (!window.__velnixSelectionGuardsInstalled) {
+                    ['contextmenu', 'selectstart', 'copy', 'cut', 'dragstart'].forEach(function(name) {
+                        document.addEventListener(name, function(event) {
+                            event.preventDefault();
+                        }, true);
+                    });
+                    window.__velnixSelectionGuardsInstalled = true;
+                }
             })();""",
             null
         )
