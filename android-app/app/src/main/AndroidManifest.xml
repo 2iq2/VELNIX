@@ -4,13 +4,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
+        android:hardwareAccelerated="true"
         android:label="VELNIX"
         android:icon="@drawable/ic_velnix"
         android:theme="@android:style/Theme.Material.NoActionBar"
+        android:supportsRtl="true"
         android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
