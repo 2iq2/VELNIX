@@ -677,7 +677,7 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun syncSportsFeed(): Boolean {
-        val result = JSONObject(request("functions/v1/tv-sports-feed", "POST", "{}", token = session()?.accessToken))
+        val result = JSONObject(request("functions/v1/tv-sports-feed", "POST", "{}"))
         return result.optBoolean("success", false)
     }
 
