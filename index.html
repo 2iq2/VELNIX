@@ -1508,14 +1508,7 @@ footer .foot{flex-wrap:wrap}
  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 </style>
-<style id="velnix-install-app-style">
-#velnixInstallApp{position:fixed;z-index:110;inset-inline-end:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 17px;border:1px solid rgba(210,166,255,.42);border-radius:16px;background:linear-gradient(120deg,rgba(93,49,145,.97),rgba(159,66,133,.97));color:#fff;font:700 14px "Tajawal",sans-serif;box-shadow:0 12px 35px rgba(0,0,0,.38),0 0 24px rgba(167,107,255,.19);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer;transition:transform .2s,box-shadow .2s}
-#velnixInstallApp:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(0,0,0,.42),0 0 28px rgba(167,107,255,.28)}
-#velnixInstallApp svg{width:19px;height:19px;flex:0 0 19px}
-#velnixInstallApp[hidden]{display:none!important}
-@media(max-width:520px){#velnixInstallApp{min-height:44px;padding:0 14px;border-radius:14px;font-size:13px;bottom:max(12px,env(safe-area-inset-bottom));inset-inline-end:max(12px,env(safe-area-inset-right))}}
-@media(display-mode:standalone){#velnixInstallApp{display:none!important}}
-</style>
+
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
@@ -3072,37 +3065,8 @@ loadChannels();
 })();
 </script>
 
-<button id="velnixInstallApp" type="button" aria-label="تثبيت تطبيق VELNIX">
-<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-<span>تثبيت التطبيق</span></button>
-<script id="velnix-pwa-install">
+<script id="velnix-pwa-register">
 (()=>{
- const button=document.getElementById('velnixInstallApp');
- if(!button)return;
- let installPrompt=null;
- const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
- const hide=()=>{button.hidden=true};
- if(standalone())hide();
- window.addEventListener('beforeinstallprompt',event=>{
-  event.preventDefault();installPrompt=event;button.hidden=false;
- });
- window.addEventListener('appinstalled',()=>{installPrompt=null;hide();if(typeof showSiteToast==='function')showSiteToast('تم تثبيت VELNIX على جهازك.','success')});
- button.addEventListener('click',async()=>{
-  if(standalone()){hide();return}
-  if(installPrompt){
-   const promptEvent=installPrompt;installPrompt=null;
-   try{
-    await promptEvent.prompt();
-    const choice=await promptEvent.userChoice;
-    if(choice?.outcome==='accepted'){hide();if(typeof showSiteToast==='function')showSiteToast('بدأ تثبيت تطبيق VELNIX.','success')}
-    else if(typeof showSiteToast==='function')showSiteToast('يمكنك تثبيت التطبيق في أي وقت من زر التثبيت.','info');
-   }catch(error){if(typeof showSiteToast==='function')showSiteToast('لم يكتمل التثبيت. افتح قائمة المتصفح واختر تثبيت التطبيق.','info')}
-   return;
-  }
-  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  const message=isIOS?'لتثبيت VELNIX على iPad أو iPhone: اضغط مشاركة في Safari ثم «إضافة إلى الشاشة الرئيسية».':'إذا لم تظهر نافذة التثبيت، افتح قائمة المتصفح ⋮ واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».';
-  if(typeof showSiteToast==='function')showSiteToast(message,'info');else window.alert(message);
- });
  if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
    navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'})
@@ -3112,4 +3076,5 @@ loadChannels();
  }
 })();
 </script>
+
 </body></html>
