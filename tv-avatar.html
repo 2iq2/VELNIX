@@ -1,0 +1,85 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090e1b">
+<title>VELNIX · رفع صورة الملف</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 20% 0,#23304d,transparent 48%),linear-gradient(145deg,#080d18,#111a2c);color:#f6f7fa;font-family:system-ui,sans-serif}
+main{width:min(100%,500px);border:1px solid #ffffff28;border-radius:25px;padding:25px;background:linear-gradient(140deg,#ffffff18,#ffffff08);box-shadow:0 26px 80px #0008;backdrop-filter:blur(20px)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#e50914;font-size:27px;font-weight:900}.word{font-weight:900;letter-spacing:4px}.muted{color:#aab4c8;font-size:13px;line-height:1.8}h1{font-size:23px;margin:0 0 8px}
+input{width:100%;padding:14px;border:1px solid #ffffff28;border-radius:12px;background:#080e1b;color:white;margin:14px 0}
+button{width:100%;border:0;border-radius:12px;padding:14px;background:#e50914;color:white;font-weight:800;font-size:14px;cursor:pointer}button:disabled{opacity:.45}
+#preview{display:block;width:124px;height:124px;border-radius:50%;object-fit:cover;margin:12px auto;border:2px solid #ffffff55;background:#152039}
+#status{min-height:46px;margin-top:14px;padding:12px;border-radius:12px;background:#ffffff0d;color:#ccd5e6;font-size:13px;line-height:1.7}.good{color:#65e0ad!important}.bad{color:#ff9aa7!important}.note{font-size:11px;color:#8795ad;line-height:1.8;margin-top:13px}
+</style></head><body><main>
+<div class="brand"><div class="logo">V</div><div><div class="word">VELNIX</div><div class="muted">صورة الملف الشخصي للتلفزيون</div></div></div>
+<h1>اختر صورة من هاتفك</h1>
+<p class="muted">هذه الصفحة تستخدم جلسة VELNIX المحفوظة في المتصفح. افتح موقع VELNIX وسجّل الدخول أولاً، ثم ارجع إلى هذا الرابط. لا تطلب الصفحة كلمة مرورك.</p>
+<input id="photo" type="file" accept="image/jpeg,image/png,image/webp" disabled>
+<img id="preview" alt="معاينة الصورة" hidden>
+<button id="save" disabled>حفظ الصورة</button>
+<div id="status">جارٍ التحقق من جلسة الدخول ورابط الملف…</div>
+<div class="note">يُسمح بملفات JPG وPNG وWebP فقط. يتم تقليل الصورة إلى 640 بكسل وبحد أقصى 3 ميغابايت. يمكن تعديل الملف المرتبط بحسابك فقط.</div>
+</main>
+<script>
+const API="https://shungcjflcjwubdlhyzq.supabase.co";
+const KEY="sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo";
+const profileId=new URLSearchParams(location.search).get("profile");
+const $=id=>document.getElementById(id);
+let session=null,blob=null,ownerId="";
+function show(message,type=""){ $("status").textContent=message;$("status").className=type; }
+async function getSession(){
+ let saved=JSON.parse(localStorage.getItem("velnix:auth-session")||"null");
+ if(!saved?.access_token||!saved?.user?.id)throw new Error("ماكو جلسة دخول. افتح موقع VELNIX وسجّل الدخول ثم امسح رمز QR مرة ثانية.");
+ if(Number(saved.expires_at||0)<Date.now()/1000+90){
+  if(!saved.refresh_token)throw new Error("انتهت جلسة الدخول. سجّل الدخول مجدداً من موقع VELNIX.");
+  const response=await fetch(API+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{"apikey":KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:saved.refresh_token})});
+  const refreshed=await response.json();if(!response.ok)throw new Error(refreshed.msg||"تعذر تجديد جلسة الدخول.");
+  saved={...refreshed,expires_at:Math.floor(Date.now()/1000)+Number(refreshed.expires_in||3600)};
+  localStorage.setItem("velnix:auth-session",JSON.stringify(saved));
+ }
+ return saved;
+}
+async function init(){
+ try{
+  if(!profileId||!/^[0-9a-f-]{36}$/i.test(profileId))throw new Error("رابط الملف غير صالح. افتح رمز QR الجديد من التلفزيون.");
+  session=await getSession();ownerId=session.user.id;
+  const r=await fetch(API+"/rest/v1/tv_profiles?id=eq."+encodeURIComponent(profileId)+"&select=id,user_id",{headers:{"apikey":KEY,"Authorization":"Bearer "+session.access_token}});
+  const profiles=await r.json();if(!r.ok)throw new Error("تعذر التحقق من الملف.");
+  if(!profiles.length||profiles[0].user_id!==ownerId)throw new Error("هذا الملف لا يتبع الحساب المسجّل في هذا المتصفح.");
+  $("photo").disabled=false;show("تم التحقق من الحساب والملف. اختر صورة من الهاتف.","good");
+ }catch(e){show(e.message||"تعذر التحقق من الدخول.","bad");}
+}
+$("photo").addEventListener("change",async()=>{
+ blob=null;$("save").disabled=true;
+ const file=$("photo").files?.[0];if(!file)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)){show("صيغة الصورة غير مدعومة.","bad");return;}
+ try{
+  const img=new Image(),url=URL.createObjectURL(file);
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url;});
+  const scale=Math.min(1,640/Math.max(img.width,img.height)),canvas=document.createElement("canvas");
+  canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+  canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);URL.revokeObjectURL(url);
+  blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.84));
+  if(!blob||blob.size>3145728)throw new Error("حجم الصورة بعد الضغط يتجاوز 3 ميغابايت.");
+  $("preview").src=URL.createObjectURL(blob);$("preview").hidden=false;$("save").disabled=false;
+  show("الصورة جاهزة. اضغط حفظ الصورة.","good");
+ }catch(e){show(e.message||"تعذرت معالجة الصورة.","bad");}
+});
+$("save").addEventListener("click",async()=>{
+ if(!blob||!session||!profileId)return;
+ $("save").disabled=true;show("جارٍ رفع الصورة وربطها بالملف…");
+ try{
+  const path=ownerId+"/"+profileId+"/"+Date.now()+".jpg";
+  const up=await fetch(API+"/storage/v1/object/tv-avatars/"+path,{method:"POST",headers:{"apikey":KEY,"Authorization":"Bearer "+session.access_token,"Content-Type":"image/jpeg","x-upsert":"false"},body:blob});
+  const upData=await up.json().catch(()=>({}));if(!up.ok)throw new Error(upData.message||"تعذر رفع الصورة إلى التخزين.");
+  const publicUrl=API+"/storage/v1/object/public/tv-avatars/"+path;
+  const patch=await fetch(API+"/rest/v1/tv_profiles?id=eq."+encodeURIComponent(profileId)+"&user_id=eq."+encodeURIComponent(ownerId),{
+   method:"PATCH",headers:{"apikey":KEY,"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json","Prefer":"return=minimal"},
+   body:JSON.stringify({avatar_url:publicUrl,updated_at:new Date().toISOString()})
+  });
+  if(!patch.ok)throw new Error("تم الرفع لكن تعذر ربط الصورة بالملف.");
+  show("تم حفظ الصورة. ارجع إلى التلفزيون واضغط تحديث الصورة بعد الرفع.","good");
+ }catch(e){show(e.message||"حدث خطأ أثناء الحفظ.","bad");}
+ finally{$("save").disabled=false;}
+});
+init();
+</script></body></html>

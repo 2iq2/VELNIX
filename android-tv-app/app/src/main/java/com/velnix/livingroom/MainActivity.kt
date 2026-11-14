@@ -104,6 +104,7 @@ private val AvatarOptions = listOf(
 )
 
 private fun avatarUrl(id: String): String {
+    if (id.startsWith("https://")) return id
     val file = AvatarOptions.firstOrNull { it.id == id }?.file ?: AvatarOptions.first().file
     return "https://2iq2.github.io/VELNIX/assets/avatars/" + file
 }
@@ -188,6 +189,16 @@ private fun VelnixApp(activity: ComponentActivity) {
     var profileSaving by remember { mutableStateOf(false) }
     var profileError by remember { mutableStateOf("") }
     var settingsVisible by remember { mutableStateOf(false) }
+    var familyVisible by remember { mutableStateOf(false) }
+    var multiViewVisible by remember { mutableStateOf(false) }
+    var activeTvProfile by remember { mutableStateOf<TvProfile?>(null) }
+    var profileLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var profileCategoryLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var settingsPinPrompt by remember { mutableStateOf(false) }
+    var settingsPinEntry by remember { mutableStateOf("") }
+    var settingsPinError by remember { mutableStateOf("") }
+    var profileFavorites by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var profileRecent by remember { mutableStateOf<List<String>>(emptyList()) }
     var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
     var dataSaver by remember { mutableStateOf(api.loadDataSaver()) }
     var showLogos by remember { mutableStateOf(api.loadShowLogos()) }
@@ -247,6 +258,56 @@ private fun VelnixApp(activity: ComponentActivity) {
         }
     }
 
+    LaunchedEffect(session?.userId) {
+        val userId = session?.userId
+        if (userId == null) {
+            activeTvProfile = null
+            profileLocks = emptySet()
+            profileCategoryLocks = emptySet()
+            profileFavorites = emptySet()
+            profileRecent = emptyList()
+            familyVisible = false
+            return@LaunchedEffect
+        }
+        activeTvProfile = null
+        try {
+            val profiles = api.tvProfiles(userId)
+            val savedId = api.loadActiveTvProfile(userId)
+            val saved = profiles.firstOrNull { it.id == savedId && !it.hasPin }
+            activeTvProfile = saved ?: profiles.firstOrNull { !it.hasPin }
+            activeTvProfile?.let { api.saveActiveTvProfile(userId, it.id) }
+            if (activeTvProfile == null) {
+                familyVisible = true
+                status = if (profiles.isEmpty()) "أنشئ أول ملف شخصي حتى تبدأ المشاهدة." else "اختر ملفاً وأدخل PIN الخاص به."
+            }
+        } catch (e: Exception) { status = e.message ?: "تعذر تحميل ملفات العائلة" }
+    }
+
+    LaunchedEffect(activeTvProfile?.id) {
+        val p = activeTvProfile ?: return@LaunchedEffect
+        val userId = session?.userId ?: return@LaunchedEffect
+        try {
+            profileLocks = api.loadLockedChannels(userId, p.id)
+            profileCategoryLocks = api.loadLockedCategories(userId, p.id)
+            profileFavorites = api.profileFavorites(userId, p.id)
+            profileRecent = api.profileHistory(userId, p.id)
+        } catch (e: Exception) { status = e.message ?: "تعذر تحميل إعدادات الملف" }
+    }
+
+    LaunchedEffect(session?.userId) {
+        if (session != null) {
+            val work = androidx.work.PeriodicWorkRequestBuilder<SportsScoreWorker>(15, java.util.concurrent.TimeUnit.MINUTES)
+                .setConstraints(androidx.work.Constraints.Builder()
+                    .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build())
+                .build()
+            androidx.work.WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "velnix-sports-score-updates", androidx.work.ExistingPeriodicWorkPolicy.UPDATE, work
+            )
+        } else {
+            androidx.work.WorkManager.getInstance(context).cancelUniqueWork("velnix-sports-score-updates")
+        }
+    }
+
     LaunchedEffect(pairingInfo?.deviceToken) {
         val pendingPair = pairingInfo ?: return@LaunchedEffect
         pairingError = ""
@@ -273,7 +334,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 
     BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
-        if (settingsVisible) settingsVisible = false else exitPrompt = true
+        if (settingsPinPrompt) settingsPinPrompt = false else if (multiViewVisible) multiViewVisible = false else if (settingsVisible) settingsVisible = false else exitPrompt = true
     }
 
     MaterialTheme(
@@ -307,8 +368,23 @@ private fun VelnixApp(activity: ComponentActivity) {
                             streamUrl = null
                         }
                     )
+                    multiViewVisible && session != null -> MultiViewScreen(
+                        api = api,
+                        channels = if (activeTvProfile?.isKids == true) channels.filter { it.category == "kids" } else channels.filterNot { it.category in profileCategoryLocks || it.id in profileLocks || (it.category == "bein" && !beinAccess) },
+                        lowRamDevice = lowRamDevice,
+                        onBack = { multiViewVisible = false }
+                    )
+                    familyVisible && session != null -> FamilyManagementScreen(
+                        api = api, userId = session!!.userId, channels = channels,
+                        onActivate = { p -> activeTvProfile = p; api.saveActiveTvProfile(session!!.userId, p.id); familyVisible = false },
+                        onProfileDataChanged = { id -> scope.launch { try { profileFavorites=api.profileFavorites(session!!.userId,id); profileRecent=api.profileHistory(session!!.userId,id); profileLocks=api.loadLockedChannels(session!!.userId,id); profileCategoryLocks=api.loadLockedCategories(session!!.userId,id) } catch(e:Exception) { status=e.message ?: "تعذر تحديث بيانات الملف" } } },
+                        onBack = { if (activeTvProfile != null) familyVisible = false else message = "فعّل ملفاً شخصياً أو أنشئ ملفاً قبل إغلاق هذه الصفحة." }
+                    )
                     settingsVisible && session != null -> SettingsScreen(
                         accentArgb = accentArgb,
+                        hasSettingsPin = api.hasSettingsPin(),
+                        onSaveSettingsPin = { value -> api.saveSettingsPin(value); status = "تم تحديث رمز حماية الإعدادات." },
+                        onRemoveSettingsPin = { api.saveSettingsPin(""); status = "تم إلغاء حماية الإعدادات." },
                         onAccentArgb = { value ->
                             accentArgb = value
                             context.getSharedPreferences("velnix_ui", android.content.Context.MODE_PRIVATE).edit().putInt("accent_argb", value).apply()
@@ -423,7 +499,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     else -> HomeScreen(
                         session = session!!,
                         profile = profile,
-                        channels = channels,
+                        channels = when { activeTvProfile?.isKids == true -> channels.filter { it.category == "kids" }; activeTvProfile != null -> channels.filterNot { it.category in profileCategoryLocks }; else -> channels },
                         hasMoreChannels = hasMoreChannels,
                         loadingMoreChannels = loadingMoreChannels,
                         onLoadMore = { loadMoreCatalog() },
@@ -431,8 +507,8 @@ private fun VelnixApp(activity: ComponentActivity) {
                         onCategory = { category = it },
                         query = query,
                         onQuery = { query = it },
-                        favorites = favorites,
-                        recent = recent,
+                        favorites = if (activeTvProfile != null) profileFavorites else favorites,
+                        recent = if (activeTvProfile != null) profileRecent else recent,
                         beinAccess = beinAccess,
                         status = status,
                         busy = busy,
@@ -440,7 +516,12 @@ private fun VelnixApp(activity: ComponentActivity) {
                         imageLoader = imageLoader,
                         showLogos = showLogos,
                         onProfile = { profileVisible = true },
-                        onSettings = { settingsVisible = true },
+                        onSettings = {
+                            if (api.hasSettingsPin()) { settingsPinPrompt = true; settingsPinEntry = ""; settingsPinError = "" }
+                            else settingsVisible = true
+                        },
+                        onFamily = { familyVisible = true },
+                        onMultiView = { multiViewVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
                             api.signOut()
@@ -449,14 +530,25 @@ private fun VelnixApp(activity: ComponentActivity) {
                             password = ""
                         },
                         onFavorite = { channel ->
-                            favorites = if (channel.id in favorites) favorites - channel.id else favorites + channel.id
-                            api.saveFavorites(favorites)
+                            val active = activeTvProfile
+                            if (active != null) {
+                                val enabled = channel.id !in profileFavorites
+                                profileFavorites = if (enabled) profileFavorites + channel.id else profileFavorites - channel.id
+                                scope.launch { try { api.setProfileFavorite(session!!.userId, active.id, channel.id, enabled) } catch (e: Exception) { error = e.message ?: "تعذر حفظ المفضلة" } }
+                            } else {
+                                favorites = if (channel.id in favorites) favorites - channel.id else favorites + channel.id
+                                api.saveFavorites(favorites)
+                            }
                         },
                         onPlay = { channel ->
                             scope.launch {
                                 busyChannel = channel.id
                                 error = ""
                                 try {
+                                    val active = activeTvProfile
+                                    if (active != null && channel.id in profileLocks) throw IllegalStateException("هذه القناة مقفلة لهذا الملف.")
+                                    if (active != null && channel.category in profileCategoryLocks) throw IllegalStateException("هذا التصنيف مقفل لهذا الملف.")
+                                    if (active?.isKids == true && channel.category != "kids") throw IllegalStateException("ملف الأطفال يسمح بقنوات الأطفال فقط.")
                                     if (channel.category == "bein" && !beinAccess) {
                                         throw IllegalStateException("قسم beIN SPORTS غير مفعّل على هذا الحساب.")
                                     }
@@ -466,6 +558,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                     selected = channel
                                     recent = (listOf(channel.id) + recent.filterNot { it == channel.id }).take(30)
                                     api.saveRecent(recent)
+                                    activeTvProfile?.let { p -> try { api.recordProfileWatch(session!!.userId, p.id, channel.id) } catch (_: Exception) { } }
                                 } catch (e: Exception) {
                                     error = e.message ?: "تعذر تجهيز البث"
                                 } finally {
@@ -476,6 +569,36 @@ private fun VelnixApp(activity: ComponentActivity) {
                         error = error
                     )
                 }
+            }
+
+            if (settingsPinPrompt) {
+                AlertDialog(
+                    onDismissRequest = { settingsPinPrompt = false; settingsPinEntry = ""; settingsPinError = "" },
+                    containerColor = Panel,
+                    title = { Text("حماية الإعدادات", color = White, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("أدخل رمز PIN لفتح إعدادات التطبيق.", color = Muted)
+                            OutlinedTextField(
+                                value = settingsPinEntry,
+                                onValueChange = { settingsPinEntry = it.filter(Char::isDigit).take(8) },
+                                label = { Text("رمز PIN") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                            )
+                            if (settingsPinError.isNotBlank()) Text(settingsPinError, color = Color(0xFFFF9292))
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            if (api.verifySettingsPin(settingsPinEntry)) {
+                                settingsPinPrompt = false; settingsPinEntry = ""; settingsPinError = ""; settingsVisible = true
+                            } else settingsPinError = "رمز PIN غير صحيح."
+                        }) { Text("فتح الإعدادات", color = LocalVelnixAccent.current) }
+                    },
+                    dismissButton = { TextButton(onClick = { settingsPinPrompt = false }) { Text("إلغاء", color = White) } }
+                )
             }
 
             if (exitPrompt) {
@@ -746,6 +869,8 @@ private fun HomeScreen(
     showLogos: Boolean,
     onProfile: () -> Unit,
     onSettings: () -> Unit,
+    onFamily: () -> Unit,
+    onMultiView: () -> Unit,
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
     onFavorite: (Channel) -> Unit,
@@ -924,6 +1049,8 @@ private fun HomeScreen(
             }
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.10f), modifier = Modifier.padding(vertical = 9.dp))
+            MenuFooterAction("◎", "ملفات العائلة والحماية", menuExpanded, onFamily)
+            MenuFooterAction("▣", "مشاهدة قناتين", menuExpanded, onMultiView)
             MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
             MenuFooterAction("⟳", "تحديث القنوات", menuExpanded, onRefresh)
             MenuFooterAction("⇥", "تسجيل الخروج", menuExpanded, onSignOut)
@@ -1140,6 +1267,295 @@ private fun ChannelTile(
 }
 
 @Composable
+private fun FamilyManagementScreen(
+    api: VelnixApi,
+    userId: String,
+    channels: List<Channel>,
+    onActivate: (TvProfile) -> Unit,
+    onProfileDataChanged: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var profiles by remember { mutableStateOf<List<TvProfile>>(emptyList()) }
+    var matches by remember { mutableStateOf<List<TvMatch>>(emptyList()) }
+    var selectedProfile by remember { mutableStateOf<String?>(null) }
+    var locked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var lockedCategories by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var selectedShareChannel by remember { mutableStateOf(channels.firstOrNull()?.id.orEmpty()) }
+    var shareCode by remember { mutableStateOf("") }
+    var shareCodeInput by remember { mutableStateOf("") }
+    var predictionTarget by remember { mutableStateOf<TvMatch?>(null) }
+    var predictionHome by remember { mutableStateOf("") }
+    var predictionAway by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
+    var kids by remember { mutableStateOf(false) }
+    var avatar by remember { mutableStateOf("anime1") }
+    var message by remember { mutableStateOf("جارٍ تحميل بيانات العائلة…") }
+    var busy by remember { mutableStateOf(false) }
+    var tab by remember { mutableStateOf("profiles") }
+    var activationTarget by remember { mutableStateOf<TvProfile?>(null) }
+    var activationPin by remember { mutableStateOf("") }
+    var activationError by remember { mutableStateOf("") }
+    var newProfilePin by remember { mutableStateOf("") }
+    LaunchedEffect(userId) {
+        try {
+            profiles = api.tvProfiles(userId)
+            try { api.syncSportsFeed() } catch (_: Exception) { }
+            matches = api.upcomingMatches()
+            selectedProfile = profiles.firstOrNull()?.id
+            message = if (matches.isEmpty()) "تعذر العثور على مباريات منشورة حالياً." else ""
+        } catch (e: Exception) { message = e.message ?: "تعذر تحميل البيانات" }
+    }
+    LaunchedEffect(selectedProfile) {
+        val id = selectedProfile ?: return@LaunchedEffect
+        try {
+            locked = api.loadLockedChannels(userId, id)
+            lockedCategories = api.loadLockedCategories(userId, id)
+        } catch (_: Exception) { locked = emptySet(); lockedCategories = emptySet() }
+    }
+    BackHandler(onBack = onBack)
+    Column(Modifier.fillMaxSize().background(AppBg).padding(horizontal = 30.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column { Text("العائلة والحماية", color = White, fontSize = 26.sp, fontWeight = FontWeight.Black); Text("ملفات مستقلة، رقابة أبوية، ومواعيد المباريات", color = Muted, fontSize = 11.sp) }
+            TextButton(onClick = onBack) { Text("رجوع", color = White) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("profiles" to "الملفات الشخصية", "locks" to "قفل القنوات والتصنيفات", "sports" to "المباريات", "share" to "مشاركة قناة").forEach { (id,label) ->
+                FilterChip(selected = tab==id, onClick={tab=id}, label={Text(label)}, colors=FilterChipDefaults.filterChipColors(selectedContainerColor=LocalVelnixAccent.current,selectedLabelColor=White))
+            }
+        }
+        if (message.isNotBlank()) Text(message, color=LocalVelnixAccent.current, fontSize=11.sp)
+        when(tab) {
+            "profiles" -> {
+                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(14.dp), verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                        Text("ملفات العائلة",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        if(profiles.isEmpty()) Text("ماكو ملفات إضافية. أنشئ أول ملف.",color=Muted)
+                        profiles.forEach { p ->
+                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(selectedProfile==p.id) LocalVelnixAccent.current.copy(alpha=.17f) else PanelRaised).clickable { selectedProfile=p.id; activationTarget=p; activationPin=""; activationError="" }.padding(10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(9.dp)) { AsyncImage(model=avatarUrl(p.avatarId),contentDescription=null,modifier=Modifier.size(38.dp).clip(CircleShape)); Column { Text(p.name,color=White,fontWeight=FontWeight.Bold); Text(if(p.isKids) "ملف أطفال" else "ملف عادي",color=Muted,fontSize=10.sp) } }
+                                TextButton(onClick={scope.launch { try { api.removeTvProfile(userId,p.id); profiles=api.tvProfiles(userId); selectedProfile=profiles.firstOrNull()?.id } catch(e:Exception){message=e.message ?: "تعذر الحذف"} }}) { Text("حذف",color=Color(0xFFFF9292)) }
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(14.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                        Text("إضافة ملف شخصي",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        OutlinedTextField(value=name,onValueChange={name=it.take(32)},label={Text("اسم الملف")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Text("الافتار",color=White,fontSize=12.sp)
+                        Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) { (1..8).forEach { n -> FilterChip(selected=avatar=="anime$n",onClick={avatar="anime$n"},label={Text("A$n")}) } }
+                        OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(6)},label={Text("PIN اختياري (4–6 أرقام)")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
+                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); selectedProfile=profiles.lastOrNull()?.id; val created=profiles.lastOrNull(); if(created!=null && !created.hasPin) onActivate(created); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
+                        Text("اضغط على ملف لتفعيله. الملفات المحمية تطلب PIN قبل التبديل.",color=Muted,fontSize=10.sp)
+                        if (selectedProfile != null) {
+                            OutlinedTextField(value=newProfilePin,onValueChange={newProfilePin=it.filter(Char::isDigit).take(6)},label={Text("تعيين أو تغيير PIN (4–6 أرقام)")},singleLine=true,visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
+                            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick={scope.launch { try { api.setTvProfilePin(userId,selectedProfile!!,newProfilePin); profiles=api.tvProfiles(userId); newProfilePin=""; message="تم تحديث PIN الملف." } catch(e:Exception){message=e.message ?: "تعذر تحديث PIN"} }}) { Text("حفظ PIN") }
+                                TextButton(onClick={scope.launch { try { api.setTvProfilePin(userId,selectedProfile!!,""); profiles=api.tvProfiles(userId); newProfilePin=""; message="تم إزالة PIN الملف." } catch(e:Exception){message=e.message ?: "تعذر إزالة PIN"} }}) { Text("إزالة PIN") }
+                            }
+                        }
+                        selectedProfile?.let { profileId ->
+                            HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=6.dp))
+                            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                                PairingQr("https://2iq2.github.io/VELNIX/tv-avatar.html?profile="+profileId)
+                                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                                    Text("ارفع صورة الملف من الهاتف",color=White,fontWeight=FontWeight.Bold,fontSize=12.sp)
+                                    Text("امسح الرمز، سجّل الدخول بحسابك، ثم اختر الصورة من الهاتف.",color=Muted,fontSize=9.sp,lineHeight=13.sp)
+                                    TextButton(onClick={scope.launch { try { profiles=api.tvProfiles(userId); message="تم تحديث قائمة الصور." } catch(e:Exception){message=e.message ?: "تعذر تحديث الملفات"} }},contentPadding=PaddingValues(0.dp)) {
+                                        Text("تحديث الصورة بعد الرفع",color=LocalVelnixAccent.current,fontSize=10.sp)
+                                    }
+                                }
+                            }
+                        }
+                        activationTarget?.let { target ->
+                            AlertDialog(
+                                onDismissRequest = { activationTarget = null },
+                                title = { Text("فتح ملف " + target.name) },
+                                text = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        if (target.hasPin) OutlinedTextField(value=activationPin,onValueChange={activationPin=it.filter(Char::isDigit).take(6)},label={Text("رمز PIN")},singleLine=true,visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
+                                        else Text("تفعيل هذا الملف؟")
+                                        if (activationError.isNotBlank()) Text(activationError,color=Color(0xFFFF9292))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        scope.launch {
+                                            try {
+                                                if (target.hasPin && !api.checkTvProfilePin(userId,target.id,activationPin)) activationError = "رمز PIN غير صحيح."
+                                                else { onActivate(target); activationTarget = null }
+                                            } catch(e:Exception) { activationError=e.message ?: "تعذر التحقق من الرمز" }
+                                        }
+                                    }) { Text("تفعيل") }
+                                },
+                                dismissButton = { TextButton(onClick={activationTarget=null}) { Text("إلغاء") } },
+                                containerColor = Panel
+                            )
+                        }
+                    }
+                }
+            }
+            "locks" -> {
+                Row(Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).verticalScroll(rememberScrollState()).padding(12.dp)) {
+                        Text("اختَر الملف",color=White,fontWeight=FontWeight.Bold)
+                        profiles.forEach { p -> FilterChip(selected=selectedProfile==p.id,onClick={selectedProfile=p.id},label={Text(p.name)}) }
+                        HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=8.dp))
+                        Text("قفل التصنيفات بالكامل",color=White,fontWeight=FontWeight.Bold,fontSize=13.sp)
+                        Text("أي تصنيف مقفل لن تظهر قنواته ولن يعمل عند محاولة فتحه.",color=Muted,fontSize=10.sp)
+                        CATEGORIES.filter { it.id != "all" }.forEach { cat ->
+                            Row(Modifier.fillMaxWidth().padding(vertical=2.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Text(cat.title,color=White,fontSize=11.sp)
+                                Checkbox(checked=cat.id in lockedCategories,onCheckedChange={v->
+                                    val id=selectedProfile ?: return@Checkbox
+                                    lockedCategories=if(v) lockedCategories+cat.id else lockedCategories-cat.id
+                                    scope.launch { try { api.setCategoryLocked(userId,id,cat.id,v) } catch(e:Exception){message=e.message ?: "تعذر حفظ قفل التصنيف"} }
+                                })
+                            }
+                        }
+                    }
+                    LazyColumn(Modifier.weight(2f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        item { Text("قفل القنوات الفردية",color=White,fontWeight=FontWeight.Bold) }
+                        items(channels.take(500),key={it.id}) { c ->
+                            Row(Modifier.fillMaxWidth().clickable { val id=selectedProfile ?: return@clickable; val next=c.id !in locked; locked=if(next) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,next) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } }.padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Column(Modifier.weight(1f)) { Text(c.name,color=White,fontSize=11.sp,maxLines=1); Text(c.categoryLabel,color=Muted,fontSize=9.sp) }
+                                Checkbox(checked=c.id in locked,onCheckedChange={v-> val id=selectedProfile ?: return@Checkbox; locked=if(v) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,v) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } })
+                            }
+                        }
+                    }
+                }
+            }
+            "sports" -> {
+                Column(Modifier.fillMaxWidth().weight(1f).background(Panel,RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                        Column {
+                            Text("المباريات والنتائج",color=White,fontSize=17.sp,fontWeight=FontWeight.Bold)
+                            Text("المصدر الرياضي يتحدث تلقائياً مع تخزين مؤقت.",color=Muted,fontSize=10.sp)
+                        }
+                        TextButton(onClick={scope.launch {
+                            busy=true
+                            try { api.syncSportsFeed(); matches=api.upcomingMatches(); message="تم تحديث جدول المباريات." }
+                            catch(e:Exception){message=e.message ?: "تعذر تحديث المباريات"}
+                            finally{busy=false}
+                        }},enabled=!busy) { Text(if(busy) "يتم التحديث…" else "تحديث",color=LocalVelnixAccent.current) }
+                    }
+                    if(matches.isEmpty()) Text("لا توجد مباريات متاحة من المصدر حالياً. جرّب التحديث لاحقاً.",color=Muted,fontSize=12.sp)
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        items(matches,key={it.id}) { match ->
+                            Row(Modifier.fillMaxWidth().background(PanelRaised,RoundedCornerShape(10.dp)).padding(12.dp),
+                                horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                                    Text(match.home+"  "+match.homeScore+" : "+match.awayScore+"  "+match.away,color=White,fontWeight=FontWeight.Bold)
+                                    Text(match.competition+" · "+match.startsAt,color=Muted,fontSize=10.sp)
+                                    Text(when(match.status) { "live" -> "مباشرة"; "finished" -> "انتهت"; "postponed" -> "مؤجلة"; else -> "قادمة" },color=if(match.status=="live") Color(0xFF49D99A) else Muted,fontSize=10.sp)
+                                }
+                                Column(horizontalAlignment=Alignment.End) {
+                                    TextButton(onClick={
+                                        predictionTarget=match
+                                        predictionHome=""
+                                        predictionAway=""
+                                    }) { Text("توقّع",color=LocalVelnixAccent.current) }
+                                    TextButton(onClick={
+                                        if(android.os.Build.VERSION.SDK_INT>=33 && context.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                            (context as? android.app.Activity)?.requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"),731)
+                                        }
+                                        scope.launch {
+                                            try {
+                                                api.addMatchReminder(userId,selectedProfile,match.id,15)
+                                                SportsReminderScheduler.schedule(context,match,15)
+                                                message="تم حفظ تذكير قبل المباراة بـ 15 دقيقة."
+                                            } catch(e:Exception){message=e.message ?: "تعذر حفظ التذكير"}
+                                        }
+                                    }) { Text("ذكّرني",color=White) }
+                                }
+                            }
+                        }
+                    }
+                }
+                predictionTarget?.let { target ->
+                    AlertDialog(
+                        onDismissRequest={predictionTarget=null},
+                        containerColor=Panel,
+                        title={Text("توقع نتيجة المباراة",color=White,fontWeight=FontWeight.Bold)},
+                        text={
+                            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                                Text(target.home+" × "+target.away,color=Muted)
+                                Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                                    OutlinedTextField(value=predictionHome,onValueChange={predictionHome=it.filter(Char::isDigit).take(2)},label={Text(target.home.take(10))},singleLine=true,modifier=Modifier.weight(1f),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
+                                    OutlinedTextField(value=predictionAway,onValueChange={predictionAway=it.filter(Char::isDigit).take(2)},label={Text(target.away.take(10))},singleLine=true,modifier=Modifier.weight(1f),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
+                                }
+                                Text("التوقع يُحفظ لحسابك ولا يغيّر نتيجة المباراة الرسمية.",color=Muted,fontSize=10.sp)
+                            }
+                        },
+                        confirmButton={
+                            TextButton(onClick={
+                                val h=predictionHome.toIntOrNull()
+                                val a=predictionAway.toIntOrNull()
+                                if(h==null||a==null||h !in 0..30||a !in 0..30) message="أدخل نتيجة متوقعة من 0 إلى 30 لكل فريق."
+                                else scope.launch {
+                                    try { api.saveMatchPrediction(userId,target.id,selectedProfile,h,a); message="تم حفظ توقعك."; predictionTarget=null }
+                                    catch(e:Exception){message=e.message ?: "تعذر حفظ التوقع"}
+                                }
+                            }) { Text("حفظ التوقع",color=LocalVelnixAccent.current) }
+                        },
+                        dismissButton={TextButton(onClick={predictionTarget=null}) { Text("إلغاء",color=White) }}
+                    )
+                }
+            }
+            "share" -> {
+                Row(Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.weight(1.2f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp)) {
+                        Text("اختر القناة للمشاركة",color=White,fontWeight=FontWeight.Bold)
+                        LazyColumn(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                            items(channels.take(250),key={it.id}) { c ->
+                                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp))
+                                    .background(if(selectedShareChannel==c.id) LocalVelnixAccent.current.copy(alpha=.18f) else PanelRaised)
+                                    .clickable { selectedShareChannel=c.id }.padding(9.dp),
+                                    horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                                    Text(c.name,color=White,fontSize=11.sp,maxLines=1)
+                                    if(selectedShareChannel==c.id) Text("✓",color=LocalVelnixAccent.current)
+                                }
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                        Text("مشاركة قناة",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        Text("أنشئ رمزاً صالحاً لمدة 24 ساعة، ثم أرسله إلى الشخص الآخر.",color=Muted,fontSize=11.sp)
+                        Button(onClick={scope.launch {
+                            try {
+                                if(selectedShareChannel.isBlank()) throw IllegalStateException("اختَر قناة أولاً.")
+                                shareCode=api.shareChannel(userId,selectedShareChannel)
+                                message="تم إنشاء رمز المشاركة."
+                            } catch(e:Exception){message=e.message ?: "تعذر إنشاء رمز المشاركة"}
+                        }},enabled=selectedProfile!=null && selectedShareChannel.isNotBlank()) { Text("إنشاء رمز للقناة") }
+                        if(shareCode.isNotBlank()) {
+                            Text(shareCode,color=LocalVelnixAccent.current,fontSize=25.sp,fontWeight=FontWeight.Black)
+                            Text("صالح لمدة 24 ساعة ولمرة واحدة.",color=Muted,fontSize=10.sp)
+                        }
+                        HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=5.dp))
+                        Text("استلام قناة برمز",color=White,fontWeight=FontWeight.Bold)
+                        OutlinedTextField(value=shareCodeInput,onValueChange={shareCodeInput=it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8)},label={Text("رمز المشاركة")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Button(onClick={scope.launch {
+                            val profileId=selectedProfile
+                            try {
+                                if(profileId==null) throw IllegalStateException("أنشئ أو اختر ملفاً شخصياً أولاً.")
+                                api.redeemChannelShare(shareCodeInput,profileId)
+                                onProfileDataChanged(profileId)
+                                shareCodeInput=""
+                                message="تم استلام القناة وإضافتها إلى مفضلة الملف."
+                            } catch(e:Exception){message=e.message ?: "تعذر استلام القناة"}
+                        }},enabled=selectedProfile!=null && shareCodeInput.length==8) { Text("استلام القناة") }
+                    }
+                }
+            }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SettingsScreen(
     accentArgb: Int,
     onAccentArgb: (Int) -> Unit,
@@ -1149,11 +1565,17 @@ private fun SettingsScreen(
     onDataSaver: (Boolean) -> Unit,
     showLogos: Boolean,
     onShowLogos: (Boolean) -> Unit,
+    hasSettingsPin: Boolean,
+    onSaveSettingsPin: (String) -> Unit,
+    onRemoveSettingsPin: () -> Unit,
     lowRamDevice: Boolean,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
     onBack: () -> Unit
 ) {
+    var settingsPin by remember { mutableStateOf("") }
+    var pinEnabled by remember(hasSettingsPin) { mutableStateOf(hasSettingsPin) }
+    var pinStatus by remember { mutableStateOf("") }
     val context = LocalContext.current
     val memory = remember {
         context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
@@ -1242,6 +1664,30 @@ private fun SettingsScreen(
                 OutlinedButton(onClick = onClearHistory, modifier = Modifier.fillMaxWidth()) {
                     Text("مسح سجل المشاهدة", color = White)
                 }
+                HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 4.dp))
+                Text("حماية الإعدادات", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("اطلب رمزاً قبل فتح صفحة الإعدادات في كل مرة.", color = Muted, fontSize = 10.sp)
+                OutlinedTextField(
+                    value = settingsPin,
+                    onValueChange = { settingsPin = it.filter(Char::isDigit).take(8) },
+                    label = { Text("رمز PIN من 4 إلى 8 أرقام") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        if (settingsPin.length !in 4..8) pinStatus = "رمز PIN يجب أن يكون من 4 إلى 8 أرقام."
+                        else { onSaveSettingsPin(settingsPin); settingsPin = ""; pinEnabled = true; pinStatus = "تم حفظ الحماية على هذا الجهاز." }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (pinEnabled) "تغيير رمز PIN" else "تفعيل حماية الإعدادات") }
+                if (pinEnabled) OutlinedButton(onClick = { onRemoveSettingsPin(); pinEnabled = false; settingsPin = ""; pinStatus = "أزيلت حماية الإعدادات." }, modifier = Modifier.fillMaxWidth()) {
+                    Text("إزالة رمز PIN", color = White)
+                }
+                if (pinStatus.isNotBlank()) Text(pinStatus, color = LocalVelnixAccent.current, fontSize = 10.sp)
+
             }
 
             Column(
@@ -1635,6 +2081,137 @@ private fun NativePlayer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MultiViewScreen(
+    api: VelnixApi,
+    channels: List<Channel>,
+    lowRamDevice: Boolean,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var first by remember { mutableStateOf(channels.firstOrNull()) }
+    var second by remember { mutableStateOf(channels.getOrNull(1)) }
+    var selectingSlot by remember { mutableIntStateOf(1) }
+    var firstUrl by remember { mutableStateOf<String?>(null) }
+    var secondUrl by remember { mutableStateOf<String?>(null) }
+    var firstType by remember { mutableStateOf("hls") }
+    var secondType by remember { mutableStateOf("hls") }
+    var loading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+
+    LaunchedEffect(first?.id, second?.id, lowRamDevice) {
+        firstUrl = null
+        secondUrl = null
+        if (lowRamDevice) return@LaunchedEffect
+        loading = true
+        message = ""
+        try {
+            first?.let { channel ->
+                val stream = api.stream(channel.streamIds.firstOrNull() ?: channel.id, channel.streamType)
+                firstUrl = stream.url
+                firstType = stream.type
+            }
+            second?.let { channel ->
+                val stream = api.stream(channel.streamIds.firstOrNull() ?: channel.id, channel.streamType)
+                secondUrl = stream.url
+                secondType = stream.type
+            }
+            if (first == null || second == null) message = "اختَر قناتين لبدء العرض المتعدد."
+        } catch (e: Exception) {
+            message = e.message ?: "تعذر تجهيز إحدى القناتين."
+        } finally {
+            loading = false
+        }
+    }
+    BackHandler(onBack = onBack)
+    Column(Modifier.fillMaxSize().background(Color(0xFF070A12)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+            Column {
+                Text("Multi-view · مشاهدة قناتين",color=White,fontSize=22.sp,fontWeight=FontWeight.Black)
+                Text("تجربة اختيارية؛ قد يختلف الأداء حسب معالج الفيديو وعدد مفككات الجهاز.",color=Muted,fontSize=10.sp)
+            }
+            TextButton(onClick=onBack) { Text("رجوع",color=White) }
+        }
+        if (lowRamDevice) {
+            Box(Modifier.fillMaxSize().background(Panel,RoundedCornerShape(18.dp)).padding(28.dp),contentAlignment=Alignment.Center) {
+                Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Text("الجهاز لا يملك ذاكرة كافية",color=White,fontSize=20.sp,fontWeight=FontWeight.Bold)
+                    Text("أوقفنا تشغيل قناتين معاً لحماية سلاسة التطبيق. استخدم مشغّل قناة واحدة على هذا الجهاز.",color=Muted,fontSize=13.sp)
+                }
+            }
+        } else {
+            Row(Modifier.weight(1f).fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.width(240.dp).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(10.dp)) {
+                    Text("تحديد القناة",color=White,fontWeight=FontWeight.Bold,fontSize=14.sp)
+                    Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {
+                        FilterChip(selected=selectingSlot==1,onClick={selectingSlot=1},label={Text("الشاشة 1")})
+                        FilterChip(selected=selectingSlot==2,onClick={selectingSlot=2},label={Text("الشاشة 2")})
+                    }
+                    Text("اضغط على قناة لتعيينها في الشاشة المختارة.",color=Muted,fontSize=9.sp)
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                        items(channels.take(500),key={it.id}) { channel ->
+                            val chosen = if(selectingSlot==1) first?.id==channel.id else second?.id==channel.id
+                            TextButton(onClick={
+                                if(selectingSlot==1) first=channel else second=channel
+                                selectingSlot=if(selectingSlot==1) 2 else 1
+                            },modifier=Modifier.fillMaxWidth()) {
+                                Text((if(chosen) "✓ " else "")+channel.name,color=if(chosen) LocalVelnixAccent.current else White,fontSize=10.sp,maxLines=1)
+                            }
+                        }
+                    }
+                }
+                Row(Modifier.weight(1f).fillMaxHeight(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Color.Black,RoundedCornerShape(14.dp)).border(1.dp,Color.White.copy(alpha=.16f),RoundedCornerShape(14.dp))) {
+                        Text(first?.name ?: "القناة الأولى",color=White,fontSize=11.sp,maxLines=1,modifier=Modifier.padding(8.dp))
+                        Box(Modifier.fillMaxWidth().weight(1f),contentAlignment=Alignment.Center) {
+                            if(firstUrl!=null) MultiViewPlayerSurface(firstUrl!!,firstType,false)
+                            else Text(if(loading) "جارٍ التحميل…" else "اختر القناة الأولى",color=Muted,fontSize=12.sp)
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Color.Black,RoundedCornerShape(14.dp)).border(1.dp,Color.White.copy(alpha=.16f),RoundedCornerShape(14.dp))) {
+                        Text(second?.name ?: "القناة الثانية",color=White,fontSize=11.sp,maxLines=1,modifier=Modifier.padding(8.dp))
+                        Box(Modifier.fillMaxWidth().weight(1f),contentAlignment=Alignment.Center) {
+                            if(secondUrl!=null) MultiViewPlayerSurface(secondUrl!!,secondType,true)
+                            else Text(if(loading) "جارٍ التحميل…" else "اختر القناة الثانية",color=Muted,fontSize=12.sp)
+                        }
+                    }
+                }
+            }
+            if(message.isNotBlank()) Text(message,color=LocalVelnixAccent.current,fontSize=10.sp)
+        }
+    }
+}
+
+@Composable
+private fun MultiViewPlayerSurface(url: String, streamType: String, muted: Boolean) {
+    val context = LocalContext.current
+    val player = remember(url,streamType,muted) {
+        runCatching {
+            val load = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                .setBufferDurationsMs(4000,12000,1000,2000)
+                .setTargetBufferBytes(8*1024*1024)
+                .setPrioritizeTimeOverSizeThresholds(false)
+                .build()
+            androidx.media3.exoplayer.ExoPlayer.Builder(context).setLoadControl(load).build().apply {
+                volume = if(muted) 0f else 1f
+                setMediaItem(MediaItem.fromUri(url))
+                playWhenReady = true
+                prepare()
+            }
+        }.getOrNull()
+    }
+    DisposableEffect(player) { onDispose { player?.release() } }
+    if(player!=null) {
+        AndroidView(factory={ctx -> PlayerView(ctx).apply { useController=false; keepScreenOn=true; player=player } },
+            update={view->view.player=player},modifier=Modifier.fillMaxSize())
+    } else {
+        Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center) {
+            Text("تعذر تشغيل البث الثاني على هذا الجهاز.",color=Muted,fontSize=11.sp)
         }
     }
 }

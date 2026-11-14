@@ -573,6 +573,167 @@ class VelnixApi(private val context: Context) {
         prefs.edit().putBoolean("show_channel_logos", value).apply()
     }
 
+    suspend fun tvProfiles(userId: String): List<TvProfile> {
+        val rows = JSONArray(request("tv_profiles?select=id,name,avatar_id,is_kids,pin_enabled,avatar_url&user_id=eq.$userId&order=created_at.asc", rest = true))
+        return (0 until rows.length()).map { i ->
+            val r = rows.getJSONObject(i)
+            TvProfile(r.getString("id"), r.getString("name"), r.optString("avatar_url").takeIf { it.startsWith("https://") } ?: r.optString("avatar_id","anime1"), r.optBoolean("is_kids"), r.optBoolean("pin_enabled"))
+        }
+    }
+
+    suspend fun profileFavorites(userId: String, profileId: String): Set<String> {
+        val rows = JSONArray(request("tv_profile_favorites?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("channel_id") }.toSet()
+    }
+
+    suspend fun setProfileFavorite(userId: String, profileId: String, channelId: String, enabled: Boolean) {
+        if (enabled) {
+            val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("channel_id", channelId)
+            request("tv_profile_favorites", "POST", row.toString(), rest = true, extraHeaders = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+        } else request("tv_profile_favorites?user_id=eq.$userId&profile_id=eq.$profileId&channel_id=eq.$channelId", "DELETE", rest = true)
+    }
+
+    suspend fun profileHistory(userId: String, profileId: String): List<String> {
+        val rows = JSONArray(request("tv_profile_history?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId&order=watched_at.desc&limit=30", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("channel_id") }
+    }
+
+    suspend fun recordProfileWatch(userId: String, profileId: String, channelId: String) {
+        val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("channel_id", channelId).put("watched_at", java.time.Instant.now().toString())
+        request("tv_profile_history", "POST", row.toString(), rest = true, extraHeaders = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal"))
+    }
+
+    fun loadActiveTvProfile(userId: String): String? = prefs.getString("active_tv_profile_$userId", null)
+    fun saveActiveTvProfile(userId: String, profileId: String) { prefs.edit().putString("active_tv_profile_$userId", profileId).apply() }
+
+    suspend fun createTvProfile(userId: String, name: String, avatar: String, kids: Boolean, pin: String) {
+        require(name.trim().length in 1..32) { "اسم الملف الشخصي يجب أن يكون من 1 إلى 32 حرفاً." }
+        require(pin.isBlank() || pin.matches(Regex("\\d{4,6}"))) { "رمز PIN يجب أن يكون من 4 إلى 6 أرقام." }
+        val payload = JSONObject().put("p_name", name.trim()).put("p_avatar_id", avatar)
+            .put("p_is_kids", kids).put("p_pin", if (pin.isBlank()) JSONObject.NULL else pin)
+        request("rpc/create_tv_profile", "POST", payload.toString(), rest = true)
+    }
+
+    suspend fun removeTvProfile(userId: String, profileId: String) {
+        request("tv_profiles?id=eq.$profileId&user_id=eq.$userId", "DELETE", rest = true)
+    }
+
+    suspend fun setTvProfilePin(userId: String, profileId: String, pin: String) {
+        require(pin.isBlank() || pin.matches(Regex("\\d{4,6}"))) { "رمز PIN يجب أن يكون من 4 إلى 6 أرقام." }
+        val payload = JSONObject().put("p_profile_id", profileId)
+            .put("p_pin", if (pin.isBlank()) JSONObject.NULL else pin)
+        request("rpc/set_tv_profile_pin", "POST", payload.toString(), rest = true)
+    }
+
+    suspend fun checkTvProfilePin(userId: String, profileId: String, pin: String): Boolean {
+        if (!pin.matches(Regex("\\d{4,6}"))) return false
+        val payload = JSONObject().put("p_profile_id", profileId).put("p_pin", pin)
+        return request("rpc/verify_tv_profile_pin", "POST", payload.toString(), rest = true).trim() == "true"
+    }
+
+    suspend fun loadLockedChannels(userId: String, profileId: String): Set<String> {
+        val rows = JSONArray(request("tv_profile_channel_locks?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("channel_id") }.toSet()
+    }
+
+    suspend fun setChannelLocked(userId: String, profileId: String, channelId: String, locked: Boolean) {
+        if (locked) {
+            val row=JSONObject().put("user_id",userId).put("profile_id",profileId).put("channel_id",channelId)
+            request("tv_profile_channel_locks","POST",row.toString(),rest=true,extraHeaders=mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+        } else request("tv_profile_channel_locks?user_id=eq.$userId&profile_id=eq.$profileId&channel_id=eq.$channelId","DELETE",rest=true)
+    }
+
+    suspend fun loadLockedCategories(userId: String, profileId: String): Set<String> {
+        val rows = JSONArray(request("tv_profile_category_locks?select=category_key&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("category_key") }.toSet()
+    }
+
+    suspend fun setCategoryLocked(userId: String, profileId: String, categoryKey: String, locked: Boolean) {
+        require(categoryKey.matches(Regex("[a-z0-9_-]{1,60}")))
+        if (locked) {
+            val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("category_key", categoryKey)
+            request("tv_profile_category_locks", "POST", row.toString(), rest = true,
+                extraHeaders = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+        } else {
+            request("tv_profile_category_locks?user_id=eq.$userId&profile_id=eq.$profileId&category_key=eq.$categoryKey",
+                "DELETE", rest = true)
+        }
+    }
+
+    suspend fun redeemChannelShare(code: String, profileId: String): String {
+        require(code.matches(Regex("[A-HJ-NP-Z2-9]{8}", RegexOption.IGNORE_CASE))) { "رمز المشاركة يجب أن يتكون من 8 خانات." }
+        val payload = JSONObject().put("p_share_code", code.uppercase()).put("p_profile_id", profileId)
+        return request("rpc/redeem_tv_channel_share", "POST", payload.toString(), rest = true).trim().trim('"')
+    }
+
+    suspend fun saveMatchPrediction(userId: String, fixtureId: String, profileId: String?, home: Int, away: Int) {
+        require(home in 0..30 && away in 0..30)
+        val row = JSONObject().put("user_id", userId).put("fixture_id", fixtureId)
+            .put("profile_id", profileId ?: JSONObject.NULL)
+            .put("predicted_home_score", home).put("predicted_away_score", away)
+            .put("updated_at", java.time.Instant.now().toString())
+        request("tv_match_predictions?on_conflict=user_id,fixture_id", "POST", row.toString(), rest = true,
+            extraHeaders = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal"))
+    }
+
+    suspend fun syncSportsFeed(): Boolean {
+        val result = JSONObject(request("functions/v1/tv-sports-feed", "POST", "{}"))
+        return result.optBoolean("success", false)
+    }
+
+    fun hasSettingsPin(): Boolean = !prefs.getString("settings_pin_hash", null).isNullOrBlank()
+
+    fun saveSettingsPin(pin: String) {
+        require(pin.isBlank() || pin.matches(Regex("\\d{4,8}"))) { "رمز إعدادات PIN يجب أن يكون من 4 إلى 8 أرقام." }
+        if (pin.isBlank()) {
+            prefs.edit().remove("settings_pin_hash").remove("settings_pin_salt").apply()
+            return
+        }
+        val salt = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+        val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 180000, 256)
+        val hash = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        prefs.edit()
+            .putString("settings_pin_salt", android.util.Base64.encodeToString(salt, android.util.Base64.NO_WRAP))
+            .putString("settings_pin_hash", android.util.Base64.encodeToString(hash, android.util.Base64.NO_WRAP))
+            .apply()
+        spec.clearPassword()
+    }
+
+    fun verifySettingsPin(pin: String): Boolean {
+        if (!pin.matches(Regex("\\d{4,8}"))) return false
+        return try {
+            val salt = android.util.Base64.decode(prefs.getString("settings_pin_salt", null), android.util.Base64.DEFAULT)
+            val expected = android.util.Base64.decode(prefs.getString("settings_pin_hash", null), android.util.Base64.DEFAULT)
+            val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 180000, 256)
+            val actual = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+            spec.clearPassword()
+            java.security.MessageDigest.isEqual(expected, actual)
+        } catch (_: Exception) { false }
+    }
+
+    suspend fun addMatchReminder(userId: String, profileId: String?, fixtureId: String, minutes: Int = 15) {
+        val row=JSONObject().put("user_id",userId).put("profile_id",profileId ?: JSONObject.NULL)
+            .put("fixture_id",fixtureId).put("remind_before_minutes",minutes)
+        request("tv_match_reminders","POST",row.toString(),rest=true,extraHeaders=mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+    }
+
+    suspend fun upcomingMatches(): List<TvMatch> {
+        val from = java.time.Instant.now().minusSeconds(21600L).toString()
+        val rows=JSONArray(request("tv_match_fixtures?select=id,home_team,away_team,competition,starts_at,status,home_score,away_score&starts_at=gte."+java.net.URLEncoder.encode(from,"UTF-8")+"&order=starts_at.asc&limit=60",rest=true))
+        return (0 until rows.length()).map { i ->
+            val r=rows.getJSONObject(i)
+            TvMatch(r.getString("id"),r.getString("home_team"),r.getString("away_team"),r.optString("competition"),r.getString("starts_at"),r.optString("status"),r.optInt("home_score"),r.optInt("away_score"))
+        }
+    }
+
+    suspend fun shareChannel(userId: String, channelId: String): String {
+        val code=(1..8).map { "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".random() }.joinToString("")
+        val expires=java.time.Instant.now().plusSeconds(86400).toString()
+        val row=JSONObject().put("owner_id",userId).put("channel_id",channelId).put("share_code",code).put("expires_at",expires)
+        request("tv_channel_shares","POST",row.toString(),rest=true,extraHeaders=mapOf("Prefer" to "return=minimal"))
+        return code
+    }
+
     fun loadFavorites(): Set<String> =
         prefs.getString("favorites", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
 
@@ -587,6 +748,9 @@ class VelnixApi(private val context: Context) {
         prefs.edit().putString("recent_channels", ids.distinct().take(30).joinToString(",")).apply()
     }
 }
+
+data class TvProfile(val id:String,val name:String,val avatarId:String,val isKids:Boolean,val hasPin:Boolean=false)
+data class TvMatch(val id:String,val home:String,val away:String,val competition:String,val startsAt:String,val status:String,val homeScore:Int,val awayScore:Int)
 
 data class DevicePairingInfo(
     val code: String,
