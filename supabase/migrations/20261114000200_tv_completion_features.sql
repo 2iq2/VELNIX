@@ -12,6 +12,7 @@ revoke select, insert, update on public.tv_profiles from authenticated;
 grant select (id, user_id, name, avatar_id, is_kids, pin_enabled, avatar_url, created_at, updated_at)
   on public.tv_profiles to authenticated;
 grant delete on public.tv_profiles to authenticated;
+grant update (avatar_url, updated_at) on public.tv_profiles to authenticated;
 
 create or replace function public.create_tv_profile(p_name text,p_avatar_id text default 'anime1',p_is_kids boolean default false,p_pin text default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
