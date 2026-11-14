@@ -72,6 +72,8 @@ class MainActivity : ComponentActivity() {
                 builtInZoomControls = false
                 displayZoomControls = false
                 setSupportZoom(false)
+                // Identify the native app so the website hides its APK download card only here.
+                userAgentString = userAgentString + " VELNIXAndroidApp"
             }
         }
         CookieManager.getInstance().apply {
