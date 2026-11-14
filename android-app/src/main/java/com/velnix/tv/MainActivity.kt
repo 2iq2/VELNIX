@@ -72,6 +72,8 @@ class MainActivity : ComponentActivity() {
                 builtInZoomControls = false
                 displayZoomControls = false
                 setSupportZoom(false)
+                // Mark this WebView so the website can hide app-download promotion only in the native app.
+                userAgentString = userAgentString + " VELNIXAndroidApp"
             }
         }
         CookieManager.getInstance().apply {
