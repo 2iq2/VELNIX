@@ -204,7 +204,7 @@ private fun VelnixApp(activity: ComponentActivity) {
             profile = ProfileInfo(active.userEmail.substringBefore("@"), "anime1")
             try {
                 profile = api.loadProfile(active.userId, active.userEmail.substringBefore("@"))
-                // Avoid repeating the access request during initial catalogue loading.
+                beinAccess = api.checkBein()
             } catch (_: Exception) {
                 // Keep the locally available account identity if the profile service is temporarily unreachable.
             }
