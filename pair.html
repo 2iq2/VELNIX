@@ -25,7 +25,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
 const SUPABASE_URL = "https://shungcjflcjwubdlhyzq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_stitJ7MdKnH573UQ5GRbYg_3XdSgEGo";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: "velnix:auth-session" }
 });
 const $ = (id) => document.getElementById(id);
 let code = (new URLSearchParams(location.search).get("code") || "").toUpperCase().replace(/[^A-Z2-9]/g,"");
