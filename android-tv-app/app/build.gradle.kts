@@ -41,6 +41,7 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
 
     // Native playback with adaptive HLS and DASH support.
     val media3Version = "1.11.1"
