@@ -80,7 +80,7 @@ import android.view.LayoutInflater
 private val AppBg = Color(0xFF08090D)
 private val Panel = Color(0xFF14151B)
 private val PanelRaised = Color(0xFF1B1C24)
-private val LocalVelnixAccent.current = Color(0xFFE50914)
+private val Accent = Color(0xFFE50914)
 private val Muted = Color(0xFFA4A5AD)
 private val Line = Color(0x24FFFFFF)
 private val White = Color(0xFFF7F7F8)
