@@ -718,7 +718,8 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun upcomingMatches(): List<TvMatch> {
-        val from = java.time.Instant.now().minusSeconds(21600L).toString()\n        val rows=JSONArray(request("tv_match_fixtures?select=id,home_team,away_team,competition,starts_at,status,home_score,away_score&starts_at=gte."+java.net.URLEncoder.encode(from,"UTF-8")+"&order=starts_at.asc&limit=60",rest=true))
+        val from = java.time.Instant.now().minusSeconds(21600L).toString()
+        val rows=JSONArray(request("tv_match_fixtures?select=id,home_team,away_team,competition,starts_at,status,home_score,away_score&starts_at=gte."+java.net.URLEncoder.encode(from,"UTF-8")+"&order=starts_at.asc&limit=60",rest=true))
         return (0 until rows.length()).map { i ->
             val r=rows.getJSONObject(i)
             TvMatch(r.getString("id"),r.getString("home_team"),r.getString("away_team"),r.optString("competition"),r.getString("starts_at"),r.optString("status"),r.optInt("home_score"),r.optInt("away_score"))
