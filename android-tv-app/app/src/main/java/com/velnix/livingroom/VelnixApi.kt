@@ -643,6 +643,74 @@ class VelnixApi(private val context: Context) {
         } else request("tv_profile_channel_locks?user_id=eq.$userId&profile_id=eq.$profileId&channel_id=eq.$channelId","DELETE",rest=true)
     }
 
+    suspend fun loadLockedCategories(userId: String, profileId: String): Set<String> {
+        val rows = JSONArray(request("tv_profile_category_locks?select=category_key&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("category_key") }.toSet()
+    }
+
+    suspend fun setCategoryLocked(userId: String, profileId: String, categoryKey: String, locked: Boolean) {
+        require(categoryKey.matches(Regex("[a-z0-9_-]{1,60}")))
+        if (locked) {
+            val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("category_key", categoryKey)
+            request("tv_profile_category_locks", "POST", row.toString(), rest = true,
+                extraHeaders = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+        } else {
+            request("tv_profile_category_locks?user_id=eq.$userId&profile_id=eq.$profileId&category_key=eq.$categoryKey",
+                "DELETE", rest = true)
+        }
+    }
+
+    suspend fun redeemChannelShare(code: String, profileId: String): String {
+        require(code.matches(Regex("[A-HJ-NP-Z2-9]{8}", RegexOption.IGNORE_CASE))) { "رمز المشاركة يجب أن يتكون من 8 خانات." }
+        val payload = JSONObject().put("p_share_code", code.uppercase()).put("p_profile_id", profileId)
+        return request("rpc/redeem_tv_channel_share", "POST", payload.toString(), rest = true).trim().trim('"')
+    }
+
+    suspend fun saveMatchPrediction(userId: String, fixtureId: String, profileId: String?, home: Int, away: Int) {
+        require(home in 0..30 && away in 0..30)
+        val row = JSONObject().put("user_id", userId).put("fixture_id", fixtureId)
+            .put("profile_id", profileId ?: JSONObject.NULL)
+            .put("predicted_home_score", home).put("predicted_away_score", away)
+            .put("updated_at", java.time.Instant.now().toString())
+        request("tv_match_predictions?on_conflict=user_id,fixture_id", "POST", row.toString(), rest = true,
+            extraHeaders = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal"))
+    }
+
+    suspend fun syncSportsFeed(): Boolean {
+        val result = JSONObject(request("functions/v1/tv-sports-feed", "POST", "{}", token = session()?.accessToken))
+        return result.optBoolean("success", false)
+    }
+
+    fun hasSettingsPin(): Boolean = !prefs.getString("settings_pin_hash", null).isNullOrBlank()
+
+    fun saveSettingsPin(pin: String) {
+        require(pin.isBlank() || pin.matches(Regex("\\d{4,8}"))) { "رمز إعدادات PIN يجب أن يكون من 4 إلى 8 أرقام." }
+        if (pin.isBlank()) {
+            prefs.edit().remove("settings_pin_hash").remove("settings_pin_salt").apply()
+            return
+        }
+        val salt = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+        val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 180000, 256)
+        val hash = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        prefs.edit()
+            .putString("settings_pin_salt", android.util.Base64.encodeToString(salt, android.util.Base64.NO_WRAP))
+            .putString("settings_pin_hash", android.util.Base64.encodeToString(hash, android.util.Base64.NO_WRAP))
+            .apply()
+        spec.clearPassword()
+    }
+
+    fun verifySettingsPin(pin: String): Boolean {
+        if (!pin.matches(Regex("\\d{4,8}"))) return false
+        return try {
+            val salt = android.util.Base64.decode(prefs.getString("settings_pin_salt", null), android.util.Base64.DEFAULT)
+            val expected = android.util.Base64.decode(prefs.getString("settings_pin_hash", null), android.util.Base64.DEFAULT)
+            val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 180000, 256)
+            val actual = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+            spec.clearPassword()
+            java.security.MessageDigest.isEqual(expected, actual)
+        } catch (_: Exception) { false }
+    }
+
     suspend fun addMatchReminder(userId: String, profileId: String?, fixtureId: String, minutes: Int = 15) {
         val row=JSONObject().put("user_id",userId).put("profile_id",profileId ?: JSONObject.NULL)
             .put("fixture_id",fixtureId).put("remind_before_minutes",minutes)
@@ -650,7 +718,7 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun upcomingMatches(): List<TvMatch> {
-        val rows=JSONArray(request("tv_match_fixtures?select=id,home_team,away_team,competition,starts_at,status,home_score,away_score&starts_at=gte."+java.net.URLEncoder.encode(java.time.Instant.now().toString(),"UTF-8")+"&order=starts_at.asc&limit=40",rest=true))
+        val from = java.time.Instant.now().minusSeconds(21600L).toString()\n        val rows=JSONArray(request("tv_match_fixtures?select=id,home_team,away_team,competition,starts_at,status,home_score,away_score&starts_at=gte."+java.net.URLEncoder.encode(from,"UTF-8")+"&order=starts_at.asc&limit=60",rest=true))
         return (0 until rows.length()).map { i ->
             val r=rows.getJSONObject(i)
             TvMatch(r.getString("id"),r.getString("home_team"),r.getString("away_team"),r.optString("competition"),r.getString("starts_at"),r.optString("status"),r.optInt("home_score"),r.optInt("away_score"))
