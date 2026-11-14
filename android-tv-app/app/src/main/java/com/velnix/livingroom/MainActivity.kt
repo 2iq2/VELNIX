@@ -19,6 +19,10 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -612,10 +616,15 @@ private fun HomeScreen(
     val config = LocalConfiguration.current
     val tvLayout = config.screenWidthDp >= 700
     var visibleChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    var menuExpanded by remember { mutableStateOf(true) }
+    val sidebarWidth by animateDpAsState(
+        targetValue = if (menuExpanded) 218.dp else 76.dp,
+        animationSpec = tween(durationMillis = 230),
+        label = "sidebar-width"
+    )
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(channels, category, query, favorites, recent, beinAccess) {
-        // Search typing is debounced and filtering/sorting never blocks the TV main thread.
         if (query.isNotBlank()) delay(140)
         visibleChannels = withContext(Dispatchers.Default) {
             channels.asSequence().filter { channel ->
@@ -629,153 +638,265 @@ private fun HomeScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(AppBg)) {
-        Row(
-            Modifier.fillMaxWidth().background(Panel).padding(horizontal = 28.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+    val menuItems = CATEGORIES + listOf(
+        Category("favorites", "المفضلة"),
+        Category("recent", "شوهدت مؤخراً")
+    )
+    fun menuSymbol(id: String): String = when (id) {
+        "all" -> "▦"
+        "sports", "bein" -> "⚽"
+        "arabic" -> "🌐"
+        "movies" -> "▣"
+        "news" -> "◉"
+        "kids" -> "☺"
+        "documentaries" -> "▤"
+        "music" -> "♫"
+        "variety", "world" -> "✦"
+        "favorites" -> "♡"
+        "recent" -> "◷"
+        else -> "•"
+    }
+
+    Row(
+        Modifier.fillMaxSize()
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(Color(0xFF0A1020), Color(0xFF10152B), Color(0xFF080B14))
+                )
+            )
+    ) {
+        Column(
+            Modifier.width(sidebarWidth)
+                .fillMaxHeight()
+                .padding(start = 10.dp, top = 12.dp, bottom = 12.dp, end = 7.dp)
+                .border(1.dp, Color.White.copy(alpha = 0.13f), RoundedCornerShape(24.dp))
+                .background(Color(0xCC151D32), RoundedCornerShape(24.dp))
+                .animateContentSize()
+                .pointerInput(menuExpanded) {
+                    var drag = 0f
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (drag > 35f) menuExpanded = true
+                            if (drag < -35f) menuExpanded = false
+                            drag = 0f
+                        },
+                        onHorizontalDrag = { _, amount -> drag += amount }
+                    )
+                }
+                .padding(horizontal = if (menuExpanded) 11.dp else 7.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                BrandMark(46)
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text("VELNIX", color = White, fontSize = 25.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                    Text("LIVE ENTERTAINMENT", color = Muted, fontSize = 9.sp, letterSpacing = 2.sp)
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (menuExpanded) Arrangement.SpaceBetween else Arrangement.Center
+            ) {
+                if (menuExpanded) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        BrandMark(34)
+                        Text("VELNIX", color = White, fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp)
+                    }
+                } else {
+                    BrandMark(35)
+                }
+                TextButton(
+                    onClick = { menuExpanded = !menuExpanded },
+                    contentPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp)
+                ) {
+                    Text(if (menuExpanded) "‹" else "›", color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(profile.displayName, color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text(if (beinAccess) "الوصول الرياضي مفعّل" else "حساب VELNIX", color = Muted, fontSize = 10.sp)
-                }
+
+            Row(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.055f))
+                    .clickable(onClick = onProfile)
+                    .focusable()
+                    .padding(vertical = 9.dp, horizontal = if (menuExpanded) 8.dp else 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (menuExpanded) Arrangement.spacedBy(9.dp) else Arrangement.Center
+            ) {
                 AsyncImage(
                     model = avatarUrl(profile.avatarId),
                     imageLoader = imageLoader,
-                    contentDescription = "صورة الملف الشخصي",
-                    modifier = Modifier.size(48.dp).clip(CircleShape).border(2.dp, Accent, CircleShape),
+                    contentDescription = "الملف الشخصي",
+                    modifier = Modifier.size(37.dp).clip(CircleShape)
+                        .border(2.dp, Accent.copy(alpha = 0.8f), CircleShape),
                     contentScale = ContentScale.Crop
                 )
-                TextButton(onClick = onProfile) { Text("ملفي الشخصي", color = White) }
-                TextButton(onClick = onSettings) { Text("الإعدادات", color = White) }
-                TextButton(onClick = onRefresh) { Text("تحديث", color = White) }
-                TextButton(onClick = onSignOut) { Text("خروج", color = Muted) }
+                if (menuExpanded) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(profile.displayName, color = White, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text("ملفي الشخصي", color = Muted, fontSize = 9.sp)
+                    }
+                    Text("›", color = Muted, fontSize = 20.sp)
+                }
+            }
+
+            Spacer(Modifier.height(13.dp))
+            if (menuExpanded) {
+                Text(
+                    "القائمة الرئيسية",
+                    color = Muted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().padding(start = 7.dp, bottom = 7.dp)
+                )
+            }
+            LazyColumn(
+                Modifier.weight(1f).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                items(menuItems, key = { it.id }) { item ->
+                    val active = category == item.id
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .height(46.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (active) Accent.copy(alpha = 0.88f)
+                                else Color.White.copy(alpha = 0.025f)
+                            )
+                            .border(
+                                if (active) 1.dp else 0.5.dp,
+                                if (active) Color.White.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.045f),
+                                RoundedCornerShape(14.dp)
+                            )
+                            .clickable { onCategory(item.id) }
+                            .focusable()
+                            .padding(horizontal = if (menuExpanded) 11.dp else 0.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = if (menuExpanded) Arrangement.spacedBy(12.dp) else Arrangement.Center
+                    ) {
+                        Text(menuSymbol(item.id), color = if (active) White else Color(0xFFD5DCEC), fontSize = 19.sp)
+                        if (menuExpanded) {
+                            Text(
+                                item.title,
+                                color = if (active) White else Color(0xFFD5DCEC),
+                                fontSize = 11.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = Color.White.copy(alpha = 0.10f), modifier = Modifier.padding(vertical = 9.dp))
+            MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
+            MenuFooterAction("⟳", "تحديث القنوات", menuExpanded, onRefresh)
+            MenuFooterAction("⇥", "تسجيل الخروج", menuExpanded, onSignOut)
+            if (menuExpanded) {
+                Text("TV  ·  2.5", color = Muted.copy(alpha = 0.65f), fontSize = 9.sp, modifier = Modifier.padding(top = 8.dp))
             }
         }
 
-        Row(Modifier.fillMaxSize()) {
-            LazyColumn(
-                Modifier.width(if (tvLayout) 226.dp else 180.dp)
-                    .fillMaxHeight()
-                    .background(Panel)
-                    .padding(horizontal = 14.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+        Column(
+            Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp, end = 22.dp, top = 17.dp, bottom = 16.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                item {
-                    Text("التصنيفات", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("مرحباً، " + profile.displayName, color = White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+                    Text("كل الترفيه، بمكان واحد", color = Muted, fontSize = 12.sp)
                 }
-                items(CATEGORIES) { item ->
-                    CategoryButton(item, category == item.id, onClick = { onCategory(item.id) })
-                }
-                item { Spacer(Modifier.height(5.dp)); HorizontalDivider(color = Line) }
-                item {
-                    CategoryButton(Category("favorites", "المفضلة"), category == "favorites") {
-                        onCategory("favorites")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        Modifier.clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = 0.075f))
+                            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(50))
+                            .padding(horizontal = 13.dp, vertical = 8.dp)
+                    ) {
+                        Text(if (beinAccess) "الحساب الرياضي مفعّل" else "حساب VELNIX", color = Color(0xFFD9E2F5), fontSize = 10.sp)
                     }
-                }
-                item {
-                    CategoryButton(Category("recent", "شوهدت مؤخراً"), category == "recent") {
-                        onCategory("recent")
-                    }
-                }
-                item { Spacer(Modifier.height(12.dp)) }
-                item {
-                    Text(
-                        "VELNIX  ·  TV 2.4",
-                        color = Muted.copy(alpha = 0.65f),
-                        fontSize = 9.sp,
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
+                    Text(status, color = Muted, fontSize = 10.sp, maxLines = 1)
                 }
             }
 
-            Column(
-                Modifier.weight(1f).fillMaxHeight().padding(horizontal = 22.dp, vertical = 18.dp)
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQuery,
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
+                placeholder = { Text("ابحث عن قناة بالاسم…", color = Muted) },
+                singleLine = true,
+                shape = RoundedCornerShape(15.dp)
+            )
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 13.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("مرحباً، " + profile.displayName, color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        Text("اختر قناتك وابدأ المشاهدة", color = Muted, fontSize = 12.sp)
-                    }
-                    Text(status, color = Muted, fontSize = 11.sp)
+                SummaryCard("القنوات", channels.size.toString(), Modifier.weight(1f))
+                SummaryCard("المفضلة", favorites.size.toString(), Modifier.weight(1f))
+                SummaryCard("آخر مشاهدة", recent.size.toString(), Modifier.weight(1f))
+            }
+            when {
+                busy && channels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Accent)
                 }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQuery,
-                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
-                    placeholder = { Text("ابحث عن قناة بالاسم…", color = Muted) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                Row(
-                    Modifier.fillMaxWidth().padding(bottom = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                category == "bein" && !beinAccess -> EmptyState("قسم beIN SPORTS يحتاج إلى تفعيل على الحساب.")
+                visibleChannels.isEmpty() -> EmptyState(if (query.isBlank()) "ماكو قنوات ضمن هذا القسم حالياً." else "ما لقينا قناة تطابق البحث.")
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Adaptive(if (tvLayout) 245.dp else 210.dp),
+                    state = gridState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    SummaryCard("القنوات", channels.size.toString(), Modifier.weight(1f))
-                    SummaryCard("المفضلة", favorites.size.toString(), Modifier.weight(1f))
-                    SummaryCard("آخر مشاهدة", recent.size.toString(), Modifier.weight(1f))
-                }
-                when {
-                    busy && channels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Accent)
+                    items(
+                        items = visibleChannels,
+                        key = { it.id },
+                        contentType = { "channel" }
+                    ) { channel ->
+                        ChannelTile(
+                            channel = channel,
+                            favorite = channel.id in favorites,
+                            imageLoader = imageLoader,
+                            showLogo = showLogos,
+                            loading = busyChannel == channel.id,
+                            onFavorite = { onFavorite(channel) },
+                            onClick = { onPlay(channel) }
+                        )
                     }
-                    category == "bein" && !beinAccess -> EmptyState("قسم beIN SPORTS يحتاج إلى تفعيل على الحساب.")
-                    visibleChannels.isEmpty() -> EmptyState(if (query.isBlank()) "ماكو قنوات ضمن هذا القسم حالياً." else "ما لقينا قناة تطابق البحث.")
-                    else -> LazyVerticalGrid(
-                        columns = GridCells.Adaptive(if (tvLayout) 245.dp else 210.dp),
-                        state = gridState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = visibleChannels,
-                            key = { it.id },
-                            contentType = { "channel" }
-                        ) { channel ->
-                            ChannelTile(
-                                channel = channel,
-                                favorite = channel.id in favorites,
-                                imageLoader = imageLoader,
-                                showLogo = showLogos,
-                                loading = busyChannel == channel.id,
-                                onFavorite = { onFavorite(channel) },
-                                onClick = { onPlay(channel) }
-                            )
-                        }
-                        if (hasMoreChannels) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Button(
-                                    onClick = onLoadMore,
-                                    enabled = !loadingMoreChannels,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
-                                ) {
-                                    if (loadingMoreChannels) CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
-                                    else Text("تحميل المزيد من القنوات")
-                                }
+                    if (hasMoreChannels) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Button(
+                                onClick = onLoadMore,
+                                enabled = !loadingMoreChannels,
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+                            ) {
+                                if (loadingMoreChannels) CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
+                                else Text("تحميل المزيد من القنوات")
                             }
                         }
                     }
                 }
-                if (error.isNotBlank()) {
-                    Text(error, color = Color(0xFFFF8A8A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-                }
+            }
+            if (error.isNotBlank()) {
+                Text(error, color = Color(0xFFFF8A8A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun MenuFooterAction(symbol: String, title: String, expanded: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().height(42.dp).clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.035f))
+            .clickable(onClick = onClick).focusable()
+            .padding(horizontal = if (expanded) 10.dp else 0.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (expanded) Arrangement.spacedBy(12.dp) else Arrangement.Center
+    ) {
+        Text(symbol, color = Color(0xFFD5DCEC), fontSize = 18.sp)
+        if (expanded) Text(title, color = Color(0xFFD5DCEC), fontSize = 10.sp, fontWeight = FontWeight.Medium)
     }
 }
 
