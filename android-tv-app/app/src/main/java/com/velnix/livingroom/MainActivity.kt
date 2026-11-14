@@ -189,6 +189,10 @@ private fun VelnixApp(activity: ComponentActivity) {
     var profileError by remember { mutableStateOf("") }
     var settingsVisible by remember { mutableStateOf(false) }
     var familyVisible by remember { mutableStateOf(false) }
+    var activeTvProfile by remember { mutableStateOf<TvProfile?>(null) }
+    var profileLocks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var profileFavorites by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var profileRecent by remember { mutableStateOf<List<String>>(emptyList()) }
     var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
     var dataSaver by remember { mutableStateOf(api.loadDataSaver()) }
     var showLogos by remember { mutableStateOf(api.loadShowLogos()) }
@@ -246,6 +250,27 @@ private fun VelnixApp(activity: ComponentActivity) {
                 // Keep the locally available account identity if the profile service is temporarily unreachable.
             }
         }
+    }
+
+    LaunchedEffect(session?.userId) {
+        val userId = session?.userId ?: return@LaunchedEffect
+        try {
+            val profiles = api.tvProfiles(userId)
+            val savedId = api.loadActiveTvProfile(userId)
+            val saved = profiles.firstOrNull { it.id == savedId }
+            activeTvProfile = saved?.takeIf { !it.hasPin } ?: profiles.firstOrNull { !it.hasPin }
+            activeTvProfile?.let { api.saveActiveTvProfile(userId, it.id) }
+        } catch (e: Exception) { status = e.message ?: "تعذر تحميل ملفات العائلة" }
+    }
+
+    LaunchedEffect(activeTvProfile?.id) {
+        val p = activeTvProfile ?: return@LaunchedEffect
+        val userId = session?.userId ?: return@LaunchedEffect
+        try {
+            profileLocks = api.loadLockedChannels(userId, p.id)
+            profileFavorites = api.profileFavorites(userId, p.id)
+            profileRecent = api.profileHistory(userId, p.id)
+        } catch (e: Exception) { status = e.message ?: "تعذر تحميل إعدادات الملف" }
     }
 
     LaunchedEffect(pairingInfo?.deviceToken) {
@@ -436,8 +461,8 @@ private fun VelnixApp(activity: ComponentActivity) {
                         onCategory = { category = it },
                         query = query,
                         onQuery = { query = it },
-                        favorites = favorites,
-                        recent = recent,
+                        favorites = if (activeTvProfile != null) profileFavorites else favorites,
+                        recent = if (activeTvProfile != null) profileRecent else recent,
                         beinAccess = beinAccess,
                         status = status,
                         busy = busy,
@@ -455,14 +480,24 @@ private fun VelnixApp(activity: ComponentActivity) {
                             password = ""
                         },
                         onFavorite = { channel ->
-                            favorites = if (channel.id in favorites) favorites - channel.id else favorites + channel.id
-                            api.saveFavorites(favorites)
+                            val active = activeTvProfile
+                            if (active != null) {
+                                val enabled = channel.id !in profileFavorites
+                                profileFavorites = if (enabled) profileFavorites + channel.id else profileFavorites - channel.id
+                                scope.launch { try { api.setProfileFavorite(session!!.userId, active.id, channel.id, enabled) } catch (e: Exception) { error = e.message ?: "تعذر حفظ المفضلة" } }
+                            } else {
+                                favorites = if (channel.id in favorites) favorites - channel.id else favorites + channel.id
+                                api.saveFavorites(favorites)
+                            }
                         },
                         onPlay = { channel ->
                             scope.launch {
                                 busyChannel = channel.id
                                 error = ""
                                 try {
+                                    val active = activeTvProfile
+                                    if (active != null && channel.id in profileLocks) throw IllegalStateException("هذه القناة مقفلة لهذا الملف.")
+                                    if (active?.isKids == true && channel.category in setOf("adult", "mature", "xxx")) throw IllegalStateException("هذه القناة غير متاحة في ملف الأطفال.")
                                     if (channel.category == "bein" && !beinAccess) {
                                         throw IllegalStateException("قسم beIN SPORTS غير مفعّل على هذا الحساب.")
                                     }
@@ -472,6 +507,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                                     selected = channel
                                     recent = (listOf(channel.id) + recent.filterNot { it == channel.id }).take(30)
                                     api.saveRecent(recent)
+                                    activeTvProfile?.let { p -> try { api.recordProfileWatch(session!!.userId, p.id, channel.id) } catch (_: Exception) { } }
                                 } catch (e: Exception) {
                                     error = e.message ?: "تعذر تجهيز البث"
                                 } finally {
