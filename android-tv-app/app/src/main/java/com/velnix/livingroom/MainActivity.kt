@@ -689,7 +689,7 @@ private fun HomeScreen(
                 item { Spacer(Modifier.height(12.dp)) }
                 item {
                     Text(
-                        "VELNIX  ·  TV 2.3",
+                        "VELNIX  ·  TV 2.4",
                         color = Muted.copy(alpha = 0.65f),
                         fontSize = 9.sp,
                         modifier = Modifier.padding(horizontal = 10.dp)
