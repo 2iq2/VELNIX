@@ -3077,4 +3077,27 @@ loadChannels();
 })();
 </script>
 
+
+<style id="velnix-disable-install-prompt">
+  #velnixInstallApp, #velnix-install-app, .velnix-install-app,
+  [data-velnix-install], [data-action="install-app"] { display:none!important; }
+</style>
+<script id="velnix-disable-install-prompt-script">
+(() => {
+  // Prevent the retired website-install prompt from appearing in any WebView/PWA session.
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+  });
+  const removeRetiredPrompt = () => {
+    document.querySelectorAll('#velnixInstallApp,#velnix-install-app,.velnix-install-app,[data-velnix-install],[data-action="install-app"]').forEach(el => el.remove());
+    document.querySelectorAll('button,a,[role="button"]').forEach(el => {
+      const label = (el.innerText || el.getAttribute('aria-label') || '').trim();
+      if (label === 'تثبيت التطبيق' || label === 'Install app') el.remove();
+    });
+  };
+  removeRetiredPrompt();
+  new MutationObserver(removeRetiredPrompt).observe(document.documentElement, {childList:true,subtree:true});
+})();
+</script>
+
 </body></html>
