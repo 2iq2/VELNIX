@@ -574,12 +574,37 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun tvProfiles(userId: String): List<TvProfile> {
-        val rows = JSONArray(request("tv_profiles?select=id,name,avatar_id,is_kids&user_id=eq.$userId&order=created_at.asc", rest = true))
+        val rows = JSONArray(request("tv_profiles?select=id,name,avatar_id,is_kids,pin_hash&user_id=eq.$userId&order=created_at.asc", rest = true))
         return (0 until rows.length()).map { i ->
             val r = rows.getJSONObject(i)
-            TvProfile(r.getString("id"), r.getString("name"), r.optString("avatar_id","anime1"), r.optBoolean("is_kids"))
+            TvProfile(r.getString("id"), r.getString("name"), r.optString("avatar_id","anime1"), r.optBoolean("is_kids"), !r.isNull("pin_hash") && r.optString("pin_hash").isNotBlank())
         }
     }
+
+    suspend fun profileFavorites(userId: String, profileId: String): Set<String> {
+        val rows = JSONArray(request("tv_profile_favorites?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("channel_id") }.toSet()
+    }
+
+    suspend fun setProfileFavorite(userId: String, profileId: String, channelId: String, enabled: Boolean) {
+        if (enabled) {
+            val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("channel_id", channelId)
+            request("tv_profile_favorites", "POST", row.toString(), rest = true, extraHeaders = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal"))
+        } else request("tv_profile_favorites?user_id=eq.$userId&profile_id=eq.$profileId&channel_id=eq.$channelId", "DELETE", rest = true)
+    }
+
+    suspend fun profileHistory(userId: String, profileId: String): List<String> {
+        val rows = JSONArray(request("tv_profile_history?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId&order=watched_at.desc&limit=30", rest = true))
+        return (0 until rows.length()).map { rows.getJSONObject(it).getString("channel_id") }
+    }
+
+    suspend fun recordProfileWatch(userId: String, profileId: String, channelId: String) {
+        val row = JSONObject().put("user_id", userId).put("profile_id", profileId).put("channel_id", channelId).put("watched_at", java.time.Instant.now().toString())
+        request("tv_profile_history", "POST", row.toString(), rest = true, extraHeaders = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal"))
+    }
+
+    fun loadActiveTvProfile(userId: String): String? = prefs.getString("active_tv_profile_$userId", null)
+    fun saveActiveTvProfile(userId: String, profileId: String) { prefs.edit().putString("active_tv_profile_$userId", profileId).apply() }
 
     suspend fun createTvProfile(userId: String, name: String, avatar: String, kids: Boolean, pin: String) {
         require(name.trim().length in 1..32) { "اسم الملف الشخصي يجب أن يكون من 1 إلى 32 حرفاً." }
@@ -660,7 +685,7 @@ class VelnixApi(private val context: Context) {
     }
 }
 
-data class TvProfile(val id:String,val name:String,val avatarId:String,val isKids:Boolean)
+data class TvProfile(val id:String,val name:String,val avatarId:String,val isKids:Boolean,val hasPin:Boolean=false)
 data class TvMatch(val id:String,val home:String,val away:String,val competition:String,val startsAt:String,val status:String,val homeScore:Int,val awayScore:Int)
 
 data class DevicePairingInfo(
