@@ -1575,6 +1575,20 @@ body[data-theme="light"].vx-christmas-active #categories .channel{border-color:r
 @media(max-width:900px){#home.hero .vx-holiday-art-caption{display:none}}
 </style>
 
+
+<style id="velnix-app-download-editions">
+.app-download-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
+.app-download-grid .app-download-card{height:100%;min-width:0;flex-direction:column;align-items:stretch;justify-content:space-between;gap:19px;padding:23px}
+.app-download-grid .app-download-info{align-items:flex-start;gap:15px}
+.app-download-grid .app-download-copy{min-width:0}
+.app-download-grid .app-download-button{width:100%;min-width:0;flex:0 0 auto}
+.app-download-card-tv{background:linear-gradient(118deg,rgba(22,73,52,.28),rgba(18,26,38,.96) 49%,rgba(201,169,110,.10))}
+.app-download-card-tv .app-android-icon{background:linear-gradient(145deg,#193d35,#10241d);border-color:rgba(201,169,110,.32);color:#e1c58e}
+.app-download-card-tv:after{background:rgba(201,169,110,.08)}
+@media(max-width:900px){.app-download-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.app-download-grid{gap:12px}.app-download-grid .app-download-card{padding:20px}}
+</style>
+
 </head>
 <body>
 <div class="clayko-intro velnix-cinematic" id="claykoIntro" role="status" aria-label="VELNIX">
@@ -1675,6 +1689,7 @@ body[data-theme="light"].vx-christmas-active #categories .channel{border-color:r
 
 <section class="app-download-section" aria-labelledby="appDownloadTitle">
   <div class="wrap">
+    <div class="app-download-grid">
     <div class="app-download-card" dir="rtl">
       <div class="app-download-info">
         <div class="app-android-icon" aria-hidden="true">
@@ -1692,13 +1707,34 @@ body[data-theme="light"].vx-christmas-active #categories .channel{border-color:r
         <div class="app-download-copy">
           <span class="app-download-kicker" data-ar="VELNIX • ANDROID APP" data-en="VELNIX • ANDROID APP">VELNIX • ANDROID APP</span>
           <h2 id="appDownloadTitle" data-ar="معلومات التطبيق" data-en="App information">معلومات التطبيق</h2>
-          <p data-ar="حمّل تطبيق VELNIX الرسمي للأندرويد واستمتع بتجربة مشاهدة أسهل من هاتفك." data-en="Get the official VELNIX Android app for a smoother viewing experience on your phone.">حمّل تطبيق VELNIX الرسمي للأندرويد واستمتع بتجربة مشاهدة أسهل من هاتفك.</p>
+          <p data-ar="تطبيق VELNIX الرسمي للهاتف والأجهزة اللوحية، بتجربة مشاهدة سهلة وسريعة." data-en="The official VELNIX Android app for phones and tablets.">تطبيق VELNIX الرسمي للهاتف والأجهزة اللوحية، بتجربة مشاهدة سهلة وسريعة.</p>
           <span class="app-download-meta" data-ar="Android • ملف تثبيت APK • آخر إصدار" data-en="Android • APK installer • Latest version">Android • ملف تثبيت APK • آخر إصدار</span>
         </div>
       </div>
       <a class="app-download-button" href="https://github.com/2iq2/VELNIX/releases/download/android-latest/VELNIX.apk" download="VELNIX.apk" aria-label="Download VELNIX Android APK">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
         DOWNLOAD
+      </a>
+    </div>
+    <div class="app-download-card app-download-card-tv" dir="rtl">
+      <div class="app-download-info">
+        <div class="app-android-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="5" y="9" width="38" height="26" rx="5" stroke="currentColor" stroke-width="2.8"/>
+            <path d="M17 41h14M24 35v6M13 17l7 6 6-5 8 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="37" cy="14" r="1.3" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="app-download-copy">
+          <span class="app-download-kicker" data-ar="VELNIX • ANDROID TV" data-en="VELNIX • ANDROID TV">VELNIX • ANDROID TV</span>
+          <h2 data-ar="نسخة التلفزيون" data-en="TV edition">نسخة التلفزيون</h2>
+          <p data-ar="نسخة مخصصة لشاشات Android TV وGoogle TV، مع تنقّل كامل بالريموت وتجربة مشاهدة على الشاشة الكبيرة." data-en="A dedicated Android TV and Google TV edition, with full remote navigation for the big screen.">نسخة مخصصة لشاشات Android TV وGoogle TV، مع تنقّل كامل بالريموت وتجربة مشاهدة على الشاشة الكبيرة.</p>
+          <span class="app-download-meta" data-ar="Android TV • Google TV • تحكم بالريموت • APK" data-en="Android TV • Google TV • Remote control • APK">Android TV • Google TV • تحكم بالريموت • APK</span>
+        </div>
+      </div>
+      <a class="app-download-button" href="https://github.com/2iq2/VELNIX/releases/download/android-tv-latest/VELNIX-TV.apk" download="VELNIX-TV.apk" aria-label="Download VELNIX Android TV APK">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        DOWNLOAD FOR TV
       </a>
     </div>
   </div>
