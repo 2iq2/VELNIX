@@ -1,4 +1,4 @@
-const CACHE = "velnix-shell-v14";
+const CACHE = "velnix-shell-v15";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./app-icon.svg"];
 
 self.addEventListener("install", event => {
