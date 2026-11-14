@@ -1,6 +1,9 @@
 package com.velnix.livingroom
 
 import android.content.pm.ActivityInfo
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -114,15 +117,25 @@ private fun VelnixApp(activity: ComponentActivity) {
     val api = remember { VelnixApi(activity) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val imageLoader = remember {
+    val activityManager = remember {
+        context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+    }
+    val lowRamDevice = remember {
+        activityManager.isLowRamDevice || activityManager.memoryClass <= 256
+    }
+    val imageLoader = remember(lowRamDevice) {
         ImageLoader.Builder(context)
             .components { add(SvgDecoder.Factory()) }
             .crossfade(false)
-            .memoryCache { coil.memory.MemoryCache.Builder(context).maxSizePercent(0.12).build() }
+            .memoryCache {
+                coil.memory.MemoryCache.Builder(context)
+                    .maxSizePercent(if (lowRamDevice) 0.04 else 0.07)
+                    .build()
+            }
             .diskCache {
                 coil.disk.DiskCache.Builder()
                     .directory(context.cacheDir.resolve("velnix_channel_images"))
-                    .maxSizeBytes(120L * 1024L * 1024L)
+                    .maxSizeBytes(if (lowRamDevice) 40L * 1024L * 1024L else 64L * 1024L * 1024L)
                     .build()
             }
             .build()
@@ -161,7 +174,7 @@ private fun VelnixApp(activity: ComponentActivity) {
         scope.launch {
             busy = true
             try {
-                val page = api.channels(offset = 0)
+                val page = api.channels(offset = 0, pageSize = 100)
                 channels = page.channels
                 catalogOffset = page.nextOffset
                 hasMoreChannels = page.hasMore
@@ -179,7 +192,7 @@ private fun VelnixApp(activity: ComponentActivity) {
         scope.launch {
             loadingMoreChannels = true
             try {
-                val page = api.channels(offset = catalogOffset)
+                val page = api.channels(offset = catalogOffset, pageSize = 100)
                 channels = (channels + page.channels).distinctBy { it.id }
                 catalogOffset = page.nextOffset
                 hasMoreChannels = page.hasMore
@@ -238,6 +251,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                         url = streamUrl!!,
                         streamType = streamType,
                         imageLoader = imageLoader,
+                        lowRamDevice = lowRamDevice,
                         onBack = {
                             selected = null
                             streamUrl = null
@@ -552,15 +566,22 @@ private fun HomeScreen(
 ) {
     val config = LocalConfiguration.current
     val tvLayout = config.screenWidthDp >= 700
-    val visibleChannels = remember(channels, category, query, favorites, recent, beinAccess) {
-        channels.filter { channel ->
-            val categoryMatch = category == "all" || channel.category == category ||
-                (category == "favorites" && channel.id in favorites) ||
-                (category == "recent" && channel.id in recent)
-            val accessMatch = channel.category != "bein" || beinAccess
-            categoryMatch && accessMatch &&
-                (query.isBlank() || channel.name.contains(query, true) || channel.english.contains(query, true))
-        }.sortedBy { it.name.lowercase() }
+    var visibleChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(channels, category, query, favorites, recent, beinAccess) {
+        // Search typing is debounced and filtering/sorting never blocks the TV main thread.
+        if (query.isNotBlank()) delay(140)
+        visibleChannels = withContext(Dispatchers.Default) {
+            channels.asSequence().filter { channel ->
+                val categoryMatch = category == "all" || channel.category == category ||
+                    (category == "favorites" && channel.id in favorites) ||
+                    (category == "recent" && channel.id in recent)
+                val accessMatch = channel.category != "bein" || beinAccess
+                categoryMatch && accessMatch &&
+                    (query.isBlank() || channel.name.contains(query, true) || channel.english.contains(query, true))
+            }.sortedBy { it.name.lowercase() }.toList()
+        }
     }
 
     Column(Modifier.fillMaxSize().background(AppBg)) {
@@ -622,7 +643,7 @@ private fun HomeScreen(
                 item { Spacer(Modifier.height(12.dp)) }
                 item {
                     Text(
-                        "VELNIX  ·  TV 2.1",
+                        "VELNIX  ·  TV 2.3",
                         color = Muted.copy(alpha = 0.65f),
                         fontSize = 9.sp,
                         modifier = Modifier.padding(horizontal = 10.dp)
@@ -668,12 +689,17 @@ private fun HomeScreen(
                     visibleChannels.isEmpty() -> EmptyState(if (query.isBlank()) "ماكو قنوات ضمن هذا القسم حالياً." else "ما لقينا قناة تطابق البحث.")
                     else -> LazyVerticalGrid(
                         columns = GridCells.Adaptive(if (tvLayout) 245.dp else 210.dp),
+                        state = gridState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 20.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(visibleChannels, key = { it.id }) { channel ->
+                        items(
+                            items = visibleChannels,
+                            key = { it.id },
+                            contentType = { "channel" }
+                        ) { channel ->
                             ChannelTile(
                                 channel = channel,
                                 favorite = channel.id in favorites,
@@ -778,7 +804,7 @@ private fun ChannelTile(
                 .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            if (!channel.logo.isNullOrBlank() && !imageFailed) {
+            if (!channel.logo.isNullOrBlank() && !imageFailed && focused) {
                 AsyncImage(
                     model = channel.logo,
                     imageLoader = imageLoader,
@@ -916,6 +942,7 @@ private fun NativePlayer(
     url: String,
     streamType: String,
     imageLoader: ImageLoader,
+    lowRamDevice: Boolean,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -932,8 +959,10 @@ private fun NativePlayer(
 
     val player = remember(url, streamType) {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(25_000, 60_000, 3_500, 8_500)
-            .setPrioritizeTimeOverSizeThresholds(true)
+            // Keep a useful live buffer without allowing it to consume most of a TV box's RAM.
+            .setBufferDurationsMs(12_000, 30_000, 2_000, 5_000)
+            .setTargetBufferBytes(if (lowRamDevice) 16 * 1024 * 1024 else 32 * 1024 * 1024)
+            .setPrioritizeTimeOverSizeThresholds(false)
             .build()
         val trackSelector = DefaultTrackSelector(context)
         val renderersFactory = DefaultRenderersFactory(context).setEnableDecoderFallback(true)
