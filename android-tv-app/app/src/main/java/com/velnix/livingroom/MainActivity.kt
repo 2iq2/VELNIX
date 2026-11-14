@@ -84,7 +84,7 @@ private val LocalVelnixAccent.current = Color(0xFFE50914)
 private val Muted = Color(0xFFA4A5AD)
 private val Line = Color(0x24FFFFFF)
 private val White = Color(0xFFF7F7F8)
-private val LocalVelnixAccent = compositionLocalOf { Accent }
+private val LocalVelnixAccent = compositionLocalOf { Color(0xFFE50914) }
 
 private val AvatarOptions = listOf(
     AvatarOption("anime1", "المحقق الهادئ", "anime1-detective.svg"),
@@ -434,7 +434,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     text = { Text("اضغط خروج مرة ثانية للتأكيد. حسابك يبقى محفوظاً ولن يتم تسجيل خروجك.", color = Muted) },
                     confirmButton = {
                         TextButton(onClick = { exitPrompt = false; activity.finish() }) {
-                            Text("خروج", color = Accent, fontWeight = FontWeight.Bold)
+                            Text("خروج", color = LocalVelnixAccent.current, fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
@@ -451,7 +451,7 @@ private fun BrandMark(size: Int, imageLoader: ImageLoader? = null) {
     Box(
         Modifier.size(size.dp)
             .clip(CircleShape)
-            .background(Accent)
+            .background(LocalVelnixAccent.current)
             .border(2.dp, Color.White.copy(alpha = 0.82f), CircleShape),
         contentAlignment = Alignment.Center
     ) {
@@ -479,7 +479,7 @@ private fun SplashScreen() {
             Box(
                 Modifier.size((112 * pulse).dp)
                     .clip(CircleShape)
-                    .background(Accent),
+                    .background(LocalVelnixAccent.current),
                 contentAlignment = Alignment.Center
             ) {
                 Text("V", color = White, fontSize = 64.sp, fontWeight = FontWeight.Black)
@@ -489,7 +489,7 @@ private fun SplashScreen() {
             Spacer(Modifier.height(8.dp))
             Text("كل الترفيه، بمكان واحد", color = Muted, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(22.dp))
-            Box(Modifier.width(150.dp).height(3.dp).clip(CircleShape).background(Accent))
+            Box(Modifier.width(150.dp).height(3.dp).clip(CircleShape).background(LocalVelnixAccent.current))
             Spacer(Modifier.height(12.dp))
             Text("LIVE TV  ·  MOVIES  ·  SPORTS", color = Muted, fontSize = 10.sp, letterSpacing = 2.sp)
         }
@@ -569,7 +569,7 @@ private fun WelcomeAuthScreen(
                     enabled = !busy && email.contains("@") && password.length >= 6,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+                    colors = ButtonDefaults.buttonColors(containerColor = LocalVelnixAccent.current, contentColor = White)
                 ) {
                     if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
                     else Text(if (signup) "إنشاء الحساب والمتابعة" else "دخول إلى VELNIX", fontWeight = FontWeight.Bold)
@@ -731,7 +731,7 @@ private fun HomeScreen(
                     imageLoader = imageLoader,
                     contentDescription = "الملف الشخصي",
                     modifier = Modifier.size(37.dp).clip(CircleShape)
-                        .border(2.dp, Accent.copy(alpha = 0.8f), CircleShape),
+                        .border(2.dp, LocalVelnixAccent.current.copy(alpha = 0.8f), CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 if (menuExpanded) {
@@ -765,7 +765,7 @@ private fun HomeScreen(
                             .height(46.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(
-                                if (active) Accent.copy(alpha = 0.88f)
+                                if (active) LocalVelnixAccent.current.copy(alpha = 0.88f)
                                 else Color.White.copy(alpha = 0.025f)
                             )
                             .border(
@@ -845,7 +845,7 @@ private fun HomeScreen(
             }
             when {
                 busy && channels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Accent)
+                    CircularProgressIndicator(color = LocalVelnixAccent.current)
                 }
                 category == "bein" && !beinAccess -> EmptyState("قسم beIN SPORTS يحتاج إلى تفعيل على الحساب.")
                 visibleChannels.isEmpty() -> EmptyState(if (query.isBlank()) "ماكو قنوات ضمن هذا القسم حالياً." else "ما لقينا قناة تطابق البحث.")
@@ -878,7 +878,7 @@ private fun HomeScreen(
                                 onClick = onLoadMore,
                                 enabled = !loadingMoreChannels,
                                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+                                colors = ButtonDefaults.buttonColors(containerColor = LocalVelnixAccent.current, contentColor = White)
                             ) {
                                 if (loadingMoreChannels) CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
                                 else Text("تحميل المزيد من القنوات")
@@ -940,7 +940,7 @@ private fun CategoryButton(category: Category, active: Boolean, onClick: () -> U
         shape = RoundedCornerShape(11.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (active) Accent else PanelRaised,
+            containerColor = if (active) LocalVelnixAccent.current else PanelRaised,
             contentColor = if (active) White else Muted
         )
     ) {
@@ -966,7 +966,7 @@ private fun ChannelTile(
             .heightIn(min = 100.dp)
             .onFocusChanged { focused = it.isFocused }
             .border(
-                if (focused) BorderStroke(2.dp, Accent) else BorderStroke(1.dp, Line),
+                if (focused) BorderStroke(2.dp, LocalVelnixAccent.current) else BorderStroke(1.dp, Line),
                 RoundedCornerShape(16.dp)
             )
             .background(Panel, RoundedCornerShape(16.dp))
@@ -998,13 +998,13 @@ private fun ChannelTile(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(channel.name, color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Text(channel.quality.ifBlank { channel.categoryLabel }, color = Muted, fontSize = 10.sp, maxLines = 1)
-            Text("مشاهدة مباشرة", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Text("مشاهدة مباشرة", color = LocalVelnixAccent.current, fontSize = 9.sp, fontWeight = FontWeight.Bold)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             TextButton(onClick = onFavorite) {
-                Text(if (favorite) "★" else "☆", color = if (favorite) Accent else Muted, fontSize = 23.sp)
+                Text(if (favorite) "★" else "☆", color = if (favorite) LocalVelnixAccent.current else Muted, fontSize = 23.sp)
             }
-            if (loading) CircularProgressIndicator(Modifier.size(15.dp), color = Accent, strokeWidth = 2.dp)
+            if (loading) CircularProgressIndicator(Modifier.size(15.dp), color = LocalVelnixAccent.current, strokeWidth = 2.dp)
         }
     }
 }
@@ -1106,7 +1106,7 @@ private fun SettingsScreen(
                 Text("إدارة البيانات", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Button(
                     onClick = onClearCache,
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White),
+                    colors = ButtonDefaults.buttonColors(containerColor = LocalVelnixAccent.current, contentColor = White),
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("مسح ذاكرة صور القنوات") }
                 OutlinedButton(onClick = onClearHistory, modifier = Modifier.fillMaxWidth()) {
@@ -1208,7 +1208,7 @@ private fun ProfileScreen(
                 model = avatarUrl(avatar),
                 imageLoader = imageLoader,
                 contentDescription = "الصورة المختارة",
-                modifier = Modifier.size(78.dp).clip(CircleShape).border(3.dp, Accent, CircleShape),
+                modifier = Modifier.size(78.dp).clip(CircleShape).border(3.dp, LocalVelnixAccent.current, CircleShape),
                 contentScale = ContentScale.Crop
             )
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -1239,8 +1239,8 @@ private fun ProfileScreen(
                 val active = avatar == item.id
                 Column(
                     Modifier.fillMaxWidth()
-                        .border(if (active) 2.dp else 1.dp, if (active) Accent else Line, RoundedCornerShape(15.dp))
-                        .background(if (active) Accent.copy(alpha = 0.12f) else Panel, RoundedCornerShape(15.dp))
+                        .border(if (active) 2.dp else 1.dp, if (active) LocalVelnixAccent.current else Line, RoundedCornerShape(15.dp))
+                        .background(if (active) LocalVelnixAccent.current.copy(alpha = 0.12f) else Panel, RoundedCornerShape(15.dp))
                         .clickable { avatar = item.id }
                         .focusable()
                         .padding(10.dp),
@@ -1266,7 +1266,7 @@ private fun ProfileScreen(
             enabled = !saving && displayName.trim().length >= 2,
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White)
+            colors = ButtonDefaults.buttonColors(containerColor = LocalVelnixAccent.current, contentColor = White)
         ) {
             if (saving) CircularProgressIndicator(Modifier.size(19.dp), color = White, strokeWidth = 2.dp)
             else Text("حفظ التغييرات", fontWeight = FontWeight.Bold)
@@ -1388,7 +1388,7 @@ private fun NativePlayer(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(if (playbackStatus.isBlank()) Color(0xFF42D392) else Accent))
+                Box(Modifier.size(8.dp).clip(CircleShape).background(if (playbackStatus.isBlank()) Color(0xFF42D392) else LocalVelnixAccent.current))
                 TextButton(onClick = onBack) { Text("إغلاق المشغّل", color = White) }
             }
         }
@@ -1479,7 +1479,7 @@ private fun NativePlayer(
             ) {
                 Text("دليل البرامج · EPG", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 if (epgLoading) {
-                    CircularProgressIndicator(Modifier.size(22.dp), color = Accent, strokeWidth = 2.dp)
+                    CircularProgressIndicator(Modifier.size(22.dp), color = LocalVelnixAccent.current, strokeWidth = 2.dp)
                 } else if (epg.isEmpty()) {
                     Text(epgMessage.ifBlank { "لا توجد برامج مدرجة حالياً." }, color = Muted, fontSize = 11.sp)
                 } else {
@@ -1487,8 +1487,8 @@ private fun NativePlayer(
                         val active = System.currentTimeMillis() in item.startsAt until item.endsAt
                         Column(
                             Modifier.fillMaxWidth()
-                                .background(if (active) Accent.copy(alpha = 0.13f) else PanelRaised, RoundedCornerShape(10.dp))
-                                .border(1.dp, if (active) Accent.copy(alpha = 0.55f) else Line, RoundedCornerShape(10.dp))
+                                .background(if (active) LocalVelnixAccent.current.copy(alpha = 0.13f) else PanelRaised, RoundedCornerShape(10.dp))
+                                .border(1.dp, if (active) LocalVelnixAccent.current.copy(alpha = 0.55f) else Line, RoundedCornerShape(10.dp))
                                 .padding(10.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
@@ -1496,7 +1496,7 @@ private fun NativePlayer(
                                 java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.startsAt)) +
                                     " – " +
                                     java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.endsAt)),
-                                color = Accent,
+                                color = LocalVelnixAccent.current,
                                 fontSize = 10.sp
                             )
                             Text(item.title, color = White, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
@@ -1513,7 +1513,7 @@ private fun NativePlayer(
 private fun PlayerAction(label: String, active: Boolean, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
-        colors = ButtonDefaults.textButtonColors(contentColor = if (active) Accent else White),
+        colors = ButtonDefaults.textButtonColors(contentColor = if (active) LocalVelnixAccent.current else White),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Text(label, fontSize = 11.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
