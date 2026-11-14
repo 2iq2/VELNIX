@@ -1509,8 +1509,16 @@ footer .foot{flex-wrap:wrap}
 }
 </style>
 
-<script id="velnix-android-app-detect">if(/VELNIXAndroidApp/.test(navigator.userAgent)){document.documentElement.classList.add('velnix-android-app');}</script>
-<style id="velnix-hide-download-in-native-app">html.velnix-android-app .app-download-section{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}</style>
+<script id="velnix-android-app-detect">
+(()=>{const root=document.documentElement,ua=navigator.userAgent||'';if(/VELNIXAndroidApp/.test(ua))root.classList.add('velnix-android-app');if(/VELNIXAndroidTVApp/.test(ua))root.classList.add('velnix-android-tv-app');})();
+</script>
+<style id="velnix-hide-download-in-native-app">
+html.velnix-android-app .app-download-section,
+html.velnix-android-tv-app .app-download-section{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+html.velnix-android-tv-app :focus{outline:3px solid #e5c98e!important;outline-offset:4px!important;box-shadow:0 0 0 5px rgba(49,111,76,.38),0 10px 28px rgba(0,0,0,.24)!important}
+html.velnix-android-tv-app button:focus,html.velnix-android-tv-app a:focus,html.velnix-android-tv-app input:focus,html.velnix-android-tv-app select:focus{border-color:#e5c98e!important}
+html.velnix-android-tv-app .channel:focus,html.velnix-android-tv-app .folder-card:focus{transform:translateY(-2px) scale(1.018)!important;border-color:rgba(229,201,142,.72)!important}
+</style>
 
 <style id="velnix-christmas-css">
 /* VELNIX Christmas Edition — seasonal layer only; player and stream styles remain untouched */
