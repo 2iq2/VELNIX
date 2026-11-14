@@ -28,9 +28,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 const $ = (id) => document.getElementById(id);
-const code = (new URLSearchParams(location.search).get("code") || "").toUpperCase().replace(/[^A-Z2-9]/g,"");
+let code = (new URLSearchParams(location.search).get("code") || "").toUpperCase().replace(/[^A-Z2-9]/g,"");
 $("code").textContent = code.length === 8 ? code : "--------";
 const status = (message, type="") => { $("status").textContent=message; $("status").className="status "+type; };
+$("manualPanel").classList.toggle("hidden", code.length === 8);
+$("applyCode").addEventListener("click",()=>{const v=($("manualCode").value||"").toUpperCase().replace(/[^A-Z2-9]/g,"");if(v.length!==8){status("أدخل 8 أحرف أو أرقام.","error");return;}code=v;$("code").textContent=code;$("manualPanel").classList.add("hidden");status("تم إدخال الرمز. أكمل تسجيل الدخول ثم وافق على الربط.");});
 let user = null;
 
 async function showSession() {
@@ -83,6 +85,7 @@ try{
   <h1>ربط جهاز التلفزيون</h1>
   <p class="desc">تأكد أن الرمز أدناه يطابق الرمز الظاهر على تلفزيونك قبل الموافقة.</p>
   <div class="code" id="code">--------</div>
+  <section id="manualPanel" class="panel hidden"><p class="desc">أدخل رمز الربط المعروض على شاشة التلفزيون.</p><input class="field" id="manualCode" maxlength="8" placeholder="رمز الربط"><button class="btn mutedbtn" id="applyCode">استخدام الرمز</button></section>
   <section id="authPanel" class="panel">
     <p class="desc">سجّل الدخول بحساب VELNIX الذي تريد استخدامه على التلفزيون.</p>
     <input class="field" id="email" type="email" autocomplete="username" placeholder="البريد الإلكتروني">
