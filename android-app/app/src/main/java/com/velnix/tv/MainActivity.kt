@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val HOME_URL = "https://2iq2.github.io/VELNIX/"
         private const val SITE_HOST = "2iq2.github.io"
-        private const val APP_BG = Color.rgb(9, 12, 18)
+        private val APP_BG = Color.rgb(9, 12, 18)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
