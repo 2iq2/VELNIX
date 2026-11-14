@@ -187,7 +187,8 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
     var profileSaving by remember { mutableStateOf(false) }
     var profileError by remember { mutableStateOf("") }
-    var settingsVisible by remember { mutableStateOf(false) }\n    var familyVisible by remember { mutableStateOf(false) }
+    var settingsVisible by remember { mutableStateOf(false) }
+    var familyVisible by remember { mutableStateOf(false) }
     var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
     var dataSaver by remember { mutableStateOf(api.loadDataSaver()) }
     var showLogos by remember { mutableStateOf(api.loadShowLogos()) }
@@ -307,7 +308,11 @@ private fun VelnixApp(activity: ComponentActivity) {
                             streamUrl = null
                         }
                     )
-                    familyVisible && session != null -> FamilyManagementScreen(\n                        api = api, userId = session!!.userId, channels = channels,\n                        onBack = { familyVisible = false }\n                    )\n                    settingsVisible && session != null -> SettingsScreen(
+                    familyVisible && session != null -> FamilyManagementScreen(
+                        api = api, userId = session!!.userId, channels = channels,
+                        onBack = { familyVisible = false }
+                    )
+                    settingsVisible && session != null -> SettingsScreen(
                         accentArgb = accentArgb,
                         onAccentArgb = { value ->
                             accentArgb = value
@@ -440,7 +445,8 @@ private fun VelnixApp(activity: ComponentActivity) {
                         imageLoader = imageLoader,
                         showLogos = showLogos,
                         onProfile = { profileVisible = true },
-                        onSettings = { settingsVisible = true },\n                        onFamily = { familyVisible = true },
+                        onSettings = { settingsVisible = true },
+                        onFamily = { familyVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
                             api.signOut()
@@ -745,7 +751,8 @@ private fun HomeScreen(
     imageLoader: ImageLoader,
     showLogos: Boolean,
     onProfile: () -> Unit,
-    onSettings: () -> Unit,\n    onFamily: () -> Unit,
+    onSettings: () -> Unit,
+    onFamily: () -> Unit,
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
     onFavorite: (Channel) -> Unit,
@@ -924,7 +931,8 @@ private fun HomeScreen(
             }
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.10f), modifier = Modifier.padding(vertical = 9.dp))
-            MenuFooterAction("◎", "ملفات العائلة والحماية", menuExpanded, onFamily)\n            MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
+            MenuFooterAction("◎", "ملفات العائلة والحماية", menuExpanded, onFamily)
+            MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
             MenuFooterAction("⟳", "تحديث القنوات", menuExpanded, onRefresh)
             MenuFooterAction("⇥", "تسجيل الخروج", menuExpanded, onSignOut)
             if (menuExpanded) {
