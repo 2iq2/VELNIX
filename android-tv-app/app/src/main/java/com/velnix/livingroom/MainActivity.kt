@@ -319,7 +319,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 
     BackHandler(enabled = !splashVisible && selected == null && !profileVisible) {
-        if (settingsVisible) settingsVisible = false else exitPrompt = true
+        if (settingsPinPrompt) settingsPinPrompt = false else if (settingsVisible) settingsVisible = false else exitPrompt = true
     }
 
     MaterialTheme(
@@ -361,6 +361,9 @@ private fun VelnixApp(activity: ComponentActivity) {
                     )
                     settingsVisible && session != null -> SettingsScreen(
                         accentArgb = accentArgb,
+                        hasSettingsPin = api.hasSettingsPin(),
+                        onSaveSettingsPin = { value -> api.saveSettingsPin(value); status = "تم تحديث رمز حماية الإعدادات." },
+                        onRemoveSettingsPin = { api.saveSettingsPin(""); status = "تم إلغاء حماية الإعدادات." },
                         onAccentArgb = { value ->
                             accentArgb = value
                             context.getSharedPreferences("velnix_ui", android.content.Context.MODE_PRIVATE).edit().putInt("accent_argb", value).apply()
@@ -1538,11 +1541,17 @@ private fun SettingsScreen(
     onDataSaver: (Boolean) -> Unit,
     showLogos: Boolean,
     onShowLogos: (Boolean) -> Unit,
+    hasSettingsPin: Boolean,
+    onSaveSettingsPin: (String) -> Unit,
+    onRemoveSettingsPin: () -> Unit,
     lowRamDevice: Boolean,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
     onBack: () -> Unit
 ) {
+    var settingsPin by remember { mutableStateOf("") }
+    var pinEnabled by remember(hasSettingsPin) { mutableStateOf(hasSettingsPin) }
+    var pinStatus by remember { mutableStateOf("") }
     val context = LocalContext.current
     val memory = remember {
         context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
@@ -1631,6 +1640,30 @@ private fun SettingsScreen(
                 OutlinedButton(onClick = onClearHistory, modifier = Modifier.fillMaxWidth()) {
                     Text("مسح سجل المشاهدة", color = White)
                 }
+                HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 4.dp))
+                Text("حماية الإعدادات", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("اطلب رمزاً قبل فتح صفحة الإعدادات في كل مرة.", color = Muted, fontSize = 10.sp)
+                OutlinedTextField(
+                    value = settingsPin,
+                    onValueChange = { settingsPin = it.filter(Char::isDigit).take(8) },
+                    label = { Text("رمز PIN من 4 إلى 8 أرقام") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        if (settingsPin.length !in 4..8) pinStatus = "رمز PIN يجب أن يكون من 4 إلى 8 أرقام."
+                        else { onSaveSettingsPin(settingsPin); settingsPin = ""; pinEnabled = true; pinStatus = "تم حفظ الحماية على هذا الجهاز." }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (pinEnabled) "تغيير رمز PIN" else "تفعيل حماية الإعدادات") }
+                if (pinEnabled) OutlinedButton(onClick = { onRemoveSettingsPin(); pinEnabled = false; settingsPin = ""; pinStatus = "أزيلت حماية الإعدادات." }, modifier = Modifier.fillMaxWidth()) {
+                    Text("إزالة رمز PIN", color = White)
+                }
+                if (pinStatus.isNotBlank()) Text(pinStatus, color = LocalVelnixAccent.current, fontSize = 10.sp)
+
             }
 
             Column(
