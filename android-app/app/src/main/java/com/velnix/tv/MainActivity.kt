@@ -55,6 +55,9 @@ class MainActivity : ComponentActivity() {
 
         webView = WebView(this).apply {
             setBackgroundColor(APP_BG)
+            // Prevent Android's native text-selection handles and copy/paste popup.
+            isLongClickable = false
+            setOnLongClickListener { true }
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -83,6 +86,7 @@ class MainActivity : ComponentActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 progress.visibility = View.GONE
+                disableTextSelection()
             }
 
             override fun onReceivedError(
@@ -181,6 +185,27 @@ class MainActivity : ComponentActivity() {
         } else {
             webView.loadUrl(HOME_URL)
         }
+    }
+
+    private fun disableTextSelection() {
+        webView.evaluateJavascript(
+            """(function() {
+                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }';
+                var style = document.getElementById('velnix-no-text-selection');
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = 'velnix-no-text-selection';
+                    (document.head || document.documentElement).appendChild(style);
+                }
+                style.textContent = css;
+                ['contextmenu', 'selectstart', 'copy', 'cut', 'dragstart'].forEach(function(name) {
+                    document.addEventListener(name, function(event) {
+                        event.preventDefault();
+                    }, true);
+                });
+            })();""",
+            null
+        )
     }
 
     private fun showLoadError() {
