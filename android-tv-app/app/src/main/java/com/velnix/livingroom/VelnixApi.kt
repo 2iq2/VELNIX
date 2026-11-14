@@ -116,7 +116,7 @@ class VelnixApi(private val context: Context) {
         } else null
 
         builder.method(method, requestBody)
-        client.newCall(builder.build()).execute().use { response ->
+        return client.newCall(builder.build()).execute().use { response ->
             HttpResult(response.code, response.body?.string().orEmpty())
         }
     }
