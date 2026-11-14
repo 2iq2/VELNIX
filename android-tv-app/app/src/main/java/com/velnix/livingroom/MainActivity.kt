@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.os.Bundle
+import android.os.Build
+import android.os.StatFs
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -168,6 +170,10 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
     var profileSaving by remember { mutableStateOf(false) }
     var profileError by remember { mutableStateOf("") }
+    var settingsVisible by remember { mutableStateOf(false) }
+    var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
+    var dataSaver by remember { mutableStateOf(api.loadDataSaver()) }
+    var showLogos by remember { mutableStateOf(api.loadShowLogos()) }
     var busyChannel by remember { mutableStateOf<String?>(null) }
 
     fun refreshCatalog() {
@@ -252,10 +258,45 @@ private fun VelnixApp(activity: ComponentActivity) {
                         streamType = streamType,
                         imageLoader = imageLoader,
                         lowRamDevice = lowRamDevice,
+                        autoReconnect = autoReconnect,
+                        dataSaver = dataSaver,
                         onBack = {
                             selected = null
                             streamUrl = null
                         }
+                    )
+                    settingsVisible && session != null -> SettingsScreen(
+                        autoReconnect = autoReconnect,
+                        onAutoReconnect = {
+                            autoReconnect = it
+                            api.saveAutoReconnect(it)
+                        },
+                        dataSaver = dataSaver,
+                        onDataSaver = {
+                            dataSaver = it
+                            api.saveDataSaver(it)
+                        },
+                        showLogos = showLogos,
+                        onShowLogos = {
+                            showLogos = it
+                            api.saveShowLogos(it)
+                        },
+                        lowRamDevice = lowRamDevice,
+                        onClearCache = {
+                            imageLoader.memoryCache?.clear()
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    context.cacheDir.resolve("velnix_channel_images").deleteRecursively()
+                                }
+                                status = "تم مسح ذاكرة صور القنوات"
+                            }
+                        },
+                        onClearHistory = {
+                            recent = emptyList()
+                            api.saveRecent(emptyList())
+                            status = "تم مسح سجل المشاهدة"
+                        },
+                        onBack = { settingsVisible = false }
                     )
                     profileVisible && session != null -> ProfileScreen(
                         current = profile,
@@ -332,7 +373,9 @@ private fun VelnixApp(activity: ComponentActivity) {
                         busy = busy,
                         busyChannel = busyChannel,
                         imageLoader = imageLoader,
+                        showLogos = showLogos,
                         onProfile = { profileVisible = true },
+                        onSettings = { settingsVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
                             api.signOut()
@@ -557,7 +600,9 @@ private fun HomeScreen(
     busy: Boolean,
     busyChannel: String?,
     imageLoader: ImageLoader,
+    showLogos: Boolean,
     onProfile: () -> Unit,
+    onSettings: () -> Unit,
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
     onFavorite: (Channel) -> Unit,
@@ -610,6 +655,7 @@ private fun HomeScreen(
                     contentScale = ContentScale.Crop
                 )
                 TextButton(onClick = onProfile) { Text("ملفي الشخصي", color = White) }
+                TextButton(onClick = onSettings) { Text("الإعدادات", color = White) }
                 TextButton(onClick = onRefresh) { Text("تحديث", color = White) }
                 TextButton(onClick = onSignOut) { Text("خروج", color = Muted) }
             }
@@ -704,6 +750,7 @@ private fun HomeScreen(
                                 channel = channel,
                                 favorite = channel.id in favorites,
                                 imageLoader = imageLoader,
+                                showLogo = showLogos,
                                 loading = busyChannel == channel.id,
                                 onFavorite = { onFavorite(channel) },
                                 onClick = { onPlay(channel) }
@@ -776,6 +823,7 @@ private fun ChannelTile(
     channel: Channel,
     favorite: Boolean,
     imageLoader: ImageLoader,
+    showLogo: Boolean,
     loading: Boolean,
     onFavorite: () -> Unit,
     onClick: () -> Unit
@@ -804,7 +852,7 @@ private fun ChannelTile(
                 .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            if (!channel.logo.isNullOrBlank() && !imageFailed && focused) {
+            if (showLogo && !channel.logo.isNullOrBlank() && !imageFailed && focused) {
                 AsyncImage(
                     model = channel.logo,
                     imageLoader = imageLoader,
@@ -829,6 +877,139 @@ private fun ChannelTile(
             if (loading) CircularProgressIndicator(Modifier.size(15.dp), color = Accent, strokeWidth = 2.dp)
         }
     }
+}
+
+@Composable
+private fun SettingsScreen(
+    autoReconnect: Boolean,
+    onAutoReconnect: (Boolean) -> Unit,
+    dataSaver: Boolean,
+    onDataSaver: (Boolean) -> Unit,
+    showLogos: Boolean,
+    onShowLogos: (Boolean) -> Unit,
+    lowRamDevice: Boolean,
+    onClearCache: () -> Unit,
+    onClearHistory: () -> Unit,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val memory = remember {
+        context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+    }
+    val storage = remember {
+        StatFs(context.filesDir.absolutePath)
+    }
+    val freeMb = storage.availableBytes / (1024L * 1024L)
+    val totalMb = storage.totalBytes / (1024L * 1024L)
+
+    Column(
+        Modifier.fillMaxSize().background(AppBg).padding(horizontal = 34.dp, vertical = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("إعدادات VELNIX", color = White, fontSize = 27.sp, fontWeight = FontWeight.Black)
+                Text("تحكم بالتشغيل والأداء ومساحة التخزين", color = Muted, fontSize = 12.sp)
+            }
+            TextButton(onClick = onBack) { Text("رجوع", color = White) }
+        }
+
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                Modifier.weight(1f).fillMaxHeight().background(Panel, RoundedCornerShape(18.dp)).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("التشغيل والأداء", color = White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                SettingSwitch(
+                    title = "إعادة الاتصال تلقائياً",
+                    description = "يحاول استرجاع البث عند انقطاعه",
+                    checked = autoReconnect,
+                    onCheckedChange = onAutoReconnect
+                )
+                HorizontalDivider(color = Line)
+                SettingSwitch(
+                    title = "توفير البيانات",
+                    description = "يحدّ جودة الفيديو القصوى إلى SD لتقليل استهلاك الشبكة والموارد",
+                    checked = dataSaver,
+                    onCheckedChange = onDataSaver
+                )
+                HorizontalDivider(color = Line)
+                SettingSwitch(
+                    title = "إظهار شعارات القنوات",
+                    description = "عطّلها إذا كان جهاز التلفاز ضعيفاً أو بطيئاً",
+                    checked = showLogos,
+                    onCheckedChange = onShowLogos
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("إدارة البيانات", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = onClearCache,
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = White),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("مسح ذاكرة صور القنوات") }
+                OutlinedButton(onClick = onClearHistory, modifier = Modifier.fillMaxWidth()) {
+                    Text("مسح سجل المشاهدة", color = White)
+                }
+            }
+
+            Column(
+                Modifier.weight(1f).fillMaxHeight().background(Panel, RoundedCornerShape(18.dp)).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("تشخيص الجهاز", color = White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                DiagnosticRow("الجهاز", Build.MANUFACTURER + " " + Build.MODEL)
+                DiagnosticRow("إصدار Android", Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
+                DiagnosticRow("ذاكرة التطبيق", memory.memoryClass.toString() + " MB")
+                DiagnosticRow("تصنيف الجهاز", if (lowRamDevice) "ذاكرة محدودة" else "ذاكرة عادية")
+                DiagnosticRow("التخزين المتاح", freeMb.toString() + " MB")
+                DiagnosticRow("سعة قسم البيانات", totalMb.toString() + " MB")
+                DiagnosticRow("نسخة VELNIX", "2.4.0")
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "ملاحظة: توفير البيانات يحدد جودة الفيديو إلى SD، وقد لا يغيّر الجودة إذا كان مصدر البث لا يوفّر أكثر من مسار واحد.",
+                    color = Muted,
+                    fontSize = 11.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingSwitch(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, color = White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(description, color = Muted, fontSize = 10.sp)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun DiagnosticRow(label: String, value: String) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = Muted, fontSize = 11.sp)
+        Text(value, color = White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+    }
+    HorizontalDivider(color = Line)
 }
 
 @Composable
@@ -943,6 +1124,8 @@ private fun NativePlayer(
     streamType: String,
     imageLoader: ImageLoader,
     lowRamDevice: Boolean,
+    autoReconnect: Boolean,
+    dataSaver: Boolean,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -964,7 +1147,11 @@ private fun NativePlayer(
             .setTargetBufferBytes(if (lowRamDevice) 16 * 1024 * 1024 else 32 * 1024 * 1024)
             .setPrioritizeTimeOverSizeThresholds(false)
             .build()
-        val trackSelector = DefaultTrackSelector(context)
+        val trackSelector = DefaultTrackSelector(context).apply {
+            if (dataSaver) {
+                parameters = buildUponParameters().setMaxVideoSizeSd().build()
+            }
+        }
         val renderersFactory = DefaultRenderersFactory(context).setEnableDecoderFallback(true)
         val mediaItem = MediaItem.Builder().setUri(url).apply {
             when {
@@ -983,6 +1170,10 @@ private fun NativePlayer(
                 setHandleAudioBecomingNoisy(true)
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
+                        if (!autoReconnect) {
+                            playbackStatus = "توقف البث. اضغط إعادة الاتصال للمحاولة."
+                            return
+                        }
                         if (retryCount >= 5) {
                             playbackStatus = "تعذر استمرار البث. افحص الاتصال ثم اضغط إعادة الاتصال."
                             return
