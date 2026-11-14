@@ -86,7 +86,11 @@ class MainActivity : ComponentActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 progress.visibility = View.GONE
+                // Re-apply after the page scripts finish rendering/hydrating.
                 disableTextSelection()
+                webView.postDelayed({ disableTextSelection() }, 350)
+                webView.postDelayed({ disableTextSelection() }, 1200)
+                webView.postDelayed({ disableTextSelection() }, 2500)
             }
 
             override fun onReceivedError(
@@ -190,7 +194,7 @@ class MainActivity : ComponentActivity() {
     private fun disableTextSelection() {
         webView.evaluateJavascript(
             """(function() {
-                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } #velnixInstallApp, #velnix-install-app, .velnix-install-app, .app-download-section, .app-download-card, #appDownloadTitle { display: none !important; }';
+                var css = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } #velnixInstallApp, #velnix-install-app, .velnix-install-app, section.app-download-section, .app-download-section, .app-download-card, #appDownloadTitle { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }';
                 var style = document.getElementById('velnix-no-text-selection');
                 if (!style) {
                     style = document.createElement('style');
@@ -204,11 +208,26 @@ class MainActivity : ComponentActivity() {
                         node.style.setProperty('display', 'none', 'important');
                     });
                     var title = document.getElementById('appDownloadTitle');
+                    if (!title) {
+                        document.querySelectorAll('h1,h2,h3,[data-ar]').forEach(function(node) {
+                            var label = (node.innerText || node.textContent || '').trim();
+                            if (label === 'معلومات التطبيق' || label === 'App information') title = node;
+                        });
+                    }
                     if (title) {
-                        var section = title.closest('section');
-                        var card = title.closest('.app-download-card');
-                        if (section) section.style.setProperty('display', 'none', 'important');
-                        if (card) card.style.setProperty('display', 'none', 'important');
+                        var node = title;
+                        for (var depth = 0; node && depth < 7; depth++, node = node.parentElement) {
+                            var cls = (node.className && node.className.toString()) || '';
+                            if (node.tagName === 'SECTION' || /app-download-section|app-download-card/.test(cls)) {
+                                node.style.setProperty('display', 'none', 'important');
+                                node.style.setProperty('visibility', 'hidden', 'important');
+                                node.style.setProperty('height', '0', 'important');
+                                node.style.setProperty('min-height', '0', 'important');
+                                node.style.setProperty('margin', '0', 'important');
+                                node.style.setProperty('padding', '0', 'important');
+                                node.style.setProperty('overflow', 'hidden', 'important');
+                            }
+                        }
                     }
                 }
 
