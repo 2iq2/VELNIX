@@ -335,6 +335,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     )
                     familyVisible && session != null -> FamilyManagementScreen(
                         api = api, userId = session!!.userId, channels = channels,
+                        onActivate = { p -> activeTvProfile = p; api.saveActiveTvProfile(session!!.userId, p.id); familyVisible = false },
                         onBack = { familyVisible = false }
                     )
                     settingsVisible && session != null -> SettingsScreen(
@@ -1188,6 +1189,7 @@ private fun FamilyManagementScreen(
     api: VelnixApi,
     userId: String,
     channels: List<Channel>,
+    onActivate: (TvProfile) -> Unit,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -1202,6 +1204,9 @@ private fun FamilyManagementScreen(
     var message by remember { mutableStateOf("جارٍ تحميل بيانات العائلة…") }
     var busy by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf("profiles") }
+    var activationTarget by remember { mutableStateOf<TvProfile?>(null) }
+    var activationPin by remember { mutableStateOf("") }
+    var activationError by remember { mutableStateOf("") }
     LaunchedEffect(userId) {
         try {
             profiles = api.tvProfiles(userId)
@@ -1233,7 +1238,7 @@ private fun FamilyManagementScreen(
                         Text("ملفات العائلة",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
                         if(profiles.isEmpty()) Text("ماكو ملفات إضافية. أنشئ أول ملف.",color=Muted)
                         profiles.forEach { p ->
-                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(selectedProfile==p.id) LocalVelnixAccent.current.copy(alpha=.17f) else PanelRaised).clickable { selectedProfile=p.id }.padding(10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(selectedProfile==p.id) LocalVelnixAccent.current.copy(alpha=.17f) else PanelRaised).clickable { selectedProfile=p.id; activationTarget=p; activationPin=""; activationError="" }.padding(10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
                                 Column { Text(p.name,color=White,fontWeight=FontWeight.Bold); Text(if(p.isKids) "ملف أطفال" else "ملف عادي",color=Muted,fontSize=10.sp) }
                                 TextButton(onClick={scope.launch { try { api.removeTvProfile(userId,p.id); profiles=api.tvProfiles(userId); selectedProfile=profiles.firstOrNull()?.id } catch(e:Exception){message=e.message ?: "تعذر الحذف"} }}) { Text("حذف",color=Color(0xFFFF9292)) }
                             }
@@ -1247,7 +1252,32 @@ private fun FamilyManagementScreen(
                         OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(6)},label={Text("PIN اختياري (4–6 أرقام)")},singleLine=true,modifier=Modifier.fillMaxWidth())
                         Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
                         Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
-                        Text("كل ملف له سجل مفضلة ومشاهدة مستقل في قاعدة البيانات. ربط واجهة التبديل النشط ما زال مطلوباً قبل اعتبارها مكتملة.",color=Muted,fontSize=10.sp)
+                        Text("اضغط على ملف لتفعيله. الملفات المحمية تطلب PIN قبل التبديل.",color=Muted,fontSize=10.sp)
+                        activationTarget?.let { target ->
+                            AlertDialog(
+                                onDismissRequest = { activationTarget = null },
+                                title = { Text("فتح ملف " + target.name) },
+                                text = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        if (target.hasPin) OutlinedTextField(value=activationPin,onValueChange={activationPin=it.filter(Char::isDigit).take(6)},label={Text("رمز PIN")},singleLine=true,visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
+                                        else Text("تفعيل هذا الملف؟")
+                                        if (activationError.isNotBlank()) Text(activationError,color=Color(0xFFFF9292))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        scope.launch {
+                                            try {
+                                                if (target.hasPin && !api.checkTvProfilePin(userId,target.id,activationPin)) activationError = "رمز PIN غير صحيح."
+                                                else { onActivate(target); activationTarget = null }
+                                            } catch(e:Exception) { activationError=e.message ?: "تعذر التحقق من الرمز" }
+                                        }
+                                    }) { Text("تفعيل") }
+                                },
+                                dismissButton = { TextButton(onClick={activationTarget=null}) { Text("إلغاء") } },
+                                containerColor = Panel
+                            )
+                        }
                     }
                 }
             }
