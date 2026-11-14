@@ -9,11 +9,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.velnix.livingroom.experimental"
+        applicationId = "com.velnix.livingroom"
         minSdk = 23
         targetSdk = 35
         versionCode = 2
-        versionName = "2.0.0-native-test"
+        versionName = "2.0.0"
     }
 
     buildFeatures {
