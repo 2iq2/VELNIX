@@ -259,13 +259,27 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
 
     LaunchedEffect(session?.userId) {
-        val userId = session?.userId ?: return@LaunchedEffect
+        val userId = session?.userId
+        if (userId == null) {
+            activeTvProfile = null
+            profileLocks = emptySet()
+            profileCategoryLocks = emptySet()
+            profileFavorites = emptySet()
+            profileRecent = emptyList()
+            familyVisible = false
+            return@LaunchedEffect
+        }
+        activeTvProfile = null
         try {
             val profiles = api.tvProfiles(userId)
             val savedId = api.loadActiveTvProfile(userId)
-            val saved = profiles.firstOrNull { it.id == savedId }
-            activeTvProfile = saved?.takeIf { !it.hasPin } ?: profiles.firstOrNull { !it.hasPin }
+            val saved = profiles.firstOrNull { it.id == savedId && !it.hasPin }
+            activeTvProfile = saved ?: profiles.firstOrNull { !it.hasPin }
             activeTvProfile?.let { api.saveActiveTvProfile(userId, it.id) }
+            if (activeTvProfile == null) {
+                familyVisible = true
+                status = if (profiles.isEmpty()) "أنشئ أول ملف شخصي حتى تبدأ المشاهدة." else "اختر ملفاً وأدخل PIN الخاص به."
+            }
         } catch (e: Exception) { status = e.message ?: "تعذر تحميل ملفات العائلة" }
     }
 
@@ -356,7 +370,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                     )
                     multiViewVisible && session != null -> MultiViewScreen(
                         api = api,
-                        channels = if (activeTvProfile?.isKids == true) channels.filter { it.category == "kids" } else channels.filterNot { it.category in profileCategoryLocks || it.id in profileLocks },
+                        channels = if (activeTvProfile?.isKids == true) channels.filter { it.category == "kids" } else channels.filterNot { it.category in profileCategoryLocks || it.id in profileLocks || (it.category == "bein" && !beinAccess) },
                         lowRamDevice = lowRamDevice,
                         onBack = { multiViewVisible = false }
                     )
@@ -364,7 +378,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                         api = api, userId = session!!.userId, channels = channels,
                         onActivate = { p -> activeTvProfile = p; api.saveActiveTvProfile(session!!.userId, p.id); familyVisible = false },
                         onProfileDataChanged = { id -> scope.launch { try { profileFavorites=api.profileFavorites(session!!.userId,id); profileRecent=api.profileHistory(session!!.userId,id); profileLocks=api.loadLockedChannels(session!!.userId,id); profileCategoryLocks=api.loadLockedCategories(session!!.userId,id) } catch(e:Exception) { status=e.message ?: "تعذر تحديث بيانات الملف" } } },
-                        onBack = { familyVisible = false }
+                        onBack = { if (activeTvProfile != null) familyVisible = false else message = "فعّل ملفاً شخصياً أو أنشئ ملفاً قبل إغلاق هذه الصفحة." }
                     )
                     settingsVisible && session != null -> SettingsScreen(
                         accentArgb = accentArgb,
@@ -1333,7 +1347,7 @@ private fun FamilyManagementScreen(
                         Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) { (1..8).forEach { n -> FilterChip(selected=avatar=="anime$n",onClick={avatar="anime$n"},label={Text("A$n")}) } }
                         OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(6)},label={Text("PIN اختياري (4–6 أرقام)")},singleLine=true,modifier=Modifier.fillMaxWidth())
                         Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
-                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
+                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,avatar,kids,pin); profiles=api.tvProfiles(userId); selectedProfile=profiles.lastOrNull()?.id; val created=profiles.lastOrNull(); if(created!=null && !created.hasPin) onActivate(created); name="";pin="";avatar="anime1";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
                         Text("اضغط على ملف لتفعيله. الملفات المحمية تطلب PIN قبل التبديل.",color=Muted,fontSize=10.sp)
                         if (selectedProfile != null) {
                             OutlinedTextField(value=newProfilePin,onValueChange={newProfilePin=it.filter(Char::isDigit).take(6)},label={Text("تعيين أو تغيير PIN (4–6 أرقام)")},singleLine=true,visualTransformation=PasswordVisualTransformation(),keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
