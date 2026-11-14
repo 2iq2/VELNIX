@@ -574,10 +574,10 @@ class VelnixApi(private val context: Context) {
     }
 
     suspend fun tvProfiles(userId: String): List<TvProfile> {
-        val rows = JSONArray(request("tv_profiles?select=id,name,avatar_id,is_kids,pin_hash&user_id=eq.$userId&order=created_at.asc", rest = true))
+        val rows = JSONArray(request("tv_profiles?select=id,name,avatar_id,is_kids,pin_enabled,avatar_url&user_id=eq.$userId&order=created_at.asc", rest = true))
         return (0 until rows.length()).map { i ->
             val r = rows.getJSONObject(i)
-            TvProfile(r.getString("id"), r.getString("name"), r.optString("avatar_id","anime1"), r.optBoolean("is_kids"), !r.isNull("pin_hash") && r.optString("pin_hash").isNotBlank())
+            TvProfile(r.getString("id"), r.getString("name"), r.optString("avatar_url").takeIf { it.startsWith("https://") } ?: r.optString("avatar_id","anime1"), r.optBoolean("is_kids"), r.optBoolean("pin_enabled"))
         }
     }
 
@@ -609,11 +609,9 @@ class VelnixApi(private val context: Context) {
     suspend fun createTvProfile(userId: String, name: String, avatar: String, kids: Boolean, pin: String) {
         require(name.trim().length in 1..32) { "اسم الملف الشخصي يجب أن يكون من 1 إلى 32 حرفاً." }
         require(pin.isBlank() || pin.matches(Regex("\\d{4,6}"))) { "رمز PIN يجب أن يكون من 4 إلى 6 أرقام." }
-        val hash = if (pin.isBlank()) JSONObject.NULL else pinHash(pin)
-        val row = JSONObject().put("user_id", userId).put("name", name.trim())
-            .put("avatar_id", avatar).put("is_kids", kids).put("pin_hash", hash)
-        request("tv_profiles", "POST", row.toString(), rest = true,
-            extraHeaders = mapOf("Prefer" to "return=minimal"))
+        val payload = JSONObject().put("p_name", name.trim()).put("p_avatar_id", avatar)
+            .put("p_is_kids", kids).put("p_pin", if (pin.isBlank()) JSONObject.NULL else pin)
+        request("rpc/create_tv_profile", "POST", payload.toString(), rest = true)
     }
 
     suspend fun removeTvProfile(userId: String, profileId: String) {
@@ -622,19 +620,16 @@ class VelnixApi(private val context: Context) {
 
     suspend fun setTvProfilePin(userId: String, profileId: String, pin: String) {
         require(pin.isBlank() || pin.matches(Regex("\\d{4,6}"))) { "رمز PIN يجب أن يكون من 4 إلى 6 أرقام." }
-        val row = JSONObject().put("pin_hash", if (pin.isBlank()) JSONObject.NULL else pinHash(pin))
-        request("tv_profiles?id=eq.$profileId&user_id=eq.$userId", "PATCH", row.toString(), rest = true)
+        val payload = JSONObject().put("p_profile_id", profileId)
+            .put("p_pin", if (pin.isBlank()) JSONObject.NULL else pin)
+        request("rpc/set_tv_profile_pin", "POST", payload.toString(), rest = true)
     }
 
     suspend fun checkTvProfilePin(userId: String, profileId: String, pin: String): Boolean {
-        val rows = JSONArray(request("tv_profiles?select=pin_hash&id=eq.$profileId&user_id=eq.$userId&limit=1", rest = true))
-        if (rows.length()==0) return false
-        val hash = rows.getJSONObject(0).optString("pin_hash")
-        return hash.isBlank() || hash == pinHash(pin)
+        if (!pin.matches(Regex("\\d{4,6}"))) return false
+        val payload = JSONObject().put("p_profile_id", profileId).put("p_pin", pin)
+        return request("rpc/verify_tv_profile_pin", "POST", payload.toString(), rest = true).trim() == "true"
     }
-
-    private fun pinHash(pin: String): String = java.security.MessageDigest.getInstance("SHA-256")
-        .digest(pin.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
     suspend fun loadLockedChannels(userId: String, profileId: String): Set<String> {
         val rows = JSONArray(request("tv_profile_channel_locks?select=channel_id&user_id=eq.$userId&profile_id=eq.$profileId", rest = true))
