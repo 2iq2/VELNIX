@@ -33,6 +33,7 @@ jobs:
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
           test -x "$SDKMANAGER"
           echo "Using SDK manager: $SDKMANAGER"
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
 
       - name: Install Android API 36
