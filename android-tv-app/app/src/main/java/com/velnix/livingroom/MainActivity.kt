@@ -1255,7 +1255,7 @@ private fun SettingsScreen(
                 DiagnosticRow("تصنيف الجهاز", if (lowRamDevice) "ذاكرة محدودة" else "ذاكرة عادية")
                 DiagnosticRow("التخزين المتاح", freeMb.toString() + " MB")
                 DiagnosticRow("سعة قسم البيانات", totalMb.toString() + " MB")
-                DiagnosticRow("نسخة VELNIX", "2.4.0")
+                DiagnosticRow("نسخة VELNIX", "2.5.0")
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "ملاحظة: توفير البيانات يحدد جودة الفيديو إلى SD، وقد لا يغيّر الجودة إذا كان مصدر البث لا يوفّر أكثر من مسار واحد.",
