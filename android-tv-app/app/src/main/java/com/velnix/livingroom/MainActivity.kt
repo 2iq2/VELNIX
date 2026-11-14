@@ -90,6 +90,10 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.isVerticalScrollBarEnabled = false
+
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(webView, true)
@@ -208,6 +212,16 @@ class MainActivity : ComponentActivity() {
                 webView.evaluateJavascript(
                     """(function(){
                         const player=document.getElementById('playerModal');
+                        if(player && player.classList.contains('velnix-tv-fullscreen')){
+                            player.classList.remove('velnix-tv-fullscreen');
+                            const focus=document.getElementById('vcFullscreen');
+                            if(focus)focus.focus();
+                            return 'handled';
+                        }
+                        if(document.fullscreenElement){
+                            document.exitFullscreen?.();
+                            return 'handled';
+                        }
                         if(player && player.classList.contains('show')){
                             const close=document.getElementById('closePlayer');
                             if(close){close.click();return 'handled';}
@@ -219,7 +233,7 @@ class MainActivity : ComponentActivity() {
                             modal.classList.remove('show');
                             return 'handled';
                         }
-                        if(window.scrollY>8){window.scrollTo({top:0,behavior:'smooth'});return 'handled';}
+                        if(window.scrollY>8){window.scrollTo({top:0,behavior:'auto'});return 'handled';}
                         if(history.length>1){history.back();return 'handled';}
                         return 'exit';
                     })();"""
@@ -244,22 +258,24 @@ class MainActivity : ComponentActivity() {
             """(function(){
                 if(!/VELNIXAndroidTVApp/.test(navigator.userAgent)) return;
                 document.documentElement.classList.add('velnix-android-tv-app');
-                const selector = 'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[role="button"],.channel,.folder-card,[tabindex="0"]';
-                const prepare = () => {
-                    document.querySelectorAll('.channel,.folder-card').forEach(el => {
-                        if(!el.hasAttribute('tabindex')) el.tabIndex = 0;
-                        if(!el.hasAttribute('role')) el.setAttribute('role','button');
-                    });
-                    document.querySelectorAll('[onclick]').forEach(el => {
-                        if(el.matches('div,article,li') && !el.hasAttribute('tabindex')) {
-                            el.tabIndex = 0;
-                            if(!el.hasAttribute('role')) el.setAttribute('role','button');
+                const selector = '.channel,.folder-card,div[onclick],article[onclick],li[onclick]';
+                const prepareOne = el => {
+                    if(!(el instanceof HTMLElement) || !el.matches(selector)) return;
+                    if(!el.hasAttribute('tabindex')) el.tabIndex = 0;
+                    if(!el.hasAttribute('role')) el.setAttribute('role','button');
+                };
+                const scanAdded = node => {
+                    if(!node || node.nodeType !== 1) return;
+                    prepareOne(node);
+                    if(node.querySelectorAll) node.querySelectorAll(selector).forEach(prepareOne);
+                };
+                document.querySelectorAll(selector).forEach(prepareOne);
+                if(!window.__velnixTvFocusObserver){
+                    window.__velnixTvFocusObserver = new MutationObserver(records => {
+                        for(const record of records){
+                            for(const node of record.addedNodes) scanAdded(node);
                         }
                     });
-                };
-                prepare();
-                if(!window.__velnixTvFocusObserver){
-                    window.__velnixTvFocusObserver = new MutationObserver(prepare);
                     window.__velnixTvFocusObserver.observe(document.documentElement,{childList:true,subtree:true});
                 }
                 if(!window.__velnixTvEnterHandler){
@@ -267,19 +283,19 @@ class MainActivity : ComponentActivity() {
                     document.addEventListener('keydown',function(event){
                         const active=document.activeElement;
                         if(!active || !active.matches('.channel,.folder-card')) return;
-                        if(event.key==='Enter' || event.key===' ' || event.keyCode===13 || event.keyCode===23){
+                        if(event.key==='Enter' || event.key===' ' || event.keyCode===13 || event.keyCode===23 || event.keyCode===66){
                             event.preventDefault();
                             event.stopPropagation();
                             active.click();
                         }
                     },true);
                 }
-                window.setTimeout(function(){
+                requestAnimationFrame(function(){
                     if(!document.activeElement || document.activeElement===document.body){
                         const first=document.querySelector('#exploreBtn,#loginBtn,a[href="#home"],.filter,.channel');
                         if(first) first.focus();
                     }
-                },350);
+                });
             })();""",
             null
         )

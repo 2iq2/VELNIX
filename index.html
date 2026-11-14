@@ -1520,6 +1520,114 @@ html.velnix-android-tv-app button:focus,html.velnix-android-tv-app a:focus,html.
 html.velnix-android-tv-app .channel:focus,html.velnix-android-tv-app .folder-card:focus{transform:translateY(-2px) scale(1.018)!important;border-color:rgba(229,201,142,.72)!important}
 </style>
 
+
+<style id="velnix-android-tv-performance-css">
+/* TV-only rendering profile: avoid costly motion and blur on low-power TV hardware */
+html.velnix-android-tv-app,
+html.velnix-android-tv-app body { scroll-behavior:auto!important; }
+html.velnix-android-tv-app *,
+html.velnix-android-tv-app *::before,
+html.velnix-android-tv-app *::after {
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+html.velnix-android-tv-app header,
+html.velnix-android-tv-app .dialog,
+html.velnix-android-tv-app .profile-dialog,
+html.velnix-android-tv-app .account-menu,
+html.velnix-android-tv-app .channel,
+html.velnix-android-tv-app .folder-card,
+html.velnix-android-tv-app .catalog-sidebar {
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  filter:none!important;
+}
+html.velnix-android-tv-app .hero:before,
+html.velnix-android-tv-app .vx-holiday-art,
+html.velnix-android-tv-app #vxHolidaySnow {display:none!important}
+html.velnix-android-tv-app .wrap {width:min(1600px,calc(100% - 72px))!important}
+html.velnix-android-tv-app .channels {grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}
+html.velnix-android-tv-app .channel,
+html.velnix-android-tv-app .folder-card {
+  transform:none!important;
+  box-shadow:none!important;
+  min-height:138px!important;
+}
+html.velnix-android-tv-app .channel:hover,
+html.velnix-android-tv-app .folder-card:hover {transform:none!important;box-shadow:none!important}
+html.velnix-android-tv-app :focus {
+  outline:3px solid #edce93!important;
+  outline-offset:3px!important;
+  box-shadow:none!important;
+}
+html.velnix-android-tv-app .channel:focus,
+html.velnix-android-tv-app .folder-card:focus {
+  transform:none!important;
+  border-color:#edce93!important;
+  box-shadow:inset 0 0 0 1px rgba(237,206,147,.25)!important;
+}
+html.velnix-android-tv-app button,
+html.velnix-android-tv-app a,
+html.velnix-android-tv-app select,
+html.velnix-android-tv-app input {scroll-margin:18px}
+html.velnix-android-tv-app .player-modal {padding:10px!important}
+html.velnix-android-tv-app .player-shell {
+  display:flex!important;
+  flex-direction:column!important;
+  width:min(96vw,1560px)!important;
+  max-height:96vh!important;
+  overflow:auto!important;
+  border-radius:18px!important;
+}
+html.velnix-android-tv-app .player-head {padding:12px 18px!important}
+html.velnix-android-tv-app .video-wrap {max-height:66vh!important;aspect-ratio:16/9}
+html.velnix-android-tv-app .velnix-controls,
+html.velnix-android-tv-app .vc-topbar,
+html.velnix-android-tv-app .video-wrap.controls-hidden .velnix-controls,
+html.velnix-android-tv-app .video-wrap.controls-hidden .vc-topbar {
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+html.velnix-android-tv-app .vc-icon,
+html.velnix-android-tv-app .vc-quality,
+html.velnix-android-tv-app .vc-exit,
+html.velnix-android-tv-app .player-retry,
+html.velnix-android-tv-app .player-close {
+  min-width:48px!important;
+  min-height:48px!important;
+  font-size:16px!important;
+}
+html.velnix-android-tv-app .vc-seek {height:8px!important}
+html.velnix-android-tv-app .player-options {gap:10px!important;flex-wrap:wrap!important}
+html.velnix-android-tv-app .velnix-tv-fullscreen {
+  position:fixed!important;inset:0!important;z-index:9999!important;
+  display:grid!important;place-items:stretch!important;padding:0!important;
+  background:#000!important;
+}
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-shell {
+  width:100vw!important;max-width:none!important;height:100vh!important;height:100dvh!important;
+  max-height:none!important;border:0!important;border-radius:0!important;overflow:hidden!important;
+}
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-head,
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-toolbar,
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-epg-panel,
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-diagnostics,
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-diagnostics-panel,
+html.velnix-android-tv-app .velnix-tv-fullscreen .player-state {display:none!important}
+html.velnix-android-tv-app .velnix-tv-fullscreen #videoStage {
+  flex:1 1 auto!important;width:100%!important;height:100%!important;max-height:none!important;
+  min-height:0!important;aspect-ratio:auto!important;
+}
+html.velnix-android-tv-app .velnix-tv-fullscreen #videoStage video {width:100%;height:100%;object-fit:contain}
+html.velnix-android-tv-app .velnix-tv-fullscreen .vc-topbar {display:flex!important}
+html.velnix-android-tv-app .velnix-tv-fullscreen .velnix-controls {display:block!important}
+@media(max-width:1200px){
+ html.velnix-android-tv-app .channels {grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+</style>
+
 <style id="velnix-christmas-css">
 /* VELNIX Christmas Edition — seasonal layer only; player and stream styles remain untouched */
 body.vx-christmas-active header{position:sticky;isolation:isolate;box-shadow:0 10px 28px rgba(10,31,23,.15)}
@@ -1728,8 +1836,8 @@ body[data-theme="light"].vx-christmas-active #categories .channel{border-color:r
         <div class="app-download-copy">
           <span class="app-download-kicker" data-ar="VELNIX • ANDROID TV" data-en="VELNIX • ANDROID TV">VELNIX • ANDROID TV</span>
           <h2 data-ar="نسخة التلفزيون" data-en="TV edition">نسخة التلفزيون</h2>
-          <p data-ar="نسخة مخصصة لشاشات Android TV وGoogle TV، مع تنقّل كامل بالريموت وتجربة مشاهدة على الشاشة الكبيرة." data-en="A dedicated Android TV and Google TV edition, with full remote navigation for the big screen.">نسخة مخصصة لشاشات Android TV وGoogle TV، مع تنقّل كامل بالريموت وتجربة مشاهدة على الشاشة الكبيرة.</p>
-          <span class="app-download-meta" data-ar="Android TV • Google TV • تحكم بالريموت • APK" data-en="Android TV • Google TV • Remote control • APK">Android TV • Google TV • تحكم بالريموت • APK</span>
+          <p data-ar="نسخة محسّنة لشاشات Android TV وGoogle TV، بتنقّل أسرع وتحكّم كامل بالريموت حتى داخل المشغّل." data-en="Optimized Android TV and Google TV edition with smoother navigation and full remote control inside the player.">نسخة مخصصة لشاشات Android TV وGoogle TV، مع تنقّل كامل بالريموت وتجربة مشاهدة على الشاشة الكبيرة.</p>
+          <span class="app-download-meta" data-ar="Android TV • Google TV • ريموت كامل • إصدار محسّن • APK" data-en="Android TV • Google TV • Full remote • Optimized edition • APK">Android TV • Google TV • تحكم بالريموت • APK</span>
         </div>
       </div>
       <a class="app-download-button" href="https://github.com/2iq2/VELNIX/releases/download/android-tv-latest/VELNIX-TV.apk" download="VELNIX-TV.apk" aria-label="Download VELNIX Android TV APK">
@@ -3230,6 +3338,21 @@ loadChannels();
     hero.appendChild(art);
   }
 
+  if (/VELNIXAndroidTVApp/.test(navigator.userAgent || '')) {
+    const remaining = endAt - Date.now();
+    if (remaining > 0) window.setTimeout(() => {
+      body.classList.remove('vx-christmas-active');
+      ribbon.remove();
+      const art = hero && hero.querySelector('.vx-holiday-art');
+      if (art) art.remove();
+      const themeColor = document.querySelector('meta[name="theme-color"]');
+      if (themeColor) themeColor.setAttribute('content', '#090c12');
+    }, remaining);
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) themeColor.setAttribute('content', '#10241b');
+    return;
+  }
+
   const snow = document.createElement('canvas');
   snow.id = 'vxHolidaySnow';
   snow.setAttribute('aria-hidden', 'true');
@@ -3322,6 +3445,179 @@ loadChannels();
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) themeColor.setAttribute('content', '#10241b');
   checkExpiry();
+})();
+</script>
+
+
+<script id="velnix-android-tv-remote-controls">
+(()=>{
+  if(!/VELNIXAndroidTVApp/.test(navigator.userAgent||'') || window.__velnixTvRemoteV3) return;
+  window.__velnixTvRemoteV3 = true;
+  const modal = document.getElementById('playerModal');
+  const stage = document.getElementById('videoStage');
+  const video = document.getElementById('liveVideo');
+  const playButton = document.getElementById('vcPlay');
+  const closeButton = document.getElementById('closePlayer');
+  const exitButton = document.getElementById('vcExit');
+  let returnFocus = null;
+  let wasOpen = false;
+  if(!modal || !stage || !video) return;
+  stage.tabIndex = 0;
+  video.tabIndex = 0;
+
+  const isOpen = () => modal.classList.contains('show');
+  const isFullscreen = () => modal.classList.contains('velnix-tv-fullscreen');
+  const visible = el => {
+    if(!el || !el.isConnected || el.disabled || el.closest('[hidden]')) return false;
+    const s = getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden' && el.getClientRects().length > 0;
+  };
+  const focusables = () => Array.from(modal.querySelectorAll(
+    'button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex]:not([tabindex="-1"])'
+  )).filter(visible);
+  const showControls = () => stage.classList.remove('controls-hidden');
+  const focusPlay = () => {
+    showControls();
+    if(playButton && visible(playButton)) playButton.focus({preventScroll:true});
+    else stage.focus({preventScroll:true});
+  };
+  const moveFocus = direction => {
+    const items = focusables();
+    if(!items.length) return;
+    let current = document.activeElement;
+    if(!modal.contains(current) || !visible(current)) current = playButton && visible(playButton) ? playButton : items[0];
+    const cr = current.getBoundingClientRect();
+    const cx = cr.left + cr.width/2, cy = cr.top + cr.height/2;
+    let best = null, bestScore = Infinity;
+    for(const item of items){
+      if(item === current) continue;
+      const r = item.getBoundingClientRect();
+      const dx = r.left + r.width/2 - cx;
+      const dy = r.top + r.height/2 - cy;
+      const primary = direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy);
+      const secondary = direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx);
+      const isForward = direction === 'left' ? dx < -2 :
+        direction === 'right' ? dx > 2 :
+        direction === 'up' ? dy < -2 : dy > 2;
+      if(!isForward) continue;
+      const score = primary + secondary * 1.75 + (secondary > primary * 2.5 ? 300 : 0);
+      if(score < bestScore){bestScore=score;best=item;}
+    }
+    if(!best){
+      const candidates = items.filter(item => item !== current);
+      candidates.sort((a,b)=>{
+        const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+        const va=direction==='left'?ra.left:direction==='right'?-ra.right:direction==='up'?ra.top:-ra.bottom;
+        const vb=direction==='left'?rb.left:direction==='right'?-rb.right:direction==='up'?rb.top:-rb.bottom;
+        const ca=direction==='left'||direction==='right'?Math.abs(ra.top+ra.height/2-cy):Math.abs(ra.left+ra.width/2-cx);
+        const cb=direction==='left'||direction==='right'?Math.abs(rb.top+rb.height/2-cy):Math.abs(rb.left+rb.width/2-cx);
+        return va-vb || ca-cb;
+      });
+      best=candidates[0]||null;
+    }
+    if(best){
+      best.focus({preventScroll:true});
+      const r=best.getBoundingClientRect();
+      if(r.top<12 || r.bottom>innerHeight-12 || r.left<12 || r.right>innerWidth-12)
+        best.scrollIntoView({block:'nearest',inline:'nearest'});
+    }
+  };
+  const togglePlayback = () => {
+    if(video.paused){video.play().catch(()=>{});}
+    else video.pause();
+  };
+  window.__velnixTvTogglePlayback = togglePlayback;
+  const setFullscreen = enabled => {
+    modal.classList.toggle('velnix-tv-fullscreen',!!enabled);
+    showControls();
+    if(exitButton){
+      const label=exitButton.querySelector('span');
+      if(label) label.textContent=enabled?'خروج من ملء الشاشة':'إغلاق المشغّل';
+      exitButton.setAttribute('aria-label',enabled?'الخروج من ملء الشاشة':'إغلاق المشغّل');
+    }
+    const target=enabled?playButton:document.getElementById('vcFullscreen');
+    if(target && visible(target)) target.focus({preventScroll:true});
+  };
+  const closeOrExit = () => {
+    if(isFullscreen()){setFullscreen(false);return;}
+    if(closeButton) closeButton.click();
+  };
+  const keyName = e => {
+    const code=e.keyCode||e.which;
+    if(code===19)return 'ArrowUp';
+    if(code===20)return 'ArrowDown';
+    if(code===21)return 'ArrowLeft';
+    if(code===22)return 'ArrowRight';
+    if(code===23||code===66)return 'Enter';
+    return e.key||'';
+  };
+
+  document.addEventListener('click', e => {
+    if(!isOpen()) return;
+    const target=e.target.closest && e.target.closest('#vcFullscreen,#fullscreenBtn,#vcExit');
+    if(!target) return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    if(target.id==='vcExit'){
+      if(isFullscreen()) setFullscreen(false);
+      else if(closeButton) closeButton.click();
+    }else setFullscreen(true);
+  },true);
+
+  document.addEventListener('click', e => {
+    if(isOpen()) return;
+    const origin=e.target.closest && e.target.closest('.channel,.folder-card');
+    if(origin) returnFocus=origin;
+  },true);
+
+  document.addEventListener('keydown', e => {
+    if(!isOpen()) return;
+    const key=keyName(e);
+    const code=e.keyCode||e.which;
+    if(key==='Escape'||key==='Backspace'||key==='BrowserBack'||code===4){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      closeOrExit();return;
+    }
+    if(key==='MediaPlayPause'||key==='MediaPlay'||key==='MediaPause'||code===85||code===126||code===127){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      if(key==='MediaPause'||code===127) video.pause();
+      else if(key==='MediaPlay'||code===126){video.play().catch(()=>{});}
+      else togglePlayback();
+      showControls();return;
+    }
+    if(key==='ArrowLeft'||key==='ArrowRight'||key==='ArrowUp'||key==='ArrowDown'){
+      const active=document.activeElement;
+      if(active && active.matches('input[type="range"]') && (key==='ArrowLeft'||key==='ArrowRight')){
+        const min=Number(active.min||0), max=Number(active.max||100);
+        const step=Number(active.step||1);
+        const direction=key==='ArrowRight'?1:-1;
+        const next=Math.max(min,Math.min(max,Number(active.value||0)+direction*step));
+        active.value=String(next);
+        active.dispatchEvent(new Event('input',{bubbles:true}));
+        active.dispatchEvent(new Event('change',{bubbles:true}));
+      }else if(!(active && active.tagName==='SELECT' && (key==='ArrowUp'||key==='ArrowDown'))){
+        moveFocus(key.slice(5).toLowerCase());
+      }
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();showControls();return;
+    }
+    if(key==='Enter'||key===' '){
+      const active=document.activeElement;
+      if(active && modal.contains(active) && active.matches('button,a,[role="button"]')){
+        e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();active.click();return;
+      }
+      if(active===stage||active===video||!modal.contains(active)){
+        e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();togglePlayback();showControls();return;
+      }
+    }
+  },true);
+
+  const observer=new MutationObserver(()=>{
+    const open=isOpen();
+    if(open && !wasOpen) window.setTimeout(focusPlay,80);
+    if(!open && wasOpen && returnFocus && returnFocus.isConnected) returnFocus.focus({preventScroll:true});
+    if(!open && wasOpen) modal.classList.remove('velnix-tv-fullscreen');
+    wasOpen=open;
+  });
+  observer.observe(modal,{attributes:true,attributeFilter:['class']});
 })();
 </script>
 
