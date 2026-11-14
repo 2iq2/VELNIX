@@ -187,7 +187,7 @@ private fun VelnixApp(activity: ComponentActivity) {
     }
     var profileSaving by remember { mutableStateOf(false) }
     var profileError by remember { mutableStateOf("") }
-    var settingsVisible by remember { mutableStateOf(false) }
+    var settingsVisible by remember { mutableStateOf(false) }\n    var familyVisible by remember { mutableStateOf(false) }
     var autoReconnect by remember { mutableStateOf(api.loadAutoReconnect()) }
     var dataSaver by remember { mutableStateOf(api.loadDataSaver()) }
     var showLogos by remember { mutableStateOf(api.loadShowLogos()) }
@@ -307,7 +307,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                             streamUrl = null
                         }
                     )
-                    settingsVisible && session != null -> SettingsScreen(
+                    familyVisible && session != null -> FamilyManagementScreen(\n                        api = api, userId = session!!.userId, channels = channels,\n                        onBack = { familyVisible = false }\n                    )\n                    settingsVisible && session != null -> SettingsScreen(
                         accentArgb = accentArgb,
                         onAccentArgb = { value ->
                             accentArgb = value
@@ -440,7 +440,7 @@ private fun VelnixApp(activity: ComponentActivity) {
                         imageLoader = imageLoader,
                         showLogos = showLogos,
                         onProfile = { profileVisible = true },
-                        onSettings = { settingsVisible = true },
+                        onSettings = { settingsVisible = true },\n                        onFamily = { familyVisible = true },
                         onRefresh = { refreshCatalog() },
                         onSignOut = {
                             api.signOut()
@@ -745,7 +745,7 @@ private fun HomeScreen(
     imageLoader: ImageLoader,
     showLogos: Boolean,
     onProfile: () -> Unit,
-    onSettings: () -> Unit,
+    onSettings: () -> Unit,\n    onFamily: () -> Unit,
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
     onFavorite: (Channel) -> Unit,
@@ -924,7 +924,7 @@ private fun HomeScreen(
             }
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.10f), modifier = Modifier.padding(vertical = 9.dp))
-            MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
+            MenuFooterAction("◎", "ملفات العائلة والحماية", menuExpanded, onFamily)\n            MenuFooterAction("⚙", "الإعدادات", menuExpanded, onSettings)
             MenuFooterAction("⟳", "تحديث القنوات", menuExpanded, onRefresh)
             MenuFooterAction("⇥", "تسجيل الخروج", menuExpanded, onSignOut)
             if (menuExpanded) {
@@ -1135,6 +1135,108 @@ private fun ChannelTile(
                 Text(if (favorite) "★" else "☆", color = if (favorite) LocalVelnixAccent.current else Muted, fontSize = 23.sp)
             }
             if (loading) CircularProgressIndicator(Modifier.size(15.dp), color = LocalVelnixAccent.current, strokeWidth = 2.dp)
+        }
+    }
+}
+
+@Composable
+private fun FamilyManagementScreen(
+    api: VelnixApi,
+    userId: String,
+    channels: List<Channel>,
+    onBack: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var profiles by remember { mutableStateOf<List<TvProfile>>(emptyList()) }
+    var matches by remember { mutableStateOf<List<TvMatch>>(emptyList()) }
+    var selectedProfile by remember { mutableStateOf<String?>(null) }
+    var locked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var name by remember { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
+    var kids by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("جارٍ تحميل بيانات العائلة…") }
+    var busy by remember { mutableStateOf(false) }
+    var tab by remember { mutableStateOf("profiles") }
+    LaunchedEffect(userId) {
+        try {
+            profiles = api.tvProfiles(userId)
+            matches = api.upcomingMatches()
+            selectedProfile = profiles.firstOrNull()?.id
+            message = ""
+        } catch (e: Exception) { message = e.message ?: "تعذر تحميل البيانات" }
+    }
+    LaunchedEffect(selectedProfile) {
+        val id = selectedProfile ?: return@LaunchedEffect
+        try { locked = api.loadLockedChannels(userId, id) } catch (_: Exception) { locked = emptySet() }
+    }
+    BackHandler(onBack = onBack)
+    Column(Modifier.fillMaxSize().background(AppBg).padding(horizontal = 30.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column { Text("العائلة والحماية", color = White, fontSize = 26.sp, fontWeight = FontWeight.Black); Text("ملفات مستقلة، رقابة أبوية، ومواعيد المباريات", color = Muted, fontSize = 11.sp) }
+            TextButton(onClick = onBack) { Text("رجوع", color = White) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("profiles" to "الملفات الشخصية", "locks" to "قفل القنوات", "sports" to "المباريات").forEach { (id,label) ->
+                FilterChip(selected = tab==id, onClick={tab=id}, label={Text(label)}, colors=FilterChipDefaults.filterChipColors(selectedContainerColor=LocalVelnixAccent.current,selectedLabelColor=White))
+            }
+        }
+        if (message.isNotBlank()) Text(message, color=LocalVelnixAccent.current, fontSize=11.sp)
+        when(tab) {
+            "profiles" -> {
+                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(14.dp), verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                        Text("ملفات العائلة",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        if(profiles.isEmpty()) Text("ماكو ملفات إضافية. أنشئ أول ملف.",color=Muted)
+                        profiles.forEach { p ->
+                            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if(selectedProfile==p.id) LocalVelnixAccent.current.copy(alpha=.17f) else PanelRaised).clickable { selectedProfile=p.id }.padding(10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Column { Text(p.name,color=White,fontWeight=FontWeight.Bold); Text(if(p.isKids) "ملف أطفال" else "ملف عادي",color=Muted,fontSize=10.sp) }
+                                TextButton(onClick={scope.launch { try { api.removeTvProfile(userId,p.id); profiles=api.tvProfiles(userId); selectedProfile=profiles.firstOrNull()?.id } catch(e:Exception){message=e.message ?: "تعذر الحذف"} }}) { Text("حذف",color=Color(0xFFFF9292)) }
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(14.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                        Text("إضافة ملف شخصي",color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)
+                        OutlinedTextField(value=name,onValueChange={name=it.take(32)},label={Text("اسم الملف")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Text("الافتار",color=White,fontSize=12.sp)
+                        Row(horizontalArrangement=Arrangement.spacedBy(7.dp)) { (1..8).forEach { n -> FilterChip(selected=false,onClick={kids=kids},label={Text("A$n")}) } }
+                        OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(6)},label={Text("PIN اختياري (4–6 أرقام)")},singleLine=true,modifier=Modifier.fillMaxWidth())
+                        Row(verticalAlignment=Alignment.CenterVertically) { Checkbox(checked=kids,onCheckedChange={kids=it}); Text("ملف أطفال مع تقييد المحتوى",color=White,fontSize=12.sp) }
+                        Button(onClick={scope.launch { busy=true; try { api.createTvProfile(userId,name,"anime1",kids,pin); profiles=api.tvProfiles(userId); name="";pin="";message="تم إنشاء الملف الشخصي." } catch(e:Exception){message=e.message ?: "تعذر إنشاء الملف"} finally{busy=false} }},enabled=!busy && name.isNotBlank()) { Text(if(busy) "جارٍ الحفظ…" else "إنشاء الملف") }
+                        Text("كل ملف له سجل مفضلة ومشاهدة مستقل في قاعدة البيانات. ربط واجهة التبديل النشط ما زال مطلوباً قبل اعتبارها مكتملة.",color=Muted,fontSize=10.sp)
+                    }
+                }
+            }
+            "locks" -> {
+                Row(Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp)) {
+                        Text("اختَر الملف",color=White,fontWeight=FontWeight.Bold)
+                        profiles.forEach { p -> FilterChip(selected=selectedProfile==p.id,onClick={selectedProfile=p.id},label={Text(p.name)}) }
+                    }
+                    LazyColumn(Modifier.weight(2f).fillMaxHeight().background(Panel,RoundedCornerShape(16.dp)).padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        item { Text("قفل القنوات",color=White,fontWeight=FontWeight.Bold) }
+                        items(channels.take(300),key={it.id}) { c ->
+                            Row(Modifier.fillMaxWidth().clickable { val id=selectedProfile ?: return@clickable; val next=c.id !in locked; locked=if(next) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,next) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } }.padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween) {
+                                Text(c.name,color=White,fontSize=11.sp,maxLines=1)
+                                Checkbox(checked=c.id in locked,onCheckedChange={v-> val id=selectedProfile ?: return@Checkbox; locked=if(v) locked+c.id else locked-c.id; scope.launch { try { api.setChannelLocked(userId,id,c.id,v) } catch(e:Exception){message=e.message ?: "تعذر حفظ القفل"} } })
+                            }
+                        }
+                    }
+                }
+            }
+            "sports" -> {
+                Column(Modifier.fillMaxWidth().weight(1f).background(Panel,RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Text("المباريات القادمة",color=White,fontSize=17.sp,fontWeight=FontWeight.Bold)
+                    if(matches.isEmpty()) Text("لا توجد مباريات مجدولة في قاعدة البيانات حالياً. يلزم تزويد جدول المباريات بمصدر بيانات قبل تشغيل التنبيهات.",color=Muted,fontSize=12.sp)
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        items(matches,key={it.id}) { match ->
+                            Row(Modifier.fillMaxWidth().background(PanelRaised,RoundedCornerShape(10.dp)).padding(12.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) { Text(match.home+"  ×  "+match.away,color=White,fontWeight=FontWeight.Bold); Text(match.competition+" · "+match.startsAt,color=Muted,fontSize=10.sp) }
+                                TextButton(onClick={scope.launch { try { api.addMatchReminder(userId,selectedProfile,match.id); message="تم حفظ تذكير المباراة." } catch(e:Exception){message=e.message ?: "تعذر حفظ التذكير"} }}) { Text("ذكّرني",color=LocalVelnixAccent.current) }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
