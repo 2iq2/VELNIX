@@ -9,6 +9,12 @@ on:
     paths:
       - "android-tv-app/**"
       - ".github/workflows/android-tv-native-validation.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "android-tv-app/**"
+      - ".github/workflows/android-tv-native-validation.yml"
   workflow_dispatch:
 
 permissions:
