@@ -5,6 +5,13 @@ on:
     branches:
       - feature/tv-native-media3
       - feature/tv-redesign-v2
+      - feature/tv-liquid-glass-redesign
+    paths:
+      - "android-tv-app/**"
+      - ".github/workflows/android-tv-native-validation.yml"
+  pull_request:
+    branches:
+      - main
     paths:
       - "android-tv-app/**"
       - ".github/workflows/android-tv-native-validation.yml"

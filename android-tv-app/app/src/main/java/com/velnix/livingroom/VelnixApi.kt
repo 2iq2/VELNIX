@@ -209,6 +209,75 @@ class VelnixApi(private val context: Context) {
         response.body
     }
 
+    suspend fun createDevicePairing(deviceName: String = "VELNIX TV"): DevicePairingInfo {
+        val payload = JSONObject()
+            .put("action", "create")
+            .put("device_name", deviceName)
+            .toString()
+        val result = JSONObject(
+            request(
+                "functions/v1/device-pairing",
+                method = "POST",
+                body = payload,
+                token = KEY
+            )
+        )
+        return DevicePairingInfo(
+            code = result.optString("code"),
+            deviceToken = result.optString("device_token"),
+            pairUrl = result.optString("pair_url"),
+            expiresAt = try {
+                java.time.Instant.parse(result.optString("expires_at")).toEpochMilli()
+            } catch (_: Exception) {
+                System.currentTimeMillis() + 180_000L
+            }
+        ).also {
+            if (it.code.length != 8 || it.deviceToken.length < 40 || it.pairUrl.isBlank()) {
+                throw IllegalStateException("خدمة ربط الأجهزة أعادت بيانات غير مكتملة.")
+            }
+        }
+    }
+
+    suspend fun pollDevicePairing(deviceToken: String): String? {
+        val payload = JSONObject()
+            .put("action", "poll")
+            .put("device_token", deviceToken)
+            .toString()
+        val result = JSONObject(
+            request(
+                "functions/v1/device-pairing",
+                method = "POST",
+                body = payload,
+                token = KEY
+            )
+        )
+        return when (result.optString("status")) {
+            "pending" -> null
+            "complete" -> result.optString("token_hash").takeIf { it.isNotBlank() }
+                ?: throw IllegalStateException("وصلت موافقة الربط لكن رمز تسجيل الدخول غير مكتمل.")
+            "expired" -> throw IllegalStateException("انتهت صلاحية رمز الربط. أنشئ رمزاً جديداً.")
+            else -> throw IllegalStateException("حالة ربط الجهاز غير معروفة.")
+        }
+    }
+
+    suspend fun verifyDeviceMagicLink(tokenHash: String): UserSession {
+        if (tokenHash.isBlank()) throw IllegalArgumentException("رمز تسجيل الدخول فارغ.")
+        val payload = JSONObject()
+            .put("type", "magiclink")
+            .put("token_hash", tokenHash)
+            .toString()
+        return saveSession(
+            JSONObject(
+                request(
+                    "auth/v1/verify",
+                    method = "POST",
+                    body = payload,
+                    token = KEY
+                )
+            )
+        )
+    }
+
     suspend fun signIn(email: String, password: String): UserSession {
         if (!email.contains("@") || password.length < 6) {
             throw IllegalArgumentException("أدخل بريداً إلكترونياً صحيحاً وكلمة مرور لا تقل عن 6 أحرف.")
@@ -518,6 +587,13 @@ class VelnixApi(private val context: Context) {
         prefs.edit().putString("recent_channels", ids.distinct().take(30).joinToString(",")).apply()
     }
 }
+
+data class DevicePairingInfo(
+    val code: String,
+    val deviceToken: String,
+    val pairUrl: String,
+    val expiresAt: Long
+)
 
 data class UserSession(
     val accessToken: String,
