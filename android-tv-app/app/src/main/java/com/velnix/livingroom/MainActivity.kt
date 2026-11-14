@@ -1329,6 +1329,19 @@ private fun FamilyManagementScreen(
                                 TextButton(onClick={scope.launch { try { api.setTvProfilePin(userId,selectedProfile!!,""); profiles=api.tvProfiles(userId); newProfilePin=""; message="تم إزالة PIN الملف." } catch(e:Exception){message=e.message ?: "تعذر إزالة PIN"} }}) { Text("إزالة PIN") }
                             }
                         }
+                        selectedProfile?.let { profileId ->
+                            HorizontalDivider(color=Line,modifier=Modifier.padding(vertical=6.dp))
+                            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                                PairingQr("https://2iq2.github.io/VELNIX/tv-avatar.html?profile="+profileId)
+                                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                                    Text("ارفع صورة الملف من الهاتف",color=White,fontWeight=FontWeight.Bold,fontSize=12.sp)
+                                    Text("امسح الرمز، سجّل الدخول بحسابك، ثم اختر الصورة من الهاتف.",color=Muted,fontSize=9.sp,lineHeight=13.sp)
+                                    TextButton(onClick={scope.launch { try { profiles=api.tvProfiles(userId); message="تم تحديث قائمة الصور." } catch(e:Exception){message=e.message ?: "تعذر تحديث الملفات"} }},contentPadding=PaddingValues(0.dp)) {
+                                        Text("تحديث الصورة بعد الرفع",color=LocalVelnixAccent.current,fontSize=10.sp)
+                                    }
+                                }
+                            }
+                        }
                         activationTarget?.let { target ->
                             AlertDialog(
                                 onDismissRequest = { activationTarget = null },
